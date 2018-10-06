@@ -685,7 +685,7 @@ class QualcommParser:
 
         # 0: DCCH, 1: BCCH, 3: CCCH, 4: SACCH
         # DCCH, SACCH requires pseudo length
-        rr_channel_map = [8, 1, 0, 2, 0x88]
+        rr_channel_map = [8, util.gsmtap_channel.BCCH, 0, util.gsmtap_channel.CCCH, 0x88]
         channel_type = rr_channel_map[chan]
 
         ts = util.parse_qxdm_ts(xdm_hdr[3])
@@ -730,7 +730,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                1,                           # Type (Um)
+                util.gsmtap_type.UM,         # Type (Um)
                 0,                           # GSM Timeslot
                 arfcn,                       # ARFCN
                 0,                           # Signal dBm
@@ -753,7 +753,7 @@ class QualcommParser:
         msg_len = pkt[18]
         l3_message = pkt[19:]
 
-        payload_type = 1
+        payload_type = util.gsmtap_type.UM
 
         if len(l3_message) > msg_len:
             l3_message = l3_message[0:msg_len]
@@ -808,7 +808,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                2,                           # Type (Abis - DTAP)
+                util.gsmtap_type.ABIS,       # Type (Abis - DTAP)
                 0,                           # GSM Timeslot
                 arfcn,                       # ARFCN
                 0,                           # Signal dBm
@@ -862,23 +862,21 @@ class QualcommParser:
 
         msg_content = b''
 
-        # 0: UL CCCH
-        # 1: UL DCCH
-        # 2: DL CCCH
-        # 3: DL DCCH
-        # 4: DL BCCH-BCH Encoded
-        # 5: DL BCCH-FACH Encoded
-        # 6: DL PCCH
-        # 7: DL MCCH
-        # 8: DL MSCH
-        # 9: DL Extension SIB
-        # 10: SIB Container
-        # FE: DL BCCH-BCH Decoded
-        # FF: DL BCCH-FACH Decoded
-
-        channel_type_map = {0: 3, 1: 1, 2: 2, 3: 0,
-                4: 8, 5: 7, 6: 4, 7: 9, 8: 10, 9: 8,
-                10: 14, 0xFE: 8, 0xFF: 7}
+        channel_type_map = {
+                0: util.gsmtap_umts_rrc_types.UL_CCCH,
+                1: util.gsmtap_umts_rrc_types.UL_DCCH,
+                2: util.gsmtap_umts_rrc_types.DL_CCCH,
+                3: util.gsmtap_umts_rrc_types.DL_DCCH,
+                4: util.gsmtap_umts_rrc_types.BCCH_BCH, # Encoded
+                5: util.gsmtap_umts_rrc_types.BCCH_FACH, # Encoded
+                6: util.gsmtap_umts_rrc_types.PCCH,
+                7: util.gsmtap_umts_rrc_types.MCCH,
+                8: util.gsmtap_umts_rrc_types.MSCH,
+                9: util.gsmtap_umts_rrc_types.BCCH_BCH,
+                10: util.gsmtap_umts_rrc_types.System_Information_Container,
+                0xFE: util.gsmtap_umts_rrc_types.BCCH_BCH, # Decoded
+                0xFF: util.gsmtap_umts_rrc_types.BCCH_FACH # Decoded
+                }
 
         subtype = 0
         try:
@@ -891,47 +889,43 @@ class QualcommParser:
         if channel_type == 0 or channel_type == 1:
             arfcn = self.umts_last_uarfcn_ul
 
-        # 0: Master Information Block
-        # 1: SIB1
-        # 2: SIB2
-        # 3: SIB3
-        # 4: SIB4
-        # 5: SIB5
-        # 6: SIB6
-        # 7: SIB7
-        # 8: SIB8
-        # 9: SIB9
-        # 10: SIB10
-        # 11: SIB11
-        # 12: SIB12
-        # 13: SIB13
-        # 14: SIB13-1
-        # 15: SIB13-2
-        # 16: SIB13-3
-        # 17: SIB13-4
-        # 18: SIB14
-        # 19: SIB15
-        # 20: SIB15-1
-        # 21: SIB15-2
-        # 22: SIB15-3
-        # 23: SIB16
-        # 24: SIB17
-        # 25: SIB15-4
-        # 26: SIB18
-        # 27: SB1
-        # 28: SB2
-        # 29: SIB15-5
-        # 30: SIB5bis
-        # 31: SIB11bis
-        # Extension SIB
-        # 66: SIB11bis
-        # 67: SIB19
-
-        sib_type_map = {0: 16, 1: 17, 2: 18, 3: 19, 4: 20, 5: 21, 6: 23, 7: 24,
-                8: 25, 9: 26, 10: 27, 11: 28, 12: 30, 13: 31, 14: 32, 15: 33,
-                16: 34, 17: 35, 18: 36, 19: 37, 20: 39, 21: 41, 22: 44, 23: 51,
-                24: 52, 25: 46, 26: 53, 27: 58, 28: 59, 29: 47, 30: 22, 31: 29,
-                66: 29, 67: 54}
+        sib_type_map = {
+                0: util.gsmtap_umts_rrc_types.MasterInformationBlock,
+                1: util.gsmtap_umts_rrc_types.SysInfoType1,
+                2: util.gsmtap_umts_rrc_types.SysInfoType2,
+                3: util.gsmtap_umts_rrc_types.SysInfoType3,
+                4: util.gsmtap_umts_rrc_types.SysInfoType4,
+                5: util.gsmtap_umts_rrc_types.SysInfoType5,
+                6: util.gsmtap_umts_rrc_types.SysInfoType6,
+                7: util.gsmtap_umts_rrc_types.SysInfoType7,
+                8: util.gsmtap_umts_rrc_types.SysInfoType8,
+                9: util.gsmtap_umts_rrc_types.SysInfoType9,
+                10: util.gsmtap_umts_rrc_types.SysInfoType10,
+                11: util.gsmtap_umts_rrc_types.SysInfoType11,
+                12: util.gsmtap_umts_rrc_types.SysInfoType12,
+                13: util.gsmtap_umts_rrc_types.SysInfoType13,
+                14: util.gsmtap_umts_rrc_types.SysInfoType13_1,
+                15: util.gsmtap_umts_rrc_types.SysInfoType13_2,
+                16: util.gsmtap_umts_rrc_types.SysInfoType13_3,
+                17: util.gsmtap_umts_rrc_types.SysInfoType13_4,
+                18: util.gsmtap_umts_rrc_types.SysInfoType14,
+                19: util.gsmtap_umts_rrc_types.SysInfoType15,
+                20: util.gsmtap_umts_rrc_types.SysInfoType15_1,
+                21: util.gsmtap_umts_rrc_types.SysInfoType15_2,
+                22: util.gsmtap_umts_rrc_types.SysInfoType15_3,
+                23: util.gsmtap_umts_rrc_types.SysInfoType16,
+                24: util.gsmtap_umts_rrc_types.SysInfoType17,
+                25: util.gsmtap_umts_rrc_types.SysInfoType15_4,
+                26: util.gsmtap_umts_rrc_types.SysInfoType18,
+                27: util.gsmtap_umts_rrc_types.SysInfoTypeSB1,
+                28: util.gsmtap_umts_rrc_types.SysInfoTypeSB2,
+                29: util.gsmtap_umts_rrc_types.SysInfoType15_5,
+                30: util.gsmtap_umts_rrc_types.SysInfoType5bis,
+                31: util.gsmtap_umts_rrc_types.SysInfoType11bis,
+                # Extension SIB
+                66: util.gsmtap_umts_rrc_types.SysInfoType11bis,
+                67: util.gsmtap_umts_rrc_types.SysInfoType19
+                }
 
         if channel_type == 0xFE or channel_type == 0xFF or channel_type == 9:
             try:
@@ -950,7 +944,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0xc,                         # Type (UMTS-RRC)
+                util.gsmtap_type.UMTS_RRC,   # Type (UMTS-RRC)
                 0,                           # GSM Timeslot
                 arfcn,                       # EARFCN
                 0,                           # Signal dBm
@@ -984,7 +978,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0x2,                         # Type (UMTS-RRC)
+                util.gsmtap_type.ABIS,       # Type (Abis - DTAP)
                 0,                           # GSM Timeslot
                 arfcn,                       # EARFCN
                 0,                           # Signal dBm
@@ -1202,7 +1196,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0xd,                         # Type (LTE-RRC)
+                util.gsmtap_type.LTE_RRC,    # Type (LTE-RRC)
                 0,                           # GSM Timeslot
                 self.lte_last_earfcn_dl,     # EARFCN
                 0,                           # Signal dBm
@@ -1291,7 +1285,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0xe,                         # Type (LTE-MAC)
+                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
                 0,                           # GSM Timeslot
                 earfcn,                      # EARFCN
                 0,                           # Signal dBm
@@ -1384,7 +1378,7 @@ class QualcommParser:
                         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                                 3,                           # Version
                                 7,                           # Header Length
-                                0xe,                         # Type (LTE-MAC)
+                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
                                 0,                           # GSM Timeslot
                                 earfcn,                      # EARFCN
                                 0,                           # Signal dBm
@@ -1451,7 +1445,7 @@ class QualcommParser:
                         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                                 3,                           # Version
                                 7,                           # Header Length
-                                0xe,                         # Type (LTE-MAC)
+                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
                                 0,                           # GSM Timeslot
                                 earfcn,                      # EARFCN
                                 0,                           # Signal dBm
@@ -1556,7 +1550,7 @@ class QualcommParser:
                         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                                 3,                           # Version
                                 7,                           # Header Length
-                                0xe,                         # Type (LTE-MAC)
+                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
                                 0,                           # GSM Timeslot
                                 earfcn,                      # EARFCN
                                 0,                           # Signal dBm
@@ -1610,7 +1604,7 @@ class QualcommParser:
                         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                                 3,                           # Version
                                 7,                           # Header Length
-                                0xe,                         # Type (LTE-MAC)
+                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
                                 0,                           # GSM Timeslot
                                 earfcn,                      # EARFCN
                                 0,                           # Signal dBm
@@ -1810,7 +1804,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0xd,                         # Type (LTE-RRC)
+                util.gsmtap_type.LTE_RRC,    # Type (LTE-RRC)
                 0,                           # GSM Timeslot
                 self.lte_last_earfcn_dl,     # EARFCN
                 0,                           # Signal dBm
@@ -1927,15 +1921,42 @@ class QualcommParser:
             util.xxd(pkt)
             return b''
 
-        # RRC Packet v9 : BCCH DL-SCH: 9, PCCH: 11, DL-CCCH: 12, DL-DCCH: 13, UL-CCCH: 14, UL-DCCH: 15, MCCH: 10, BCCH BCH: 8
-        # RRC Packet <v9: BCCH DL-SCH: 2, PCCH: 4, DL-CCCH: 5, DL-DCCH: 6, UL-CCCH: 7, UL-DCCH: 8, BCCH BCH: 1, MCCH: 3
-        # RRC Packet <v9: BCCH DL-SCH: 2, PCCH: 5, DL-CCCH: 6, DL-DCCH: 7, UL-CCCH: 8, UL-DCCH: 9
         if pkt[16] < 9:
-            rrc_subtype_map = {1: 4, 2: 5, 3: 7, 4: 6, 5: 0, 6: 1, 7: 2, 8: 3}
+            # RRC Packet <v9
+            rrc_subtype_map = {
+                    1: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                    2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                    3: util.gsmtap_lte_rrc_types.MCCH,
+                    4: util.gsmtap_lte_rrc_types.PCCH,
+                    5: util.gsmtap_lte_rrc_types.DL_CCCH,
+                    6: util.gsmtap_lte_rrc_types.DL_DCCH,
+                    7: util.gsmtap_lte_rrc_types.UL_CCCH,
+                    8: util.gsmtap_lte_rrc_types.UL_DCCH
+                    }
         elif pkt[16] < 15:
-            rrc_subtype_map = {8: 4, 9: 5, 10: 7, 11: 6, 12: 0, 13: 1, 14: 2, 15: 3}
+            # RRC Packet v9-v12
+            rrc_subtype_map = {
+                    8: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                    9: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                    10: util.gsmtap_lte_rrc_types.MCCH,
+                    11: util.gsmtap_lte_rrc_types.PCCH,
+                    12: util.gsmtap_lte_rrc_types.DL_CCCH,
+                    13: util.gsmtap_lte_rrc_types.DL_DCCH,
+                    14: util.gsmtap_lte_rrc_types.UL_CCCH,
+                    15: util.gsmtap_lte_rrc_types.UL_DCCH
+                    }
         else:
-            rrc_subtype_map = {1: 4, 2: 5, 3: 7, 5: 6, 6: 0, 7: 1, 8: 2, 9: 3}
+            # RRC Packet v13-
+            rrc_subtype_map = {
+                    1: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                    2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                    3: util.gsmtap_lte_rrc_types.MCCH,
+                    5: util.gsmtap_lte_rrc_types.PCCH,
+                    6: util.gsmtap_lte_rrc_types.DL_CCCH,
+                    7: util.gsmtap_lte_rrc_types.DL_DCCH,
+                    8: util.gsmtap_lte_rrc_types.UL_CCCH,
+                    9: util.gsmtap_lte_rrc_types.UL_DCCH
+                    }
 
         ts = util.parse_qxdm_ts(xdm_hdr[3])
         ts_sec = calendar.timegm(ts.timetuple())
@@ -1944,7 +1965,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0xd,                         # Type (LTE-RRC)
+                int(util.gsmtap_type.LTE_RRC), # Type (LTE-RRC)
                 0,                           # GSM Timeslot
                 earfcn,                      # EARFCN
                 0,                           # Signal dBm
@@ -1974,7 +1995,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                 3,                           # Version
                 7,                           # Header Length
-                0x12,                        # Type (NAS-EPS)
+                util.gsmtap_type.LTE_NAS,    # Type (NAS-EPS)
                 0,                           # GSM Timeslot
                 earfcn,                      # EARFCN
                 0,                           # Signal dBm
@@ -2064,7 +2085,7 @@ class QualcommParser:
         gsmtap_hdr = struct.pack('!BBBBHBBLBBBB', 
                 2,                           # Version
                 4,                           # Header Length
-                0x4,                         # Type (GSM SIM)
+                util.gsmtap_type.SIM,        # Type (GSM SIM)
                 0,                           # GSM Timeslot
                 0,                           # EARFCN
                 0,                           # Signal dBm

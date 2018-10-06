@@ -197,7 +197,6 @@ class SamsungParser:
     def process_control_message(self, pkt):
         return b''
 
-
     def process_common_data(self, pkt):
         pkt = pkt[10:-1]
         arfcn = 0
@@ -212,12 +211,16 @@ class SamsungParser:
             msg_content = pkt[10:]
 
             if chan_type == 0x30: # UMTS RRC
-                # 0x30: CCCH (DL/UL)
-                # 0x31: DCCH (DL/UL)
-                # 0x32: BCCH-BCH
-                # 0x34: PCCH
-                chan_map_ul = {0x30: 3, 0x31: 1}
-                chan_map_dl = {0x30: 2, 0x31: 0, 0x32: 8, 0x34: 4}
+                chan_map_ul = {
+                        0x30: util.gsmtap_umts_rrc_types.UL_CCCH,
+                        0x31: util.gsmtap_umts_rrc_types.UL_DCCH
+                        }
+                chan_map_dl = {
+                        0x30: util.gsmtap_umts_rrc_types.DL_CCCH,
+                        0x31: util.gsmtap_umts_rrc_types.DL_DCCH,
+                        0x32: util.gsmtap_umts_rrc_types.BCCH_BCH,
+                        0x34: util.gsmtap_umts_rrc_types.PCCH
+                        }
 
                 subtype = 0
                 if direction == 2:
@@ -233,7 +236,7 @@ class SamsungParser:
                 gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                         3,                           # Version
                         7,                           # Header Length
-                        0xc,                         # Type (UMTS-RRC)
+                        util.gsmtap_type.UMTS_RRC,   # Type (UMTS-RRC)
                         0,                           # GSM Timeslot
                         arfcn,                       # UARFCN
                         0,                           # Signal dBm
@@ -254,7 +257,7 @@ class SamsungParser:
                 gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                         3,                           # Version
                         7,                           # Header Length
-                        0x2,                         # Type (UMTS-RRC)
+                        util.gsmtap_type.ABIS,       # Type (Abis - DTAP)
                         0,                           # GSM Timeslot
                         arfcn,                       # UARFCN
                         0,                           # Signal dBm
@@ -285,7 +288,7 @@ class SamsungParser:
                     gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                             3,                           # Version
                             7,                           # Header Length
-                            1,                           # Type (Um)
+                            util.gsmtap_type.UM,         # Type (Um)
                             0,                           # GSM Timeslot
                             0,                           # ARFCN
                             0,                           # Signal dBm
@@ -302,7 +305,7 @@ class SamsungParser:
                     gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                             3,                           # Version
                             7,                           # Header Length
-                            2,                           # Type (Um)
+                            util.gsmtap_type.ABIS,       # Type (Abis - DTAP)
                             0,                           # GSM Timeslot
                             0,                           # ARFCN
                             0,                           # Signal dBm
@@ -322,7 +325,7 @@ class SamsungParser:
                 gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                             3,                           # Version
                             7,                           # Header Length
-                            1,                           # Type (Um)
+                            util.gsmtap_type.UM,         # Type (Um)
                             0,                           # GSM Timeslot
                             arfcn,                       # ARFCN
                             0,                           # Signal dBm
@@ -439,15 +442,35 @@ class SamsungParser:
         arfcn = 0
 
         if pkt[0] == 0x52:
+            # 0x52: LTE RRC OTA Packet
+
             # pkt[1] - pkt[4]: TS
             channel = pkt[5]
-            direction = pkt[6]
+            direction = pkt[6] # 0: DL, 1: UL
             rrc_len = pkt[7] | (pkt[8] << 8)
             rrc_msg = pkt[9:]
 
-            # 0: CCCH 1: PCCH 2: BCCH BCH 3: BCCH DL-SCH 4: DCCH
-            # 0: DL, 1: UL
-            rrc_subtype_map = [[0, 2], [6, 255], [4, 255], [5, 255], [1, 3]]
+            rrc_subtype_dl = {
+                    0: util.gsmtap_lte_rrc_types.DL_CCCH,
+                    1: util.gsmtap_lte_rrc_types.PCCH,
+                    2: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                    3: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                    4: util.gsmtap_lte_rrc_types.DL_DCCH
+                    }
+            rrc_subtype_ul = {
+                    0: util.gsmtap_lte_rrc_types.UL_CCCH,
+                    4: util.gsmtap_lte_rrc_types.UL_DCCH
+                    }
+
+            subtype = 0
+            try:
+                if direction == 0:
+                    subtype = rrc_subtype_dl[channel]
+                else:
+                    subtype = rrc_subtype_ul[channel]
+            except KeyError:
+                print("Unknown LTE RRC channel type %d" % channel)
+                util.xxd(pkt)
 
             if direction == 0:
                 arfcn = self.lte_last_earfcn_dl
@@ -457,13 +480,13 @@ class SamsungParser:
             gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                     3,                           # Version
                     7,                           # Header Length
-                    0xd,                         # Type (LTE-RRC)
+                    util.gsmtap_type.LTE_RRC,    # Type (LTE-RRC)
                     0,                           # GSM Timeslot
                     arfcn,                       # EARFCN
                     0,                           # Signal dBm
                     0,                           # SNR dB
                     0,                           # Frame Number
-                    rrc_subtype_map[channel][direction], # Subtype
+                    subtype,                     # Subtype
                     0,                           # Antenna Number
                     0,                           # Subslot
                     0,                           # Reserved
@@ -489,6 +512,9 @@ class SamsungParser:
             
             return b''
         elif pkt[0] == 0x5a or pkt[0] == 0x5f:
+            # 0x5A: LTE NAS EMM Message
+            # 0x5F: LTE NAS ESM Message
+
             # pkt[1] - pkt[4]: TS?
             direction = pkt[5] # 0 - DL, 1 - UL
             nas_len = pkt[6] | (pkt[7] << 8)
@@ -503,7 +529,7 @@ class SamsungParser:
             gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
                     3,                           # Version
                     7,                           # Header Length
-                    0x12,                        # Type (NAS-EPS)
+                    gsmtap.type.LTE_NAS,         # Type (NAS-EPS)
                     0,                           # GSM Timeslot
                     arfcn,                       # EARFCN
                     0,                           # Signal dBm
@@ -521,7 +547,6 @@ class SamsungParser:
             #if len(pkt) < 0x60:
             #    util.xxd(pkt)
             return b''
-
 
     def process_edge_data(self, pkt):
         print('TODO: command 0x23')

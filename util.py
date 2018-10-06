@@ -4,8 +4,9 @@
 import struct
 import datetime
 import sys
-
 import string
+from enum import IntEnum, unique
+
 XXD_SET = string.ascii_letters + string.digits + string.punctuation
 
 crc_table = [
@@ -945,3 +946,116 @@ def xxd_oneline(buf):
 
 def warning(*objs):
     print('Warning: ', *objs, file=sys.stderr)
+
+# Definition copied from libosmocore's include/osmocom/core/gsmtap.h
+
+@unique
+class gsmtap_type(IntEnum):
+    UM = 0x01
+    ABIS = 0x02
+    UM_BURST = 0x03
+    SIM = 0x04
+    GB_LLC = 0x08
+    GB_SNDCP = 0x09
+    UMTS_RRC = 0x0c
+    LTE_RRC = 0x0d
+    LTE_MAC = 0x0e
+    LTE_MAC_FRAMED = 0x0f
+    OSMOCORE_LOG = 0x10
+    QC_DIAG = 0x11
+    LTE_NAS = 0x12
+
+@unique
+class gsmtap_channel(IntEnum):
+    UNKNOWN = 0x00
+    BCCH = 0x01
+    CCCH = 0x02
+    RACH = 0x03
+    AGCH = 0x04
+    PCH = 0x05
+    SDCCH = 0x06
+    SDCCH4 = 0x07
+    SDCCH8 = 0x08
+    TCH_F = 0x09
+    TCH_H = 0x0a
+    PACCH = 0x0b
+    CBCH52 = 0x0c
+    PDCH = 0x0d
+    PTCCH = 0x0e
+    CBCH51 = 0x0f
+
+@unique
+class gsmtap_umts_rrc_types(IntEnum):
+    DL_DCCH = 0
+    UL_DCCH = 1
+    DL_CCCH = 2
+    UL_CCCH = 3
+    PCCH = 4
+    DL_SHCCH = 5
+    UL_SHCCH = 6
+    BCCH_FACH = 7
+    BCCH_BCH = 8
+    MCCH = 9
+    MSCH = 10
+    HandoverToUTRANCommand = 11
+    InterRATHandoverInfo = 12
+    SystemInformation_BCH = 13
+    System_Information_Container = 14
+    UE_RadioAccessCapabilityInfo = 15
+    MasterInformationBlock = 16
+    SysInfoType1 = 17
+    SysInfoType2 = 18
+    SysInfoType3 = 19
+    SysInfoType4 = 20
+    SysInfoType5 = 21
+    SysInfoType5bis = 22
+    SysInfoType6 = 23
+    SysInfoType7 = 24
+    SysInfoType8 = 25
+    SysInfoType9 = 26
+    SysInfoType10 = 27
+    SysInfoType11 = 28
+    SysInfoType11bis = 29
+    SysInfoType12 = 30
+    SysInfoType13 = 31
+    SysInfoType13_1 = 32
+    SysInfoType13_2 = 33
+    SysInfoType13_3 = 34
+    SysInfoType13_4 = 35
+    SysInfoType14 = 36
+    SysInfoType15 = 37
+    SysInfoType15bis = 38
+    SysInfoType15_1 = 39
+    SysInfoType15_1bis = 40
+    SysInfoType15_2 = 41
+    SysInfoType15_2bis = 42
+    SysInfoType15_2ter = 43
+    SysInfoType15_3 = 44
+    SysInfoType15_3bis = 45
+    SysInfoType15_4 = 46
+    SysInfoType15_5 = 47
+    SysInfoType15_6 = 48
+    SysInfoType15_7 = 49
+    SysInfoType15_8 = 50
+    SysInfoType16 = 51
+    SysInfoType17 = 52
+    SysInfoType18 = 53
+    SysInfoType19 = 54
+    SysInfoType20 = 55
+    SysInfoType21 = 56
+    SysInfoType22 = 57
+    SysInfoTypeSB1 = 58
+    SysInfoTypeSB2 = 59
+    ToTargetRNC_Container = 60
+    TargetRNC_ToSourceRNC_Container = 61
+
+@unique
+class gsmtap_lte_rrc_types(IntEnum):
+    DL_CCCH = 0
+    DL_DCCH = 1
+    UL_CCCH = 2
+    UL_DCCH = 3
+    BCCH_BCH = 4
+    BCCH_DL_SCH = 5
+    PCCH = 6
+    MCCH = 7
