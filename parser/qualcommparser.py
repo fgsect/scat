@@ -1849,12 +1849,12 @@ class QualcommParser:
         msg_hdr = b''
         msg_content = b''
 
-        if pkt[16] == 0x0f or pkt[16] == 0x0c or pkt[16] == 0x08 or pkt[16] == 0x09: # Version 8, 9, 0xc, 0xf
+        if pkt[16] == 0x08 or pkt[16] == 0x09 or pkt[16] == 0x0c or pkt[16] == 0x0f or pkt[16] == 0x13: # Version 8, 9, 0xc, 0xf, 0x13
+            # 08 | 0A 72 | 01 | 0E 00 | 9C 18 00 00 | A9 33 | 06 | 00 00 00 00 | 02 00 | 2E 02
+            # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b 8e c1 dd 13 b0
             # 0f | 0d 21 | 00 | 9e 00 | 14 05 00 00 | 49 8c | 05 | 00 00 00 00 | 07 00 | 40 0c 8e c9 42 89 e0
             # 0f | 0d 21 | 01 | 9e 00 | 14 05 00 00 | 00 00 | 09 | 00 00 00 00 | 1c 00 | 08 10 a5 34 61 41 a3 1c 31 68 04 40 1a 00 49 16 7c 23 15 9f 00 10 67 c1 06 d9 e0 00 fd 2d
-            # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b 8e c1 dd 13 b0 
-            # 08 | 0A 72 | 01 | 0E 00 | 9C 18 00 00 | A9 33 | 06 | 00 00 00 00 | 02 00 | 2E 02
-            # V9 uses different channel specification
+            # 13 | 0e 22 | 00 | 0b 00 | fa 09 00 00 | 00 00 | 32 | 00 00 00 00 | 09 00 | 28 18 40 16 08 08 80 00 00
             msg_hdr = pkt[16:35] # 19 bytes
             msg_content = pkt[35:-2] # Rest of packet
             if len(msg_hdr) != 19:
@@ -1924,39 +1924,50 @@ class QualcommParser:
         if pkt[16] < 9:
             # RRC Packet <v9
             rrc_subtype_map = {
-                    1: util.gsmtap_lte_rrc_types.BCCH_BCH,
-                    2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-                    3: util.gsmtap_lte_rrc_types.MCCH,
-                    4: util.gsmtap_lte_rrc_types.PCCH,
-                    5: util.gsmtap_lte_rrc_types.DL_CCCH,
-                    6: util.gsmtap_lte_rrc_types.DL_DCCH,
-                    7: util.gsmtap_lte_rrc_types.UL_CCCH,
-                    8: util.gsmtap_lte_rrc_types.UL_DCCH
-                    }
+                1: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtap_lte_rrc_types.MCCH,
+                4: util.gsmtap_lte_rrc_types.PCCH,
+                5: util.gsmtap_lte_rrc_types.DL_CCCH,
+                6: util.gsmtap_lte_rrc_types.DL_DCCH,
+                7: util.gsmtap_lte_rrc_types.UL_CCCH,
+                8: util.gsmtap_lte_rrc_types.UL_DCCH
+            }
         elif pkt[16] < 15:
-            # RRC Packet v9-v12
+            # RRC Packet v9-v15
             rrc_subtype_map = {
-                    8: util.gsmtap_lte_rrc_types.BCCH_BCH,
-                    9: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-                    10: util.gsmtap_lte_rrc_types.MCCH,
-                    11: util.gsmtap_lte_rrc_types.PCCH,
-                    12: util.gsmtap_lte_rrc_types.DL_CCCH,
-                    13: util.gsmtap_lte_rrc_types.DL_DCCH,
-                    14: util.gsmtap_lte_rrc_types.UL_CCCH,
-                    15: util.gsmtap_lte_rrc_types.UL_DCCH
-                    }
+                8: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                9: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                10: util.gsmtap_lte_rrc_types.MCCH,
+                11: util.gsmtap_lte_rrc_types.PCCH,
+                12: util.gsmtap_lte_rrc_types.DL_CCCH,
+                13: util.gsmtap_lte_rrc_types.DL_DCCH,
+                14: util.gsmtap_lte_rrc_types.UL_CCCH,
+                15: util.gsmtap_lte_rrc_types.UL_DCCH
+            }
+        elif pkt[16] < 19:
+            # RRC Packet v15-?
+            rrc_subtype_map = {
+                1: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtap_lte_rrc_types.MCCH,
+                5: util.gsmtap_lte_rrc_types.PCCH,
+                6: util.gsmtap_lte_rrc_types.DL_CCCH,
+                7: util.gsmtap_lte_rrc_types.DL_DCCH,
+                8: util.gsmtap_lte_rrc_types.UL_CCCH,
+                9: util.gsmtap_lte_rrc_types.UL_DCCH
+            }
         else:
-            # RRC Packet v13-
+            # RRC Packet v19
+            # Don't know about version between v15-v19
             rrc_subtype_map = {
-                    1: util.gsmtap_lte_rrc_types.BCCH_BCH,
-                    2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-                    3: util.gsmtap_lte_rrc_types.MCCH,
-                    5: util.gsmtap_lte_rrc_types.PCCH,
-                    6: util.gsmtap_lte_rrc_types.DL_CCCH,
-                    7: util.gsmtap_lte_rrc_types.DL_DCCH,
-                    8: util.gsmtap_lte_rrc_types.UL_CCCH,
-                    9: util.gsmtap_lte_rrc_types.UL_DCCH
-                    }
+                0x03: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                0x2e: util.gsmtap_lte_rrc_types.BCCH_DL_SCH_NB,
+                0x30: util.gsmtap_lte_rrc_types.DL_CCCH_NB,
+                0x31: util.gsmtap_lte_rrc_types.DL_DCCH_NB,
+                0x32: util.gsmtap_lte_rrc_types.UL_CCCH_NB,
+                0x34: util.gsmtap_lte_rrc_types.UL_DCCH_NB
+            }
 
         ts = util.parse_qxdm_ts(xdm_hdr[3])
         ts_sec = calendar.timegm(ts.timetuple())
