@@ -1849,9 +1849,10 @@ class QualcommParser:
         msg_hdr = b''
         msg_content = b''
 
-        if pkt[16] == 0x08 or pkt[16] == 0x09 or pkt[16] == 0x0c or pkt[16] == 0x0f or pkt[16] == 0x13: # Version 8, 9, 0xc, 0xf, 0x13
-            # 08 | 0A 72 | 01 | 0E 00 | 9C 18 00 00 | A9 33 | 06 | 00 00 00 00 | 02 00 | 2E 02
+        if pkt[16] in (0x08, 0x09, 0x0c, 0x0d, 0x0f, 0x13): # Version 8, 9, 12, 13, 15, 19
+            # 08 | 0a 72 | 01 | 0e 00 | 9c 18 00 00 | a9 33 | 06 | 00 00 00 00 | 02 00 | 2e 02
             # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b 8e c1 dd 13 b0
+            # 0d | 0c 74 | 01 | 32 00 | 38 18 00 00 | 00 00 | 08 | 00 00 00 00 | 02 00 | 2c 00
             # 0f | 0d 21 | 00 | 9e 00 | 14 05 00 00 | 49 8c | 05 | 00 00 00 00 | 07 00 | 40 0c 8e c9 42 89 e0
             # 0f | 0d 21 | 01 | 9e 00 | 14 05 00 00 | 00 00 | 09 | 00 00 00 00 | 1c 00 | 08 10 a5 34 61 41 a3 1c 31 68 04 40 1a 00 49 16 7c 23 15 9f 00 10 67 c1 06 d9 e0 00 fd 2d
             # 13 | 0e 22 | 00 | 0b 00 | fa 09 00 00 | 00 00 | 32 | 00 00 00 00 | 09 00 | 28 18 40 16 08 08 80 00 00
@@ -1874,7 +1875,7 @@ class QualcommParser:
             # XXX: needs proper field for physical cell id
             sfn = sfn | (p_cell_id << 16)
 
-        elif pkt[16] == 0x06 or pkt[16] == 0x07: # Version 6 and 7
+        elif pkt[16] in (0x06, 0x07): # Version 6 and 7
             # 06 | 09 B1 | 00 | 07 01 | 2C 07 | 25 34 | 02 | 02 00 00 00 | 12 00 | 40 49 88 05 C0 97 02 D3 B0 98 1C 20 A0 81 8C 43 26 D0 
             msg_hdr = pkt[16:33] # 17 bytes
             msg_content = pkt[33:-2] # Rest of packet
@@ -1896,7 +1897,7 @@ class QualcommParser:
             # XXX: needs proper field for physical cell id
             sfn = sfn | (p_cell_id << 16)
 
-        elif pkt[16] == 0x02 or pkt[16] == 0x03 or pkt[16] == 0x04: # Version 2 or 4
+        elif pkt[16] in (0x02, 0x03, 0x04): # Version 2, 3, 4
             msg_hdr = pkt[16:29] # 13 bytes
             msg_content = pkt[29:-2] # Rest of packet
             if len(msg_hdr) != 13:
@@ -1933,8 +1934,8 @@ class QualcommParser:
                 7: util.gsmtap_lte_rrc_types.UL_CCCH,
                 8: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[16] < 15:
-            # RRC Packet v9-v15
+        elif pkt[16] < 13:
+            # RRC Packet v9-v12
             rrc_subtype_map = {
                 8: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 9: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
@@ -1944,6 +1945,18 @@ class QualcommParser:
                 13: util.gsmtap_lte_rrc_types.DL_DCCH,
                 14: util.gsmtap_lte_rrc_types.UL_CCCH,
                 15: util.gsmtap_lte_rrc_types.UL_DCCH
+            }
+        elif pkt[16] < 15:
+            # RRC Packet v13-v14
+            rrc_subtype_map = {
+                1: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtap_lte_rrc_types.MCCH,
+                4: util.gsmtap_lte_rrc_types.PCCH,
+                5: util.gsmtap_lte_rrc_types.DL_CCCH,
+                6: util.gsmtap_lte_rrc_types.DL_DCCH,
+                7: util.gsmtap_lte_rrc_types.UL_CCCH,
+                8: util.gsmtap_lte_rrc_types.UL_DCCH
             }
         elif pkt[16] < 19:
             # RRC Packet v15-?
