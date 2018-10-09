@@ -80,6 +80,24 @@ Available values are following:
 
 Exit the application with Ctrl+C.
 
+## Example 
+
+Usage with this command : 
+sudo ./scat.py -t sec -m e333 -u -a 001:006 -i 2 -H 127.0.0.2
+
+Note that it will send all packet on 127.0.0.2. You may want to use : 
+
+ifconfig ethUSB 127.0.0.2 netmask 255.255.255.0 up
+sudo route add -net 127.0.0.0 netmask 255.255.255.0 gw 127.0.0.1
+
+to be able to easily sort it with Wireshark
+
+For different smartphones : 
+* GS5 Mini : 
+    val=$(lsusb | awk '/Samsung/ {print substr($4, 1, length($4)-1)}')
+    sudo ./scat.py -t sec -m e303 -u -a 001:$val -i 4 -H 127.0.0.2
+
+
 ## Known Bugs
 
 Issues related to exposing the diagnostics port via USB is out of scope.
