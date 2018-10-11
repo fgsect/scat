@@ -727,21 +727,13 @@ class QualcommParser:
 
         # SACCH DL/Measurement Information: Short PD format
         
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.UM,         # Type (Um)
-                0,                           # GSM Timeslot
-                arfcn,                       # ARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                channel_type,                # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.UM,
+            arfcn = arfcn,
+            sub_type = channel_type,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + l3_message
 
@@ -771,21 +763,13 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
 
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                payload_type,                # Type (Um)
-                0,                           # GSM Timeslot
-                arfcn,                       # ARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                channel_type,                # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = payload_type,
+            arfcn = arfcn,
+            sub_type = channel_type,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return b''
         #return gsmtap_hdr + l3_message
@@ -805,21 +789,12 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
 
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.ABIS,       # Type (Abis - DTAP)
-                0,                           # GSM Timeslot
-                arfcn,                       # ARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                0,                           # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.ABIS,
+            arfcn = arfcn,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + l3_message
 
@@ -941,21 +916,13 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
 
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.UMTS_RRC,   # Type (UMTS-RRC)
-                0,                           # GSM Timeslot
-                arfcn,                       # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                subtype,                     # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.UMTS_RRC,
+            arfcn = arfcn,
+            sub_type = subtype,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + msg_content
 
@@ -975,21 +942,12 @@ class QualcommParser:
 
         # msg_hdr[1] == L3 message length
         # Rest of content: L3 message
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.ABIS,       # Type (Abis - DTAP)
-                0,                           # GSM Timeslot
-                arfcn,                       # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                0,                           # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.ABIS,
+            arfcn = arfcn,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + msg_content
 
@@ -1193,21 +1151,13 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
         
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.LTE_RRC,    # Type (LTE-RRC)
-                0,                           # GSM Timeslot
-                self.lte_last_earfcn_dl,     # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                4,                           # Subtype (BCCH-BCH)
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_RRC,
+            arfcn = self.lte_last_earfcn_dl,
+            sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + mib_payload
 
@@ -1282,21 +1232,12 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
         
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
-                0,                           # GSM Timeslot
-                earfcn,                      # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                0,                           # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_MAC,
+            arfcn = earfcn,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + mac_header + mac_body
 
@@ -1375,21 +1316,14 @@ class QualcommParser:
                         gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x01, gsmtap_rnti_type,
                                 rnti, ueid, sfn, subfn, 0x01)
 
-                        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                                3,                           # Version
-                                7,                           # Header Length
-                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
-                                0,                           # GSM Timeslot
-                                earfcn,                      # EARFCN
-                                0,                           # Signal dBm
-                                0,                           # SNR dB
-                                sfn,                         # Frame Number
-                                0,                           # Subtype
-                                0,                           # Antenna Number
-                                subfn,                       # Subslot
-                                0,                           # Reserved
-                                ts_sec,
-                                ts_usec)
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 3,
+                            payload_type = util.gsmtap_type.LTE_MAC,
+                            arfcn = earfcn,
+                            frame_number = sfn,
+                            sub_slot = subfn,
+                            device_sec = ts_sec,
+                            device_usec = ts_usec)
 
                         #print("%d:%d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, pmch_id, dl_tbs, rlc_pdus, padding, header_len, mac_hdr))
                         self.writerCPUP.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, ts)
@@ -1442,21 +1376,14 @@ class QualcommParser:
                         gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x01, gsmtap_rnti_type,
                                 rnti, ueid, sfn, subfn, 0x01)
 
-                        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                                3,                           # Version
-                                7,                           # Header Length
-                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
-                                0,                           # GSM Timeslot
-                                earfcn,                      # EARFCN
-                                0,                           # Signal dBm
-                                0,                           # SNR dB
-                                sfn,                         # Frame Number
-                                0,                           # Subtype
-                                0,                           # Antenna Number
-                                subfn,                       # Subslot
-                                0,                           # Reserved
-                                ts_sec,
-                                ts_usec)
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 3,
+                            payload_type = util.gsmtap_type.LTE_MAC,
+                            arfcn = earfcn,
+                            frame_number = sfn,
+                            sub_slot = subfn,
+                            device_sec = ts_sec,
+                            device_usec = ts_usec)
 
                         #print("%d:%d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, pmch_id, dl_tbs, rlc_pdus, padding, header_len, mac_hdr))
                         self.writerCPUP.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, ts)
@@ -1547,21 +1474,14 @@ class QualcommParser:
                         gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x00, gsmtap_rnti_type,
                                 rnti, ueid, sfn, subfn, 0x01)
 
-                        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                                3,                           # Version
-                                7,                           # Header Length
-                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
-                                0,                           # GSM Timeslot
-                                earfcn,                      # EARFCN
-                                0,                           # Signal dBm
-                                0,                           # SNR dB
-                                sfn,                         # Frame Number
-                                0,                           # Subtype
-                                0,                           # Antenna Number
-                                subfn,                       # Subslot
-                                0,                           # Reserved
-                                ts_sec,
-                                ts_usec)
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 3,
+                            payload_type = util.gsmtap_type.LTE_MAC,
+                            arfcn = earfcn,
+                            frame_number = sfn,
+                            sub_slot = subfn,
+                            device_sec = ts_sec,
+                            device_usec = ts_usec)
 
                         #print("%d:%d %d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len, mac_hdr))
                         self.writerCPUP.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, ts)
@@ -1601,21 +1521,14 @@ class QualcommParser:
                         gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x00, gsmtap_rnti_type,
                                 rnti, ueid, sfn, subfn, 0x01)
 
-                        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                                3,                           # Version
-                                7,                           # Header Length
-                                util.gsmtap_type.LTE_MAC,    # Type (LTE-MAC)
-                                0,                           # GSM Timeslot
-                                earfcn,                      # EARFCN
-                                0,                           # Signal dBm
-                                0,                           # SNR dB
-                                sfn,                         # Frame Number
-                                0,                           # Subtype
-                                0,                           # Antenna Number
-                                subfn,                       # Subslot
-                                0,                           # Reserved
-                                ts_sec,
-                                ts_usec)
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 3,
+                            payload_type = util.gsmtap_type.LTE_MAC,
+                            arfcn = earfcn,
+                            frame_number = sfn,
+                            sub_slot = subfn,
+                            device_sec = ts_sec,
+                            device_usec = ts_usec)
 
                         #print("%d:%d %d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len, mac_hdr))
                         self.writerCPUP.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, ts)
@@ -1801,21 +1714,13 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
         
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.LTE_RRC,    # Type (LTE-RRC)
-                0,                           # GSM Timeslot
-                self.lte_last_earfcn_dl,     # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                4,                           # Subtype (BCCH-BCH)
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_RRC,
+            arfcn = self.lte_last_earfcn_dl,
+            sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + mib_payload
 
@@ -1986,21 +1891,15 @@ class QualcommParser:
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
         
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                int(util.gsmtap_type.LTE_RRC), # Type (LTE-RRC)
-                0,                           # GSM Timeslot
-                earfcn,                      # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                sfn,                         # Frame Number
-                rrc_subtype_map[subtype],    # Subtype
-                0,                           # Antenna Number
-                subfn,                       # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_RRC,
+            arfcn = earfcn,
+            frame_number = sfn,
+            sub_type = rrc_subtype_map[subtype],
+            sub_slot = subfn,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + msg_content
 
@@ -2016,21 +1915,13 @@ class QualcommParser:
             earfcn = earfcn | 0x4000
 
         msg_content = pkt[20:-2]
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBBQL', 
-                3,                           # Version
-                7,                           # Header Length
-                util.gsmtap_type.LTE_NAS,    # Type (NAS-EPS)
-                0,                           # GSM Timeslot
-                earfcn,                      # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                0 if plain else 1,           # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0,                           # Reserved
-                ts_sec,
-                ts_usec)
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_NAS,
+            arfcn = earfcn,
+            sub_type = 0 if plain else 1,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
 
         return gsmtap_hdr + msg_content
 
@@ -2106,19 +1997,9 @@ class QualcommParser:
                 print('Not handling unknown type 0x%02x' % msg_content[pos])
                 break
 
-        gsmtap_hdr = struct.pack('!BBBBHBBLBBBB', 
-                2,                           # Version
-                4,                           # Header Length
-                util.gsmtap_type.SIM,        # Type (GSM SIM)
-                0,                           # GSM Timeslot
-                0,                           # EARFCN
-                0,                           # Signal dBm
-                0,                           # SNR dB
-                0,                           # Frame Number
-                0,                           # Subtype
-                0,                           # Antenna Number
-                0,                           # Subslot
-                0)                           # Reserved
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.SIM)
 
         if len(self.last_tx[sim_id]) == 0:
             if len(tx_buf) > 0:

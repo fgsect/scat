@@ -1074,3 +1074,48 @@ class gsmtap_lte_rrc_types(IntEnum):
     BCCH_DL_SCH_NB = 20
     PCCH_NB = 21
     SC_MCCH_NB = 22
+
+def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
+    arfcn = 0, signal_dbm = 0, snr_db = 0, frame_number = 0,
+    sub_type = 0, antenna_nr = 0, sub_slot = 0,
+    device_sec = 0, device_usec = 0):
+
+    gsmtap_v2_hdr_def = '!BBBBHBBLBBBB'
+    gsmtap_v3_hdr_def = '!BBBBHBBLBBBBQL'
+    gsmtap_hdr = b''
+
+    if version == 2:
+        gsmtap_hdr = struct.pack(gsmtap_v2_hdr_def,
+            2,                           # Version
+            4,                           # Header Length
+            payload_type,                # Type
+            timeslot,                    # GSM Timeslot
+            arfcn,                       # ARFCN
+            signal_dbm,                  # Signal dBm
+            snr_db,                      # SNR dB
+            frame_number,                # Frame Number
+            sub_type,                    # Subtype
+            antenna_nr,                  # Antenna Number
+            sub_slot,                    # Subslot
+            0                            # Reserved
+            )
+    elif version == 3:
+        gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
+            3,                           # Version
+            7,                           # Header Length
+            payload_type,                # Type
+            timeslot,                    # GSM Timeslot
+            arfcn,                       # ARFCN
+            signal_dbm,                  # Signal dBm
+            snr_db,                      # SNR dB
+            frame_number,                # Frame Number
+            sub_type,                    # Subtype
+            antenna_nr,                  # Antenna Number
+            sub_slot,                    # Subslot
+            0,                           # Reserved
+            device_sec,
+            device_usec)
+    else:
+        assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
+
+    return gsmtap_hdr
