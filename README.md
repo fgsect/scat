@@ -29,6 +29,9 @@ exposing the diagnostic port for Qualcomm-based smartphones.
 * Samsung: Enter `*#0808#` in dialer, select any USB mode entry containing `DM`.
   * Korean models: Enter `3197123580` in dialer, password is either `996412`,
     `776432`, `0821`.
+  * Certain version of firmwares after 2018 are blocking the access to the
+    hidden menu with the abovementioned code. Currently no solution is known
+    without rooting the phone (correction wanted).
 * LG: Enter `277634#*#` in dialer (TODO: exact location of USB test menu)
   * On some LG devices, diagnostic ports are not exposed in Linux even after
     enabling the USB testing mode. This is due to multiple USB device
@@ -36,7 +39,7 @@ exposing the diagnostic port for Qualcomm-based smartphones.
     recommended in such devices.
 * Sony: Rooting required. Get a rooted adb shell and enter the command `setprop
   persist.usb.eng 1`.
-* Nexus: Roogiting required. Get a rooted adb shell and enter the command
+* Nexus: Rooting required. Get a rooted adb shell and enter the command
   `setprop sys.usb.config diag,adb`.
   * Not working for Pixel devices!
 * Sailfish OS: (TODO: how to modify usb-moded settings)
@@ -54,12 +57,25 @@ Accessing the baseband diagnostics via USB:
 `$ scat.py -t qc -u -a 001:010 -i 2`
 
 The first `-t qc` defines that we are parsing a Qualcomm baseband. For Samsung
-baseband, use `sec` instead of `qc`. `-u` specifies that we are accessing the
-diagnostic device via USB. Although there are small heuristic to determine the
-connected device, it is recommended to explicitly specify the USB device address
-and interface number of diagnostics node. `-a 001:010` specifies the address,
-which follows the same syntax visible in `lsusb` command. `-i 2` specifies the
-interface number of the diagnostic node, which is again device specific.
+baseband, use `sec` instead of `qc` and you need to supply the model manually
+like this example:
+
+`$ scat.py -t sec -m e333 -u -a 001:006 -i 2`
+
+Available model types are following:
+
+* `-m cmc221s`: CMC221S, used in very early Samsung LTE modem/smartphone.
+* `-m e303`: Exynos modem 303.
+* `-m e333`: Exynos modem 333.
+* Newer Exynos modems might work with `-m e333` option, YMMV.
+
+`-u` specifies that we are accessing the diagnostic device via USB. 
+
+Although there are small heuristic to determine the connected device, it is
+recommended to explicitly specify the USB device address and interface number of
+diagnostics node. `-a 001:010` specifies the address, which follows the same
+syntax visible in `lsusb` command. `-i 2` specifies the interface number of the
+diagnostic node, which is again device specific.
 
 Accessing the baseband diagnostics via serial port:
 
@@ -68,40 +84,54 @@ Accessing the baseband diagnostics via serial port:
 Replace `/dev/ttyUSB0` to what is your diagnostic device.
 
 By default, SCAT will send packets to 127.0.0.1, control plane packets to UDP
-port 4729 as GSMTAP, user plane packets to UDP port 47290 as IP. Destination to
-send the GSMTAP packet could be changed using `-H 127.0.0.2` switch.
-
-Samsung-specific option: you need to specify the baseband model manually.
-Available values are following:
-
-* `-m cmc221s`: CMC221S, used in very early Samsung LTE modem/smartphone.
-* `-m e303`: Exynos modem 303.
-* `-m e333`: Exynos modem 333.
+port 4729 as GSMTAP, user plane packets to UDP port 47290 as IP.
 
 Exit the application with Ctrl+C.
 
-## Example 
+### Advanced Options
 
-Usage with this command : 
-`sudo ./scat.py -t sec -m e333 -u -a 001:006 -i 2 -H 127.0.0.2`
+Destination to send the GSMTAP packet could be changed using `-H 127.0.0.2`
+switch. For example, this command will send all packets to 127.0.0.2:
 
-Note that it will send all packet on 127.0.0.2. You may want to use : 
+`$ scat.py -t sec -m e333 -u -a 001:006 -i 2 -H 127.0.0.2`
+
+You may want to use the following command to be able to easily sort it with
+Wireshark:
 
 ```
 ifconfig ethUSB 127.0.0.2 netmask 255.255.255.0 up
 sudo route add -net 127.0.0.0 netmask 255.255.255.0 gw 127.0.0.1
 ```
 
-to be able to easily sort it with Wireshark
-
-For different smartphones : 
-* GS5 Mini : 
+It is possible to automatically determine the USB bus address by using other
+command's outputs.  Following example is for Samsung Galaxy S5 Mini: 
 
 ```
     val=$(lsusb | awk '/Samsung/ {print substr($4, 1, length($4)-1)}')
     sudo ./scat.py -t sec -m e303 -u -a 001:$val -i 4 -H 127.0.0.2
 ```
 
+### Tested Devices
+
+Following devices are tested by the authors and contributors:
+
+| Device Name/Model | Processor | Baseband | Required Arguments | Rooting Required? | Note |
+| --- | --- | --- | --- | --- | --- |
+| Nokia 8110 4G (TA-1048) | Snapdragon 205 MSM8905 | X5 | `-t qc` | Yes | |
+| Google Nexus 5 (LG-D821) | Snapdragon 800 MSM8974 | MDM9x25 | `-t qc` | Yes | |
+| Google Nexus 5X (LG-H791) | Snapdragon 808 MSM8992 | X10 | `-t qc` | Yes | |
+| Google Pixel 2 (G011A) | Snapdragon 835 MSM8998 | X16 | `-t qc` | Yes | Modification of system partition is also required|
+| LG G Flex 2 (LG-H955) | Snapdragon 810 MSM8994 | X10 | `-t qc` | No | |
+| Sierra Wireless EM7455 | - | X7 (MDM9635) | `-t qc` | - | |
+| Sony Xperia X (F5122) | Snapdragon 650 MSM8956 | X8 | `-t qc` | Yes | |
+| Samsung Galaxy S III LTE (SHW-M210K) | Exynos 4412 | CMC221S | `-t sec -m cmc221s` | No | |
+| Samsung Galaxy S4 LTE (GT-I9505) | Snapdragon APQ8064T | Qualcomm MDM9215 | `-t qc` | No
+| Samsung Galaxy S5 Mini (SM-G800F) | Exynos 3470 | Exynos Modem 303 | `-t sec -m e303` | No | |
+| Samsung Galaxy S6 (SM-G920F) | Exynos 7420 | Exynos Modem 333 | `-t sec -m e333` | No/Yes | |
+| Samsung Galaxy S6 Edge+ (SM-G928F) | Exynos 7420 | Exynos Modem 333 | `-t sec -m e333` | No/Yes | |
+| Samsung Galaxy S8 (SM-G950F) | Exynos 8895 | Exynos Modem 355 | `-t sec -m e333` | No/Yes | |
+
+Note that we did not listed every Qualcomm-based devices here.
 
 ## Known Bugs
 
