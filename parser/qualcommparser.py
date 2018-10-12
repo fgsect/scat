@@ -1224,8 +1224,9 @@ class QualcommParser:
             self.lte_last_tcrnti = tc_rnti
 
         else:
-            # TODO: RACH response v3
+            # TODO: RACH response v3, v4
             print('Unsupported RACH response version %02x' % msg_content[5])
+            util.xxd(pkt)
             return b''
 
         ts = util.parse_qxdm_ts(xdm_hdr[3])
@@ -1698,6 +1699,7 @@ class QualcommParser:
             self.lte_last_bw_dl = msg_content[5]
             self.lte_last_bw_ul = msg_content[5]
         else:
+            # TODO: LTE RRC MIB packet version 17 (0x11)
             print('Unknown LTE RRC MIB packet version %s' % pkt[16])
             util.xxd(pkt)
             return b''
@@ -1890,6 +1892,11 @@ class QualcommParser:
         ts = util.parse_qxdm_ts(xdm_hdr[3])
         ts_sec = calendar.timegm(ts.timetuple())
         ts_usec = ts.microsecond
+
+        if not (subtype in rrc_subtype_map.keys()):
+            print("Unknown RRC subtype 0x%02x for RRC packet version 0x%02x" % (subtype, pkt[16]))
+            util.xxd(pkt)
+            return b''
         
         gsmtap_hdr = util.create_gsmtap_header(
             version = 3,
