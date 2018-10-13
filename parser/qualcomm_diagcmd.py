@@ -36,7 +36,9 @@ def diag_log_get_1x_item_id(x):
 @unique
 class diag_log_code_1x(IntEnum):
     LOG_UIM_DATA_C = 0x98                                         # 0x1098 RUIM Debug
+    LOG_INTERNAL_CORE_DUMP_C = 0x158                              # 0x1158 Internal - Core Dump
     LOG_DATA_PROTOCOL_LOGGING_C = 0x1eb                           # 0x11EB Protocol Services Data
+    LOG_GENERIC_SIM_TOOLKIT_TASK_C = 0x272                        # 0x1272 Generic SIM Toolkit Task
     LOG_UIM_DS_DATA_C = 0x4ce                                     # 0x14CE UIM DS Data
     LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C = 0x572 # 0x1572 Network IP Rm Tx 80 Bytes
     LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C = 0x573 # 0x1573 Network IP Rm Rx 80 Bytes
@@ -145,14 +147,14 @@ def create_log_config_set_mask(equip_id, last_item, *bits):
 
 # Preferred log masks used by SCAT
 def log_mask_empty_1x():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, 0x083f)
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, 0x0fff)
 
 def log_mask_scat_1x():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, 0x0847,
         diag_log_code_1x.LOG_UIM_DATA_C,
-        0x158, # 0x1158   Reserved
+        diag_log_code_1x.LOG_INTERNAL_CORE_DUMP_C,
         diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_C,
-        0x272, # 0x1272   Generic SIM Toolkit Task
+        diag_log_code_1x.LOG_GENERIC_SIM_TOOLKIT_TASK_C,
         diag_log_code_1x.LOG_UIM_DS_DATA_C,
         diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C,
         diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C,
@@ -184,7 +186,7 @@ def log_mask_scat_1x():
         )
 
 def log_mask_empty_wcdma():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, 0x0918)
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, 0x0ff7)
 
 def log_mask_scat_wcdma():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, 0x0ff7,
@@ -195,7 +197,7 @@ def log_mask_scat_wcdma():
         )
 
 def log_mask_empty_gsm():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, 0x0428)
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, 0x0ff7)
 
 def log_mask_scat_gsm():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, 0x0ff7,
@@ -239,7 +241,7 @@ def log_mask_empty_dtv():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_DTV, 0x0392)
 
 def log_mask_empty_lte():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0392)
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0209)
 
 def log_mask_scat_lte():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0209,
@@ -262,3 +264,17 @@ def log_mask_scat_lte():
 
 def log_mask_empty_tdscdma():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_TDSCDMA, 0x0207)
+
+def create_extended_message_config_set_mask(first_ssid, last_ssid, *masks):
+    # Command ID, Operation | first_ssid, last_ssid, runtime_masks
+    diag_log_config_mask_header = struct.pack('<BBHHH',
+        DIAG_EXT_MSG_CONFIG_F, 0x04,
+        first_ssid, last_ssid, 0x00)
+    ext_msg_config_mask_payload = bytearray(b'\x00\x00\x00\x00' * (last_ssid - first_ssid + 1))
+
+    # Each subsystem ID has own log level
+    # Currently Extended messages are not parsed so do nothing
+    for mask in masks:
+        pass
+
+    return diag_log_config_mask_header + bytes(ext_msg_config_mask_payload)
