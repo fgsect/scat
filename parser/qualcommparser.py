@@ -4,6 +4,7 @@ import util
 import usb
 import struct
 import calendar, datetime
+import parser.qualcomm_diagcmd as diagcmd
 
 class QualcommParser:
     def __init__(self):
@@ -28,8 +29,6 @@ class QualcommParser:
         self.handler = None
         self.writerCPUP = None
 
-        self.all_messages = False
-
         self.pending_pkts = dict()
 
         self.last_tx = [b'', b'']
@@ -45,354 +44,67 @@ class QualcommParser:
         self.writerCPUP = writerCPUP
 
     def setParameter(self, params):
-        for x in params:
-            if x == 'all':
-                self.all_messages = params[x]
         pass
+
+    def _write_then_read_discard(self, buf, wrapped = False, xxd = False):
+        if not wrapped:
+            buf = util.generate_packet(buf)
+        self.handler.write(buf)
+
+        rbuf = self.handler.read(0x1000)
+        if xxd:
+            rbuf = util.unwrap(rbuf)
+            util.xxd(rbuf)
 
     def init_diag(self):
         print('-------- initialize diag --------')
-        # DIAG Disable?
-        self.handler.write(util.generate_packet(b'\x60\x00'))
+        rbuf = self.handler.read(0x1000)
+        # Disable static event reporting
+        self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00))
 
-        buf = self.handler.read(0x100)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
+        # Send empty masks
+        self._write_then_read_discard(diagcmd.log_mask_empty_1x(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_wcdma(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_gsm(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_umts(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_dtv(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_lte(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_tdscdma(), False, True)
 
-        self.handler.write(util.generate_packet(util.log_config_1))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.log_config_2))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.log_config_3))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.log_config_4))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.log_config_5))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.log_config_6))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.log_config_7))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_1))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_2))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_3))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_4))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_5))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_6))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_7))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_8))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_9))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_10))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_11))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_12))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_13))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_14))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_15))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_16))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_17))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_18))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_19))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_20))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_21))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_22))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(util.emr_23))
-        buf = self.handler.read(0x1000)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
+        self._write_then_read_discard(util.emr_1, False, True)
+        self._write_then_read_discard(util.emr_2, False, True)
+        self._write_then_read_discard(util.emr_3, False, True)
+        self._write_then_read_discard(util.emr_4, False, True)
+        self._write_then_read_discard(util.emr_5, False, True)
+        self._write_then_read_discard(util.emr_6, False, True)
+        self._write_then_read_discard(util.emr_7, False, True)
+        self._write_then_read_discard(util.emr_8, False, True)
+        self._write_then_read_discard(util.emr_9, False, True)
+        self._write_then_read_discard(util.emr_10, False, True)
+        self._write_then_read_discard(util.emr_11, False, True)
+        self._write_then_read_discard(util.emr_12, False, True)
+        self._write_then_read_discard(util.emr_13, False, True)
+        self._write_then_read_discard(util.emr_14, False, True)
+        self._write_then_read_discard(util.emr_15, False, True)
+        self._write_then_read_discard(util.emr_16, False, True)
+        self._write_then_read_discard(util.emr_17, False, True)
+        self._write_then_read_discard(util.emr_18, False, True)
+        self._write_then_read_discard(util.emr_19, False, True)
+        self._write_then_read_discard(util.emr_20, False, True)
+        self._write_then_read_discard(util.emr_21, False, True)
+        self._write_then_read_discard(util.emr_22, False, True)
+        self._write_then_read_discard(util.emr_23, False, True)
 
     def prepare_diag(self):
         print('-------- start diag --------')
-        # DIAG Enable
-        self.handler.write(util.generate_packet(b'\x60\x01'))
+        # Static event reporting Enable
+        self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x01))
 
-        buf = self.handler.read(0x100)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        if self.all_messages:
-            self.handler.write(util.generate_packet(util.emr_config_1))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_2))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_3))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_4))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_5))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_6))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_7))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_8))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_9))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_10))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_11))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_12))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_13))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_14))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_15))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_16))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_17))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_18))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_19))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_20))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_21))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_22))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.emr_config_23))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_1x_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_wcdma_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_gsm_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_umts_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_dtv_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_lte_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_tdscdma_all))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-        else:
-            self.handler.write(util.generate_packet(util.log_enable_ip))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_wcdma))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_gsm))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_umts))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
-
-            self.handler.write(util.generate_packet(util.log_enable_lte))
-            buf = self.handler.read(0x1000)
-            buf = util.unwrap(buf)
-            util.xxd(buf)
+        self._write_then_read_discard(diagcmd.log_mask_scat_1x(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_scat_wcdma(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_scat_gsm(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_scat_umts(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_scat_lte(), False, True)
 
     def parse_diag(self, pkt, wrapped = False, parse_ts = False):
         # Should contain DIAG command and CRC16
@@ -481,22 +193,10 @@ class QualcommParser:
 
     def stop_diag(self):
         print('-------- stop diag --------')
-        # DIAG Disable
-        self.handler.write(util.generate_packet(b'\x60\x00'))
-
-        buf = self.handler.read(0x100)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(b'\x73\x00\x00\x00\x00\x00\x00\x00'))
-        buf = self.handler.read(0x100)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
-
-        self.handler.write(util.generate_packet(b'\x7d\x05\x00\x00\x00\x00\x00\x00'))
-        buf = self.handler.read(0x100)
-        buf = util.unwrap(buf)
-        util.xxd(buf)
+        # Static event reporting Disable
+        self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00), False, True)
+        self._write_then_read_discard(struct.pack('<LL', diagcmd.DIAG_LOG_CONFIG_F, diagcmd.LOG_CONFIG_DISABLE_OP), False, True)
+        self._write_then_read_discard(b'\x7d\x05\x00\x00\x00\x00\x00\x00', False, True)
 
     def parse_dlf(self):
         oldbuf = b''
@@ -2033,74 +1733,74 @@ class QualcommParser:
 
         #print(hex(xdm_hdr[1]))
         no_process = {
-                0xB061: 'LTE MAC RACH Trigger',
-                0x5226: 'GPRS MAC Signaling Message',
+            0xB061: 'LTE MAC RACH Trigger',
+            0x5226: 'GPRS MAC Signaling Message',
         }
 
         process = {
-                # SIM
-                0x1098: lambda x, y: self.parse_sim(x, y, 0), # RUIM Debug
-                0x14CE: lambda x, y: self.parse_sim(x, y, 1), # UIM DS Data
+            # SIM
+            0x1098: lambda x, y: self.parse_sim(x, y, 0), # RUIM Debug
+            0x14CE: lambda x, y: self.parse_sim(x, y, 1), # UIM DS Data
 
-                # GSM
-                0x5065: lambda x, y: self.parse_gsm_fcch(x, y), # GSM L1 FCCH Acquisition
-                0x5066: lambda x, y: self.parse_gsm_sch(x, y), # GSM L1 SCH Acquisition
-                0x506C: lambda x, y: self.parse_gsm_l1_burst_metric(x, y), # GSM L1 Burst Metrics
-                0x506A: lambda x, y: self.parse_gsm_l1_new_burst_metric(x, y), # GSM L1 New Burst Metrics
-                0x507A: lambda x, y: self.parse_gsm_l1_serv_aux_meas(x, y), # GSM L1 Serving Auxiliary Measurments
-                0x507B: lambda x, y: self.parse_gsm_l1_neig_aux_meas(x, y), # GSM L1 Neighbor Cell Auxiliary Measurments
-                0x5071: lambda x, y: self.parse_gsm_l1_surround_cell_ba(x, y), # GSM Surround Cell BA List
-                0x5134: lambda x, y: self.parse_gsm_cell_info(x, y), # GSM RR Cell Information
-                0x512F: lambda x, y: self.parse_gsm_rr(x, y), # GSM RR Signaling Message
-                #0x5226: lambda x, y: parse_gprs_mac(x, y), # GPRS MAC Signaling Message
-                0x5230: lambda x, y: self.parse_gprs_ota(x, y), # GPRS SM/GMM OTA Signaling Message
+            # GSM
+            0x5065: lambda x, y: self.parse_gsm_fcch(x, y), # GSM L1 FCCH Acquisition
+            0x5066: lambda x, y: self.parse_gsm_sch(x, y), # GSM L1 SCH Acquisition
+            0x506C: lambda x, y: self.parse_gsm_l1_burst_metric(x, y), # GSM L1 Burst Metrics
+            0x506A: lambda x, y: self.parse_gsm_l1_new_burst_metric(x, y), # GSM L1 New Burst Metrics
+            0x507A: lambda x, y: self.parse_gsm_l1_serv_aux_meas(x, y), # GSM L1 Serving Auxiliary Measurments
+            0x507B: lambda x, y: self.parse_gsm_l1_neig_aux_meas(x, y), # GSM L1 Neighbor Cell Auxiliary Measurments
+            0x5071: lambda x, y: self.parse_gsm_l1_surround_cell_ba(x, y), # GSM Surround Cell BA List
+            0x5134: lambda x, y: self.parse_gsm_cell_info(x, y), # GSM RR Cell Information
+            0x512F: lambda x, y: self.parse_gsm_rr(x, y), # GSM RR Signaling Message
+            #0x5226: lambda x, y: parse_gprs_mac(x, y), # GPRS MAC Signaling Message
+            0x5230: lambda x, y: self.parse_gprs_ota(x, y), # GPRS SM/GMM OTA Signaling Message
 
-                # WCDMA (3G RRC)
-                0x4005: lambda x, y: self.parse_wcdma_search_cell_reselection(x, y), # WCDMA Search Cell Reselection Rank
-                0x4127: lambda x, y: self.parse_wcdma_cell_id(x, y), # WCDMA Cell ID
-                0x412F: lambda x, y: self.parse_wcdma_rrc(x, y), # WCDMA Signaling Messages
+            # WCDMA (3G RRC)
+            0x4005: lambda x, y: self.parse_wcdma_search_cell_reselection(x, y), # WCDMA Search Cell Reselection Rank
+            0x4127: lambda x, y: self.parse_wcdma_cell_id(x, y), # WCDMA Cell ID
+            0x412F: lambda x, y: self.parse_wcdma_rrc(x, y), # WCDMA Signaling Messages
 
-                # UMTS (3G NAS)
-                0x713A: lambda x, y: self.parse_umts_ue_ota(x, y), # UMTS UE OTA
+            # UMTS (3G NAS)
+            0x713A: lambda x, y: self.parse_umts_ue_ota(x, y), # UMTS UE OTA
 
-                # LTE
-                # LTE ML1
-                0xB17F: lambda x, y: self.parse_lte_ml1_scell_meas(x, y), # LTE ML1 Serving Cell Meas and Eval
-                0xB180: lambda x, y: self.parse_lte_ml1_ncell_meas(x, y), # LTE ML1 Neighbor Measurements
-                0xB197: lambda x, y: self.parse_lte_ml1_cell_info(x, y), # LTE ML1 Serving Cell Info
-                # LTE MAC
-                #0xB061: lambda x, y: parse_lte_mac_rach_trigger(x, y), # LTE MAC RACH Trigger
-                0xB062: lambda x, y: self.parse_lte_mac_rach_response(x, y), # LTE MAC RACH Response
-                0xB063: lambda x, y: self.parse_lte_mac_dl_block(x, y), # LTE MAC DL Transport Block
-                0xB064: lambda x, y: self.parse_lte_mac_ul_block(x, y), # LTE MAC UL Transport Block
-                # LTE RLC
-                # LTE PDCP
-                #0xB0A0: lambda x, y: self.parse_lte_pdcp_dl_cfg(x, y), # LTE PDCP DL Config
-                #0xB0B0: lambda x, y: self.parse_lte_pdcp_ul_cfg(x, y), # LTE PDCP UL Config
-                #0xB0A1: lambda x, y: self.parse_lte_pdcp_dl_data(x, y), # LTE PDCP DL Data PDU
-                #0xB0B1: lambda x, y: self.parse_lte_pdcp_ul_data(x, y), # LTE PDCP UL Data PDU
-                #0xB0A2: lambda x, y: self.parse_lte_pdcp_dl_ctrl(x, y), # LTE PDCP DL Ctrl PDU
-                #0xB0B2: lambda x, y: self.parse_lte_pdcp_ul_ctrl(x, y), # LTE PDCP UL Ctrl PDU
-                #0xB0A3: lambda x, y: self.parse_lte_pdcp_dl_cip(x, y), # LTE PDCP DL Cipher Data PDU
-                #0xB0B3: lambda x, y: self.parse_lte_pdcp_ul_cip(x, y), # LTE PDCP UL Cipher Data PDU
-                0xB0A5: lambda x, y: self.parse_lte_pdcp_dl_srb_int(x, y), # LTE PDCP DL SRB Integrity Data PDU
-                0xB0B5: lambda x, y: self.parse_lte_pdcp_ul_srb_int(x, y), # LTE PDCP UL SRB Integrity Data PDU
-                # LTE RRC
-                0xB0C1: lambda x, y: self.parse_lte_mib(x, y), # LTE RRC MIB Message
-                0xB0C2: lambda x, y: self.parse_lte_rrc_cell_info(x, y), # LTE RRC Serving Cell Info
-                0xB0C0: lambda x, y: self.parse_lte_rrc(x, y), # LTE RRC OTA Message
-                # LTE NAS
-                0xB0E0: lambda x, y: self.parse_lte_nas(x, y, False), # NAS ESM RX Enc
-                0xB0E1: lambda x, y: self.parse_lte_nas(x, y, False), # NAS ESM TX Enc
-                0xB0EA: lambda x, y: self.parse_lte_nas(x, y, False), # NAS EMM RX Enc
-                0xB0EB: lambda x, y: self.parse_lte_nas(x, y, False), # NAS EMM TX Enc
-                0xB0E2: lambda x, y: self.parse_lte_nas(x, y, True), # NAS ESM RX
-                0xB0E3: lambda x, y: self.parse_lte_nas(x, y, True), # NAS ESM TX
-                0xB0EC: lambda x, y: self.parse_lte_nas(x, y, True), # NAS EMM RX
-                0xB0ED: lambda x, y: self.parse_lte_nas(x, y, True), # NAS EMM TX
+            # LTE
+            # LTE ML1
+            0xB17F: lambda x, y: self.parse_lte_ml1_scell_meas(x, y), # LTE ML1 Serving Cell Meas and Eval
+            0xB180: lambda x, y: self.parse_lte_ml1_ncell_meas(x, y), # LTE ML1 Neighbor Measurements
+            0xB197: lambda x, y: self.parse_lte_ml1_cell_info(x, y), # LTE ML1 Serving Cell Info
+            # LTE MAC
+            #0xB061: lambda x, y: parse_lte_mac_rach_trigger(x, y), # LTE MAC RACH Trigger
+            0xB062: lambda x, y: self.parse_lte_mac_rach_response(x, y), # LTE MAC RACH Response
+            0xB063: lambda x, y: self.parse_lte_mac_dl_block(x, y), # LTE MAC DL Transport Block
+            0xB064: lambda x, y: self.parse_lte_mac_ul_block(x, y), # LTE MAC UL Transport Block
+            # LTE RLC
+            # LTE PDCP
+            #0xB0A0: lambda x, y: self.parse_lte_pdcp_dl_cfg(x, y), # LTE PDCP DL Config
+            #0xB0B0: lambda x, y: self.parse_lte_pdcp_ul_cfg(x, y), # LTE PDCP UL Config
+            #0xB0A1: lambda x, y: self.parse_lte_pdcp_dl_data(x, y), # LTE PDCP DL Data PDU
+            #0xB0B1: lambda x, y: self.parse_lte_pdcp_ul_data(x, y), # LTE PDCP UL Data PDU
+            #0xB0A2: lambda x, y: self.parse_lte_pdcp_dl_ctrl(x, y), # LTE PDCP DL Ctrl PDU
+            #0xB0B2: lambda x, y: self.parse_lte_pdcp_ul_ctrl(x, y), # LTE PDCP UL Ctrl PDU
+            #0xB0A3: lambda x, y: self.parse_lte_pdcp_dl_cip(x, y), # LTE PDCP DL Cipher Data PDU
+            #0xB0B3: lambda x, y: self.parse_lte_pdcp_ul_cip(x, y), # LTE PDCP UL Cipher Data PDU
+            0xB0A5: lambda x, y: self.parse_lte_pdcp_dl_srb_int(x, y), # LTE PDCP DL SRB Integrity Data PDU
+            0xB0B5: lambda x, y: self.parse_lte_pdcp_ul_srb_int(x, y), # LTE PDCP UL SRB Integrity Data PDU
+            # LTE RRC
+            0xB0C1: lambda x, y: self.parse_lte_mib(x, y), # LTE RRC MIB Message
+            0xB0C2: lambda x, y: self.parse_lte_rrc_cell_info(x, y), # LTE RRC Serving Cell Info
+            0xB0C0: lambda x, y: self.parse_lte_rrc(x, y), # LTE RRC OTA Message
+            # LTE NAS
+            0xB0E0: lambda x, y: self.parse_lte_nas(x, y, False), # NAS ESM RX Enc
+            0xB0E1: lambda x, y: self.parse_lte_nas(x, y, False), # NAS ESM TX Enc
+            0xB0EA: lambda x, y: self.parse_lte_nas(x, y, False), # NAS EMM RX Enc
+            0xB0EB: lambda x, y: self.parse_lte_nas(x, y, False), # NAS EMM TX Enc
+            0xB0E2: lambda x, y: self.parse_lte_nas(x, y, True), # NAS ESM RX
+            0xB0E3: lambda x, y: self.parse_lte_nas(x, y, True), # NAS ESM TX
+            0xB0EC: lambda x, y: self.parse_lte_nas(x, y, True), # NAS EMM RX
+            0xB0ED: lambda x, y: self.parse_lte_nas(x, y, True), # NAS EMM TX
 
-                # Generic
-                0x11EB: lambda x, y: self.parse_ip(x, y), # Protocol Services Data
+            # Generic
+            0x11EB: lambda x, y: self.parse_ip(x, y), # Protocol Services Data
         }
 
         if xdm_hdr[1] in process.keys():

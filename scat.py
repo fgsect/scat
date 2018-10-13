@@ -254,7 +254,7 @@ if __name__ == '__main__':
     importlib.import_module('parser')
     parsers = {}
     for p in parsers_dir:
-        if not p.startswith('.__') and not p.endswith('_private'):
+        if not p.startswith('.__') and p.endswith('parser'):
             m = importlib.import_module(p, package="parser")
             parsers[m.shortname()] = m.__entry__
 
@@ -277,7 +277,6 @@ if __name__ == '__main__':
 
     if 'qc' in parsers.keys():
         qc_group = parser.add_argument_group('Qualcomm specific settings')
-        qc_group.add_argument('--qc-all', help='Read all supported Qualcomm diagnostic messages (Qualcomm only)', action='store_true')
         qc_group.add_argument('--qmdl', help='Store log as QMDL file (Qualcomm only)')
 
     if 'sec' in parsers.keys():
@@ -357,9 +356,7 @@ if __name__ == '__main__':
     current_parser.setHandler(handler)
     current_parser.setWriter(writer_cpup)
 
-    if args.type == 'qc':
-        current_parser.setParameter({'all_messages': args.qc_all})
-    elif args.type == 'sec':
+    if args.type == 'sec':
         current_parser.setParameter({'model': args.model})
 
     # Run process
