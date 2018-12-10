@@ -78,7 +78,42 @@ def diag_log_get_gsm_item_id(x):
 
 @unique
 class diag_log_code_gsm(IntEnum):
-    pass
+    # Layer 1
+    LOG_GSM_L1_FCCH_ACQUISITION_C = 0x65       # 0x5065 GSM L1 FCCH Acquisition
+    LOG_GSM_L1_SCH_ACQUISITION_C = 0x66        # 0x5066 GSM L1 SCH Acquisition
+    LOG_GSM_L1_NEW_BURST_METRICS_C = 0x6a      # 0x506A GSM L1 New Burst Metrics
+    LOG_GSM_L1_BURST_METRICS_C = 0x6c          # 0x506C GSM L1 Burst Metrics
+    LOG_GSM_L1_SCELL_BA_LIST_C = 0x71          # 0x5071 GSM Surround Cell BA List
+    LOG_GSM_L1_SCELL_AUX_MEASUREMENTS_C = 0x7a # 0x507A GSM L1 Serving Auxiliary Measurments
+    LOG_GSM_L1_NCELL_AUX_MEASUREMENTS_C = 0x7b # 0x507B GSM L1 Neighbor Cell Auxiliary Measurments
+
+    # Layer 3
+    LOG_GSM_RR_SIGNALING_MESSAGE_C = 0x12f # 0x512F GSM RR Signaling Message
+    LOG_GSM_RR_CELL_INFORMATION_C = 0x134  # 0x5134 GSM RR Cell Information
+
+    # GPRS, Layer 3
+    LOG_GPRS_RR_PACKET_SI_1_C = 0x1fd               # 0x51FD GPRS RR Packet System Information 1
+    LOG_GPRS_RR_PACKET_SI_2_C = 0x1fe               # 0x51FE GPRS RR Packet System Information 2
+    LOG_GPRS_RR_PACKET_SI_3_C = 0x1ff               # 0x51FF GPRS RR Packet System Information 3
+    LOG_GPRS_MAC_SIGNALING_MESSACE_C = 0x226        # 0x5226 GPRS MAC Signaling Message
+    LOG_GPRS_SM_GMM_OTA_SIGNALING_MESSAGE_C = 0x230 # 0x5230 GPRS SM/GMM OTA Signaling Message
+
+    # DSDS, Layer 1
+    LOG_GSM_DSDS_L1_FCCH_ACQUISITION_C = 0xa65       # 0x5A65 GSM DSDS L1 FCCH Acquisition
+    LOG_GSM_DSDS_L1_SCH_ACQUISITION_C = 0xa66        # 0x5A66 GSM DSDS L1 SCH Acquisition
+    LOG_GSM_DSDS_L1_BURST_METRICS_C = 0xa6c          # 0x5A6C GSM DSDS L1 Burst Metrics
+    LOG_GSM_DSDS_L1_SCELL_BA_LIST_C = 0xa71          # 0x5A71 GSM DSDS Surround Cell BA List
+    LOG_GSM_DSDS_L1_SCELL_AUX_MEASUREMENTS_C = 0xa7a # 0x5A7A GSM DSDS L1 Serving Auxiliary Measurments
+    LOG_GSM_DSDS_L1_NCELL_AUX_MEASUREMENTS_C = 0xa7b # 0x5A7B GSM DSDS L1 Neighbor Cell Auxiliary Measurments
+
+    # DSDS, Layer 3
+    LOG_GSM_DSDS_RR_SIGNALING_MESSAGE_C = 0xb2f # 0x5B2F GSM DSDS RR Signaling Message
+    LOG_GSM_DSDS_RR_CELL_INFORMATION_C = 0xb34  # 0x5B34 GSM DSDS RR Cell Information
+
+    # DSDS GPRS, Layer 3
+    LOG_GPRS_DSDS_RR_PACKET_SI_1_C = 0xbfd # 0x5BFD GPRS DSDS RR Packet System Information 1
+    LOG_GPRS_DSDS_RR_PACKET_SI_2_C = 0xbfe # 0x5BFE GPRS DSDS RR Packet System Information 2
+    LOG_GPRS_DSDS_RR_PACKET_SI_3_C = 0xbff # 0x5BFF GPRS DSDS RR Packet System Information 3
 
 # Origin: http://cgit.osmocom.org/osmo-qcdiag/tree/src/protocol/diag_log_umts.h
 def diag_log_get_umts_item_id(x):
@@ -201,31 +236,31 @@ def log_mask_empty_gsm():
 
 def log_mask_scat_gsm():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, 0x0ff7,
-        0x65, # 0x5065 GSM L1 FCCH Acquisition
-        0x66, # 0x5066 GSM L1 SCH Acquisition
-        0x6a, # 0x506A GSM L1 New Burst Metrics
-        0x6c, # 0x506C GSM L1 Burst Metrics
-        0x71, # 0x5071 GSM Surround Cell BA List
-        0x7a, # 0x507A GSM L1 Serving Auxiliary Measurments
-        0x7b, # 0x507B GSM L1 Neighbor Cell Auxiliary Measurments
-        0x12f, # 0x512F GSM RR Signaling Message
-        0x134, # 0x5134 GSM RR Cell Information
-        0x1fd, # 0x51FD GPRS RR Packet System Information 1
-        0x1fe, # 0x51FE GPRS RR Packet System Information 2
-        0x1ff, # 0x51FF GPRS RR Packet System Information 3
-        0x226, # 0x5226 GPRS MAC Signaling Message
-        0x230, # 0x5230 GPRS SM/GMM OTA Signaling Message
-        0xa65, # 0x5A65 GSM DSDS L1 FCCH Acquisition
-        0xa66, # 0x5A66 GSM DSDS L1 SCH Acquisition
-        0xa6c, # 0x5A6C GSM DSDS L1 Burst Metrics
-        0xa71, # 0x5A71 GSM DSDS Surround Cell BA List
-        0xa7a, # 0x5A7A GSM DSDS L1 Serving Auxiliary Measurements
-        0xa7b, # 0x5A7B GSM DSDS L1 Neighbor Cell Auxiliary Measurements
-        0xb2f, # 0x5B2F GSM DSDS RR Signaling Message
-        0xb34, # 0x5B34 GSM DSDS RR Cell Information
-        0xbfd, # 0x5BFD GPRS DSDS RR Packet System Information 1
-        0xbfe, # 0x5BFE GPRS DSDS RR Packet System Information 2
-        0xbff, # 0x5BFF GPRS DSDS RR Packet System Information 3
+        diag_log_code_gsm.LOG_GSM_L1_FCCH_ACQUISITION_C,
+        diag_log_code_gsm.LOG_GSM_L1_SCH_ACQUISITION_C,
+        diag_log_code_gsm.LOG_GSM_L1_NEW_BURST_METRICS_C,
+        diag_log_code_gsm.LOG_GSM_L1_BURST_METRICS_C,
+        diag_log_code_gsm.LOG_GSM_L1_SCELL_BA_LIST_C,
+        diag_log_code_gsm.LOG_GSM_L1_SCELL_AUX_MEASUREMENTS_C,
+        diag_log_code_gsm.LOG_GSM_L1_NCELL_AUX_MEASUREMENTS_C,
+        diag_log_code_gsm.LOG_GSM_RR_SIGNALING_MESSAGE_C,
+        diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C,
+        diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_1_C,
+        diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_2_C,
+        diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_3_C,
+        diag_log_code_gsm.LOG_GPRS_MAC_SIGNALING_MESSACE_C,
+        diag_log_code_gsm.LOG_GPRS_SM_GMM_OTA_SIGNALING_MESSAGE_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_L1_FCCH_ACQUISITION_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_L1_SCH_ACQUISITION_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_L1_BURST_METRICS_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_L1_SCELL_BA_LIST_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_L1_SCELL_AUX_MEASUREMENTS_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_L1_NCELL_AUX_MEASUREMENTS_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_RR_SIGNALING_MESSAGE_C,
+        diag_log_code_gsm.LOG_GSM_DSDS_RR_CELL_INFORMATION_C,
+        diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_1_C,
+        diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_2_C,
+        diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_3_C,
     )
 
 def log_mask_empty_umts():

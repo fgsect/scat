@@ -34,7 +34,8 @@ class SamsungParser:
         self.model = 'e333'
 
         self.handler = None
-        self.writerCPUP = None
+        self.writerSIM1 = None
+        self.writerSIM2 = None
 
         self.name = 'samsung'
         self.shortname = 'sec'
@@ -42,8 +43,9 @@ class SamsungParser:
     def setHandler(self, handler):
         self.handler = handler
 
-    def setWriter(self, writerCPUP):
-        self.writerCPUP = writerCPUP
+    def setWriter(self, writerSIM1, writerSIM2):
+        self.writerSIM1 = writerSIM1
+        self.writerSIM2 = writerSIM2
 
     def setParameter(self, params):
         for p in params:
@@ -123,11 +125,11 @@ class SamsungParser:
             sock_content = self.parse_diag_log_e303(pkt)
 
         if type(sock_content) == bytes and len(sock_content) > 0:
-            self.writerCPUP.write_cp(sock_content)
+            self.writerSIM1.write_cp(sock_content)
         elif type(sock_content) == bytes and len(sock_content) >= 0:
             return
         elif sock_content[0] == 1 and type(sock_content[1]) == bytes:
-            self.writerCPUP.write_up(sock_content[1])
+            self.writerSIM1.write_up(sock_content[1])
         else:
             return
 

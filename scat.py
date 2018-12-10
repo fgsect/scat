@@ -25,7 +25,7 @@ eth_hdr = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00'
 # Device Handler
 class SerialHandler:
     def __init__(self, port_name):
-        self.port = serial.Serial(port_name, baudrate=115200, timeout=0.1)
+        self.port = serial.Serial(port_name, baudrate=115200, timeout=0.1, rtscts=True, dsrdtr=True)
 
     def __enter__(self):
         return self
@@ -287,14 +287,24 @@ if __name__ == '__main__':
     ip_group.add_argument('-P', '--port', help='Change UDP port to emit GSMTAP packets', type=int, default=4729)
     ip_group.add_argument('--port-up', help='Change UDP port to emit user plane packets', type=int, default=47290)
     ip_group.add_argument('-H', '--hostname', help='Change host name/IP to emit GSMTAP packets', type=str, default='127.0.0.1')
+    ip_group.add_argument('--port-sim2', help='Change UDP port to emit GSMTAP packets for SIM 2', type=int, default=4729)
+    ip_group.add_argument('--port-up-sim2', help='Change UDP port to emit user plane packets for SIM 2', type=int, default=47290)
+    ip_group.add_argument('--hostname-sim2', help='Change host name/IP to emit GSMTAP packets for SIM 2', type=str, default='127.0.0.2')
+
     ip_group.add_argument('-F', '--pcap-file', help='Write GSMTAP packets directly to specified PCAP file')
     ip_group.add_argument('--pcap-file-up', help='Write user plane packets directly to specified PCAP file')
+    ip_group.add_argument('--pcap-file-sim2', help='Write GSMTAP packets directly to specified PCAP file for SIM 2')
+    ip_group.add_argument('--pcap-file-up-sim2', help='Write user plane packets directly to specified PCAP file for SIM 2')
 
     args = parser.parse_args()
 
-    GSMTAP_IP = args.hostname
-    GSMTAP_PORT = args.port
-    IP_OVER_UDP_PORT = args.port_up
+    GSMTAP_IP_SIM1 = args.hostname
+    GSMTAP_PORT_SIM1 = args.port
+    IP_OVER_UDP_PORT_SIM1 = args.port_up
+
+    GSMTAP_IP_SIM2 = args.hostname_sim2
+    GSMTAP_PORT_SIM2 = args.port_sim2
+    IP_OVER_UDP_PORT_SIM2 = args.port_up_sim2
 
     if not args.type in parsers.keys():
         print('Error: invalid baseband type specified. Available modules: %s' % parsers_desc)
@@ -348,13 +358,15 @@ if __name__ == '__main__':
 
     # Writer preparation
     if args.pcap_file == None:
-        writer_cpup = SocketWriter(GSMTAP_IP, GSMTAP_PORT, GSMTAP_IP, IP_OVER_UDP_PORT)
+        writer_cpup_sim1 = SocketWriter(GSMTAP_IP_SIM1, GSMTAP_PORT_SIM1, GSMTAP_IP_SIM1, IP_OVER_UDP_PORT_SIM1)
+        writer_cpup_sim2 = SocketWriter(GSMTAP_IP_SIM2, GSMTAP_PORT_SIM2, GSMTAP_IP_SIM2, IP_OVER_UDP_PORT_SIM2)
     else:
-        writer_cpup = PcapWriter(args.pcap_file, GSMTAP_PORT, IP_OVER_UDP_PORT)
+        writer_cpup_sim1 = PcapWriter(args.pcap_file, GSMTAP_PORT_SIM1, IP_OVER_UDP_PORT_SIM1)
+        writer_cpup_sim2 = PcapWriter(args.pcap_file_sim2, GSMTAP_PORT_SIM2, IP_OVER_UDP_PORT_SIM2)
 
     current_parser = parsers[args.type]()
     current_parser.setHandler(handler)
-    current_parser.setWriter(writer_cpup)
+    current_parser.setWriter(writer_cpup_sim1, writer_cpup_sim2)
 
     if args.type == 'sec':
         current_parser.setParameter({'model': args.model})
