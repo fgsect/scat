@@ -137,8 +137,6 @@ Note that we did not listed every Qualcomm-based devices here.
 
 Issues related to exposing the diagnostics port via USB is out of scope.
 
-* Only the first SIM of dual SIM devices are visible. We know how to fix this
-  issue, will be updated in the next release.
 * On certain Qualcomm devices, after exiting and launching the application for
   more than once, initialization eventually hangs and no messages are appearing.
   Root cause still in investigation. Solution: reboot the smartphone.
