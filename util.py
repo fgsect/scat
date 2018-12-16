@@ -68,11 +68,15 @@ def generate_packet(arr):
     return arr
 
 def parse_qxdm_ts(ts):
-    # Epoch: 1980-01-06 00:00:00
-    # 1 for 1/800s
+    # Upper 48 bits: epoch at 1980-01-06 00:00:00, incremented by 1 for 1/800s
+    # Lower 16 bits: time since last 1/800s tick in 1/32 chip units
+
+    ts_upper = (ts >> 16)
+    ts_lower = ts & 0xffff
+
     epoch = datetime.datetime(1980, 1, 6, 0, 0, 0)
     try:
-        ts_delta = datetime.timedelta(seconds=ts / 800.)
+        ts_delta = datetime.timedelta(seconds=ts_upper / 800.)
     except:
         ts_delta = datetime.timedelta(seconds=0)
     return epoch + ts_delta
