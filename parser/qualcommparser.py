@@ -166,7 +166,7 @@ class QualcommParser:
             #util.xxd(pkt)
             return
 
-    def run_diag(self):
+    def run_diag(self, writer_qmdl = None):
         oldbuf = b''
         try:
             while True:
@@ -185,27 +185,8 @@ class QualcommParser:
                     if len(pkt) == 0:
                         continue
                     self.parse_diag(pkt)
-
-        except KeyboardInterrupt:
-            return
-
-    def run_diag_qmdl(self, writer_qmdl):
-        oldbuf = b''
-        try:
-            while True:
-                buf = self.handler.read(0x1000)
-                if len(buf) == 0:
-                    continue
-                buf = oldbuf + buf
-                buf_atom = buf.split(b'\x7e')
-
-                if buf[-1] != 0x7e:
-                    oldbuf = buf_atom.pop()
-                else:
-                    oldbuf = b''
-
-                for pkt in buf_atom:
-                    writer_qmdl.write_gsmtap(pkt + b'\x7e')
+                    if writer_qmdl:
+                        writer_qmdl.write_cp(pkt + b'\x7e')
 
         except KeyboardInterrupt:
             return
