@@ -141,12 +141,12 @@ class QualcommParser:
             crc = util.dm_crc16(pkt[:-2])
             crc_pkt = (pkt[-1] << 8) | pkt[-2]
             if crc != crc_pkt:
-                util.warning("CRC mismatch: expected 0x%04x, got 0x%04x" % (crc, crc_pkt))
+                util.warning("CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
                 util.xxd(pkt)
             pkt = pkt[:-2]
 
         if pkt[0] == diagcmd.DIAG_LOG_F:
-            self.parse_diag_log(pkt)
+            self.parse_diag_log(pkt, radio_id)
 
 #            if parse_ts:
 #                ts = struct.unpack('<Q', pkt[10:16] + b'\x00\x00')[0]
@@ -246,7 +246,7 @@ class QualcommParser:
 
     def read_dump(self):
         while self.handler.file_available:
-            print("Reading from %s" % self.handler.fname)
+            print("Reading from {}".format(self.handler.fname))
             if self.handler.fname.find('.qmdl') > 0:
                 self.run_diag()
             elif self.handler.fname.find('.dlf') > 0:
@@ -268,17 +268,17 @@ class QualcommParser:
     def parse_gsm_dsds_fcch(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_fcch(pkt_ts, pkt[1:], radio_id_pkt)
 
     def parse_gsm_sch(self, pkt_ts, pkt, radio_id):
-        self.parse_gsm_sch(pkt_ts, pkt, radio_id)
+        self.parse_gsm_fcch(pkt_ts, pkt, radio_id)
 
     def parse_gsm_dsds_sch(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_sch(pkt_ts, pkt[1:], radio_id_pkt)
 
@@ -313,10 +313,10 @@ class QualcommParser:
 
                 c_rxpwr_real = c_rxpwr * 0.0625
                 if c_rxpwr < 0:
-                    print('2G Serving Cell New: ARFCN %s/BC %s, RxPwr %.2f' % (c_arfcn, c_band, c_rxpwr_real))
+                    print('Radio {}: 2G Serving Cell New: ARFCN {}/BC {}, RxPwr {:.2f}'.format(radio_id, c_arfcn, c_band, c_rxpwr_real))
                 i += 1
         else:
-            print('Unsupported GSM L1 New Burst Metric version %s' % pkt[0])
+            print('Unsupported GSM L1 New Burst Metric version {}'.format(pkt[0]))
 
     def parse_gsm_l1_burst_metric(self, pkt_ts, pkt, radio_id):
         chan = pkt[0]
@@ -341,19 +341,19 @@ class QualcommParser:
 
             c_rxpwr_real = c_rxpwr * 0.0625
             if c_rxpwr < 0:
-                print('Radio %s: 2G Serving Cell: ARFCN %s/BC %s, RxPwr %.2f' % (radio_id, c_arfcn, c_band, c_rxpwr_real))
+                print('Radio {}: 2G Serving Cell: ARFCN {}/BC {}, RxPwr {:.2f}'.format(radio_id, c_arfcn, c_band, c_rxpwr_real))
             i += 1
 
     def parse_gsm_dsds_l1_burst_metric(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_burst_metric(pkt_ts, pkt[1:], radio_id_pkt)
 
     def parse_gsm_l1_surround_cell_ba(self, pkt_ts, pkt, radio_id):
         num_cells = pkt[0]
-        print('Radio %s: 2G Cell: # cells %s' % (radio_id, num_cells))
+        print('Radio {}: 2G Cell: # cells {}'.format(radio_id, num_cells))
         for i in range(num_cells):
             cell_pkt = pkt[1 + 12 * i:1 + 12 * (i + 1)]
             interim = struct.unpack('<HhHLH', cell_pkt)
@@ -365,12 +365,12 @@ class QualcommParser:
             s_time_offset = interim[4]
 
             s_rxpwr_real = s_rxpwr * 0.0625
-            print('Radio %s: 2G Cell %s: ARFCN %s/BC %s, RxPwr %.2f' % (radio_id, i, s_arfcn, s_band, s_rxpwr_real))
+            print('Radio {}: 2G Cell {}: ARFCN {}/BC {}, RxPwr {:.2f}'.format(radio_id, i, s_arfcn, s_band, s_rxpwr_real))
 
     def parse_gsm_dsds_l1_surround_cell_ba(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_surround_cell_ba(pkt_ts, pkt[1:], radio_id_pkt)
 
@@ -379,18 +379,18 @@ class QualcommParser:
         rxpwr = interim[0]
         snr_is_bad = interim[1]
         rxpwr_real = rxpwr * 0.0625
-        print('Radio %s: 2G Serving Cell Aux: RxPwr %.2f' % (radio_id, rxpwr_real))
+        print('Radio {}: 2G Serving Cell Aux: RxPwr {:.2f}'.format(radio_id, rxpwr_real))
 
     def parse_gsm_dsds_l1_serv_aux_meas(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_serv_aux_meas(pkt_ts, pkt[1:], radio_id_pkt)
 
     def parse_gsm_l1_neig_aux_meas(self, pkt_ts, pkt, radio_id):
         num_cells = pkt[0]
-        print('Radio %s: 2G Cell Aux: # cells %s' % (radio_id, num_cells))
+        print('Radio {}: 2G Cell Aux: # cells {}'.format(radio_id, num_cells))
         for i in range(num_cells):
             cell_pkt = pkt[1 + 4 * i:1 + 4 * (i + 1)]
             interim = struct.unpack('<Hh', cell_pkt)
@@ -399,12 +399,12 @@ class QualcommParser:
             n_rxpwr = interim[1]
 
             n_rxpwr_real = n_rxpwr * 0.0625
-            print('Radio %s: Cell %s: ARFCN %s/BC %s, RxPwr %.2f' % (radio_id, i, n_arfcn, n_band, n_rxpwr_real))
+            print('Radio {}: Cell {}: ARFCN {}/BC {}, RxPwr {:.2f}'.format(radio_id, i, n_arfcn, n_band, n_rxpwr_real))
 
     def parse_gsm_dsds_l1_neig_aux_meas(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_neig_aux_meas(pkt_ts, pkt[1:], radio_id_pkt)
 
@@ -421,7 +421,7 @@ class QualcommParser:
     def parse_gsm_dsds_cell_info(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_cell_info(pkt_ts, pkt[1:], radio_id_pkt)
 
@@ -460,7 +460,7 @@ class QualcommParser:
             lapdm_control = b'\x03'
             # length field
             if msg_len > 63:
-                util.warning('message length longer than 63 (%s)' % msg_len)
+                util.warning('message length longer than 63 ({})'.format(msg_len))
                 return 
             lapdm_len = bytes([(msg_len << 2) | 0x01])
 
@@ -475,7 +475,7 @@ class QualcommParser:
             lapdm_control = b'\x03'
             # length field
             if msg_len > 63:
-                util.warning('message length longer than 63 (%s)' % msg_len)
+                util.warning('message length longer than 63 ({})'.format(msg_len))
                 return
             lapdm_len = bytes([(msg_len << 2) | 0x01])
 
@@ -496,7 +496,7 @@ class QualcommParser:
     def parse_gsm_dsds_rr(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_rr(pkt_ts, pkt[1:], radio_id_pkt)
 
@@ -563,7 +563,7 @@ class QualcommParser:
         num_wcdma_cells = pkt[0]
         num_gsm_cells = pkt[1] # TODO: check if num_gsm_cells > 0
 
-        print('Radio %s: 3G Cell: # cells %s' % (radio_id, num_wcdma_cells))
+        print('Radio {}: 3G Cell: # cells {}'.format(radio_id, num_wcdma_cells))
         for i in range(num_wcdma_cells):
             cell_pkt = pkt[2 + 10 * i:2 + 10 * (i + 1)]
             cell_pkt_vals = struct.unpack('<HHbhbh', cell_pkt)
@@ -573,7 +573,7 @@ class QualcommParser:
             n_cell_rank_rscp = cell_pkt_vals[3]
             n_cell_ecio = cell_pkt_vals[4]
             n_cell_rank_ecio = cell_pkt_vals[5]
-            print('Radio %s: Cell %s: UARFCN %s, PSC %s, RSCP %s, Ec/Io %s' % (radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
+            print('Radio {}: Cell {}: UARFCN {}, PSC {}, RSCP {}, Ec/Io {:.2f}'.format(radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
 
     def parse_wcdma_cell_id(self, pkt_ts, pkt, radio_id):
         if len(pkt) < 12:
@@ -612,7 +612,7 @@ class QualcommParser:
         try:
             subtype = channel_type_map[pkt[0]]
         except KeyError:
-            print("Unknown WCDMA RRC channel type %d" % pkt[0])
+            print("Unknown WCDMA RRC channel type {}".format(pkt[0]))
             util.xxd(pkt)
 
         arfcn = self.umts_last_uarfcn_dl[radio_id]
@@ -661,7 +661,7 @@ class QualcommParser:
             try:
                 subtype = sib_type_map[pkt[4]]
             except KeyError:
-                print("Unknown WCDMA SIB Class %d" % pkt[4])
+                print("Unknown WCDMA SIB Class {}".format(pkt[4]))
             msg_content = pkt[5:]
         else:
             msg_content = pkt[4:]
@@ -706,7 +706,7 @@ class QualcommParser:
     def parse_umts_ue_ota_dsds(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id > 2:
-            print('Unexpected radio ID { }' % radio_id_pkt)
+            print('Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_umts_ue_ota(pkt_ts, pkt[1:], radio_id_pkt)
 
@@ -747,12 +747,11 @@ class QualcommParser:
                 s_intra_search_q = (r9_data_interim >> 14) & 0x3f
                 s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
             else:
-                print('Unknown LTE ML1 Serving Cell Meas packet - RRC version %s' % rrc_rel)
+                print('Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(rrc_rel))
             real_rsrp = -180 + meas_rsrp * 0.0625
             real_rssi = -110 + meas_rssi * 0.0625
             real_rsrq = -30 + meas_rsrq * 0.0625
-            print('Radio %s: LTE SCell: EARFCN %s, PCI %3s, Measured RSRP %.2f, Measured RSSI %.2f' % 
-                    (radio_id, earfcn, pci, real_rsrp, real_rssi))
+            print('Radio {}: LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}'.format(radio_id, earfcn, pci, real_rsrp, real_rssi))
         elif pkt[0] == 4: # Version 4
             # Version, RRC standard release, EARFCN, PCI - Serving Layer Priority
             # Measured, Average RSRP, Measured, Average RSRQ, Measured RSSI
@@ -790,14 +789,13 @@ class QualcommParser:
                 s_intra_search_q = (r9_data_interim >> 14) & 0x3f
                 s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
             else:
-                print('Unknown LTE ML1 Serving Cell Meas packet - RRC version %s' % rrc_rel)
+                print('Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(rrc_rel))
             real_rsrp = -180 + meas_rsrp * 0.0625
             real_rssi = -110 + meas_rssi * 0.0625
             real_rsrq = -30 + meas_rsrq * 0.0625
-            print('Radio %s: LTE SCell: EARFCN %s, PCI %3s, Measured RSRP %.2f, Measured RSSI %.2f' % 
-                    (radio_id, earfcn, pci, real_rsrp, real_rssi))
+            print('Radio {}: LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}'.format(radio_id, earfcn, pci, real_rsrp, real_rssi))
         else:
-            print('Unknown LTE ML1 Serving Cell Meas packet version %s' % pkt[0])
+            print('Unknown LTE ML1 Serving Cell Meas packet version {}'.format(pkt[0]))
             return
 
     def parse_lte_ml1_ncell_meas(self, pkt_ts, pkt, radio_id):
@@ -807,7 +805,7 @@ class QualcommParser:
             earfcn = struct.unpack('<L', pkt[4:8])[0]
             q_rxlevmin = (pkt[8] | pkt[9] << 8) & 0x3f
             n_cells = (pkt[8] | pkt[9] << 8) >> 6
-            print('Radio %s: LTE NCell: # cells %s' % (radio_id, n_cells))
+            print('Radio {}: LTE NCell: # cells {}'.format(radio_id, n_cells))
             for i in range(n_cells):
                 n_cell_pkt = pkt[12 + 32 * i:12 + 32 * (i + 1)]
                 interim = struct.unpack('<LLLLHHLL', n_cell_pkt[0:28])
@@ -832,8 +830,7 @@ class QualcommParser:
                 n_real_rssi = -110 + n_meas_rssi * 0.0625
                 n_real_rsrq = -30 + n_meas_rsrq * 0.0625
 
-                print('Radio %s: Neighbor cell %s: PCI %3s, RSRP %.02f, RSSI %.02f' % 
-                        (radio_id, i, n_pci, n_real_rsrp, n_real_rssi))
+                print('Radio {}: Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}'.format(radio_id, i, n_pci, n_real_rsrp, n_real_rssi))
         elif pkt[0] == 4: # Version 4
             # Version, RRC standard release, EARFCN, Q_rxlevmin, Num Cells, Cell Info
             # Cell Info - PCI, Measured RSSI, Measured RSRP, Average RSRP
@@ -845,7 +842,7 @@ class QualcommParser:
             earfcn = pkt[4] | pkt[5] << 8
             q_rxlevmin = (pkt[6] | pkt[7] << 8) & 0x3f
             n_cells = (pkt[6] | pkt[7] << 8) >> 6
-            print('Radio %s: LTE NCell: # cells %s' % (radio_id, n_cells))
+            print('Radio {}: LTE NCell: # cells {}'.format(radio_id, n_cells))
             for i in range(n_cells):
                 n_cell_pkt = pkt[8 + 32 * i:8 + 32 * (i + 1)]
                 interim = struct.unpack('<LLLLHHLL', n_cell_pkt[0:28])
@@ -869,10 +866,9 @@ class QualcommParser:
                 n_real_rssi = -110 + n_meas_rssi * 0.0625
                 n_real_rsrq = -30 + n_meas_rsrq * 0.0625
 
-                print('Radio %s: Neighbor cell %s: PCI %3s, RSRP %.2f, RSSI %.2f' % 
-                        (radio_id, i, n_pci, n_real_rsrp, n_real_rssi))
+                print('Radio {}: Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}'.format(radio_id, i, n_pci, n_real_rsrp, n_real_rssi))
         else:
-            print('Radio %s: Unknown LTE ML1 Neighbor Meas packet version %s' % (radio_id, pkt[0]))
+            print('Radio {}: Unknown LTE ML1 Neighbor Meas packet version {}'.format(radio_id, pkt[0]))
 
     def parse_lte_ml1_cell_info(self, pkt_ts, pkt, radio_id):
         mib_payload = bytes([0, 0, 0])
@@ -899,7 +895,7 @@ class QualcommParser:
 
             mib_payload = bytes([pkt[31], pkt[30], pkt[29]])
         else:
-            print('Unknown LTE ML1 cell info packet version %s' % pkt[0])
+            print('Unknown LTE ML1 cell info packet version {}'.format(pkt[0]))
 
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
