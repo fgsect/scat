@@ -9,22 +9,22 @@ import binascii
 
 class SamsungParser:
     def __init__(self):
-        self.gsm_last_cell_id = 0
-        self.gsm_last_arfcn = 0
+        self.gsm_last_cell_id = [0, 0]
+        self.gsm_last_arfcn = [0, 0]
 
-        self.umts_last_cell_id = 0
-        self.umts_last_uarfcn_dl = 0
-        self.umts_last_uarfcn_ul = 0
+        self.umts_last_cell_id = [0, 0]
+        self.umts_last_uarfcn_dl = [0, 0]
+        self.umts_last_uarfcn_ul = [0, 0]
 
-        self.lte_last_cell_id = 0
-        self.lte_last_earfcn_dl = 0
-        self.lte_last_earfcn_ul = 0
-        self.lte_last_earfcn_tdd = 0
-        self.lte_last_sfn = 0
-        self.lte_last_tx_ant = 0
-        self.lte_last_bw_dl = 0
-        self.lte_last_bw_ul = 0
-        self.lte_last_band_ind = 0
+        self.lte_last_cell_id = [0, 0]
+        self.lte_last_earfcn_dl = [0, 0]
+        self.lte_last_earfcn_ul = [0, 0]
+        self.lte_last_earfcn_tdd = [0, 0]
+        self.lte_last_sfn = [0, 0]
+        self.lte_last_tx_ant = [0, 0]
+        self.lte_last_bw_dl = [0, 0]
+        self.lte_last_bw_ul = [0, 0]
+        self.lte_last_band_ind = [0, 0]
 
         # cmc221s: CMC221S: S3 (SHV-E210SK)
         # e300: Shannon 300: TODO
@@ -46,6 +46,22 @@ class SamsungParser:
     def setWriter(self, writerSIM1, writerSIM2):
         self.writerSIM1 = writerSIM1
         self.writerSIM2 = writerSIM2
+
+    def writeCP(self, pkt_content, radio_id, ts=None):
+        if radio_id == 0:
+            self.writerSIM1.write_cp(pkt_content, ts)
+        elif radio_id == 1:
+            self.writerSIM2.write_cp(pkt_content, ts)
+        else:
+            util.warning("Unknown radio_id {}".format(radio_id))
+
+    def writeUP(self, pkt_content, radio_id, ts=None):
+        if radio_id == 0:
+            self.writerSIM1.write_up(pkt_content, ts)
+        elif radio_id == 1:
+            self.writerSIM2.write_up(pkt_content, ts)
+        else:
+            util.warning("Unknown radio_id {}".format(radio_id))
 
     def setParameter(self, params):
         for p in params:
@@ -117,21 +133,12 @@ class SamsungParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt, wrapped = False, parse_ts = False):
+    def parse_diag(self, pkt, hdlc_encoded = True, parse_ts = False, radio_id = 0):
         sock_content = b''
         if self.model == 'e333':
-            sock_content = self.parse_diag_log_e333(pkt)
+            self.parse_diag_log_e333(pkt, radio_id)
         elif self.model == 'e303':
-            sock_content = self.parse_diag_log_e303(pkt)
-
-        if type(sock_content) == bytes and len(sock_content) > 0:
-            self.writerSIM1.write_cp(sock_content)
-        elif type(sock_content) == bytes and len(sock_content) >= 0:
-            return
-        elif sock_content[0] == 1 and type(sock_content[1]) == bytes:
-            self.writerSIM1.write_up(sock_content[1])
-        else:
-            return
+            self.parse_diag_log_e303(pkt, radio_id)
 
     def run_diag(self):
         print('-------- start diag --------')
@@ -191,13 +198,10 @@ class SamsungParser:
         if ip_hdr[0] == 0x00:
             if ip_hdr[5] != len(ip_payload):
                 util.warning('IP length mismatch, expected %04x, got %04x' % (ip_hdr[5], len(ip_payload)))
-
-            return [1, ip_payload]
-        else:
-            return b''
+            writeUP(ip_payload, 0)
 
     def process_control_message(self, pkt):
-        return b''
+        pass
 
     def process_common_data(self, pkt):
         pkt = pkt[10:-1]
@@ -227,31 +231,31 @@ class SamsungParser:
                 subtype = 0
                 if direction == 2:
                     subtype = chan_map_dl[chan_subtype]
-                    arfcn = self.umts_last_uarfcn_dl
+                    arfcn = self.umts_last_uarfcn_dl[0]
                 elif direction == 1:
                     subtype = chan_map_ul[chan_subtype]
-                    arfcn = self.umts_last_uarfcn_ul
+                    arfcn = self.umts_last_uarfcn_ul[0]
                 else:
                     print('Unknown direction %02x' % direction)
-                    return b''
+                    return
 
                 gsmtap_hdr = util.create_gsmtap_header(
                     version = 2,
                     payload_type = util.gsmtap_type.UMTS_RRC,
                     arfcn = arfcn,
                     sub_type = subtype)
-                return gsmtap_hdr + msg_content
+                self.writeCP(gsmtap_hdr + msg_content, 0)
             elif chan_type == 0x01: # UMTS NAS
                 if direction == 2:
-                    arfcn = self.umts_last_uarfcn_dl
+                    arfcn = self.umts_last_uarfcn_dl[0]
                 elif direction == 1:
-                    arfcn = self.umts_last_uarfcn_ul
+                    arfcn = self.umts_last_uarfcn_ul[0]
 
                 gsmtap_hdr = util.create_gsmtap_header(
                     version = 2,
                     payload_type = util.gsmtap_type.ABIS,
                     arfcn = arfcn)
-                return gsmtap_hdr + msg_content
+                self.writeCP(gsmtap_hdr + msg_content, 0)
             elif chan_type == 0x20: # GSM RR
                 # TODO: CCCH and SACCH are not distinguished by headers!
                 # Some values are RR message, some are RR_short_PD
@@ -262,7 +266,7 @@ class SamsungParser:
                     # length field
                     if msg_len > 63:
                         util.warning('message length longer than 63 (%s)' % msg_len)
-                        return b''
+                        return
                     lapdm_len = bytes([(msg_len << 2) | 0x01])
 
                     #msg_content = lapdm_address + lapdm_control + lapdm_len + msg_content
@@ -271,12 +275,12 @@ class SamsungParser:
                         version = 2,
                         payload_type = util.gsmtap_type.UM,
                         sub_type = util.gsmtap_channel.CCCH) # Subtype (XXX: All CCCH)
-                    return gsmtap_hdr + msg_content
+                    self.writeCP(gsmtap_hdr + msg_content, 0)
                 elif direction == 1: # Only RR
                     gsmtap_hdr = util.create_gsmtap_header(
                         version = 2,
                         payload_type = util.gsmtap_type.ABIS)
-                    return gsmtap_hdr + msg_content
+                    self.writeCP(gsmtap_hdr + msg_content)
             elif chan_type == 0x21: # GSM RLC/MAC
                 arfcn = 1
                 if direction == 1:
@@ -287,23 +291,21 @@ class SamsungParser:
                     arfcn = arfcn,
                     sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
                 #return gsmtap_hdr + msg_content
-                return b''
+                return
             else:
                 print('Unknown channel type %02x for subcommand 0x03' % chan_type)
-                return b''
+                return
         else:
             print('Unknown subcommand %02x for command 0x21' % pkt[0])
             #util.xxd(pkt)
-            return b''
-
-        return b''
+            return
 
     def process_common_basic(self, pkt):
         pkt = pkt[10:-1]
         #if not (pkt[0] == 0x00 or pkt[0] == 0x02):
         #if pkt[0] == 0x00:
         #    util.xxd(pkt)
-        return b''
+        return
 
     def process_lte_basic_e333(self, pkt):
         pkt = pkt[10:-1]
@@ -321,12 +323,12 @@ class SamsungParser:
             cell_info = struct.unpack('<BHI', pkt[12:19])
 
             if cell_info[0] == 0:
-                self.lte_last_earfcn_dl = cell_info[1]
-                self.lte_last_earfcn_ul = self.lte_last_earfcn_dl | (1 << 14)
-                self.lte_last_cell_id = cell_info[2]
+                self.lte_last_earfcn_dl[0] = cell_info[1]
+                self.lte_last_earfcn_ul[0] = self.lte_last_earfcn_dl[0] | (1 << 14)
+                self.lte_last_cell_id[0] = cell_info[2]
             elif cell_info[0] == 1:
-                self.umts_last_uarfcn_dl = cell_info[1]
-                self.umts_last_cell_id = cell_info[2]
+                self.umts_last_uarfcn_dl[0] = cell_info[1]
+                self.umts_last_cell_id[0] = cell_info[2]
             else:
                 print('Unhandled RAT %02x' % cell_info[0])
         else:
@@ -334,7 +336,7 @@ class SamsungParser:
             #print('process_lte_basic')
             #util.xxd(pkt)
 
-        return b''
+        return
 
         #if pkt[0] == 0x02:
         #    util.xxd(pkt)
@@ -422,17 +424,16 @@ class SamsungParser:
                 util.xxd(pkt)
 
             if direction == 0:
-                arfcn = self.lte_last_earfcn_dl
+                arfcn = self.lte_last_earfcn_dl[0]
             else:
-                arfcn = self.lte_last_earfcn_ul
+                arfcn = self.lte_last_earfcn_ul[0]
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
                 payload_type = util.gsmtap_type.LTE_RRC,
                 arfcn = arfcn,
                 sub_type = subtype)
-
-            return gsmtap_hdr + rrc_msg
+            self.writeCP(gsmtap_hdr + rrc_msg, 0)
         elif pkt[0] == 0x55: 
             # TODO: RACH Preamble/Response
             # pkt[1] - pkt[4]: TS
@@ -448,8 +449,7 @@ class SamsungParser:
                 pass
             else:
                 assert False, "Invalid RACH direction"
-            
-            return b''
+            return
         elif pkt[0] == 0x5a or pkt[0] == 0x5f:
             # 0x5A: LTE NAS EMM Message
             # 0x5F: LTE NAS ESM Message
@@ -461,20 +461,19 @@ class SamsungParser:
             nas_msg = pkt[9:]
 
             if direction == 0:
-                arfcn = self.lte_last_earfcn_dl
+                arfcn = self.lte_last_earfcn_dl[0]
             else:
-                arfcn = self.lte_last_earfcn_ul
+                arfcn = self.lte_last_earfcn_ul[0]
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
                 payload_type = util.gsmtap_type.LTE_NAS,
                 arfcn = arfcn)
-
-            return gsmtap_hdr + nas_msg
+            self.writeCP(gsmtap_hdr + nas_msg, 0)
         else:
             #if len(pkt) < 0x60:
             #    util.xxd(pkt)
-            return b''
+            return
 
     def process_edge_data(self, pkt):
         print('TODO: command 0x23')
@@ -487,15 +486,14 @@ class SamsungParser:
             pass
         else:
             print("Unknown packet[0] %02x" % pkt[0])
-
-        return b''
+        return
 
     def process_hspa_basic(self, pkt):
         pkt = pkt[10:-1]
 
         if pkt[0] == 0x22:
-            self.umts_last_uarfcn_dl = pkt[5] | (pkt[6] << 8)
-            self.umts_last_uarfcn_ul = pkt[7] | (pkt[8] << 8)
+            self.umts_last_uarfcn_dl[0] = pkt[5] | (pkt[6] << 8)
+            self.umts_last_uarfcn_ul[0] = pkt[7] | (pkt[8] << 8)
         else:
             # 0x20 - RRC status
             # uint8: channel, 0x00 - DISCONNECTED, 0x01: CELL_DCH, 0x02: CELL_FACH, 0x03: CELL_PCH, 0x04: URA_PCH
@@ -503,16 +501,15 @@ class SamsungParser:
             #if len(pkt) < 0x40:
                 #util.xxd(pkt)
             pass
-
-        return b''
+        return
 
     def process_hspa_data(self, pkt):
-        return b''
+        return
 
     def process_trace_data(self, pkt):
-        return b''
+        return
 
-    def parse_diag_log_e333(self, pkt):
+    def parse_diag_log_e333(self, pkt, radio_id = 0):
         process = {
             # 0x00 - only used during diag setup
             0x01: lambda x: self.process_common_basic(x),
@@ -532,7 +529,7 @@ class SamsungParser:
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             print('Invalid packet structure')
             util.xxd(pkt)
-            return b''
+            return
 
         len_1 = pkt[1] | (pkt[2] << 8)
         len_2 = pkt[4] | (pkt[5] << 8)
@@ -571,9 +568,9 @@ class SamsungParser:
         #                                   binascii.hexlify(pkt[10:-1]).decode('ascii'),
         #                                   binascii.hexlify(pkt[-1:]).decode('ascii')))
 
-        return b''
+        return
 
-    def parse_diag_log_e303(self, pkt):
+    def parse_diag_log_e303(self, pkt, radio_id = 0):
         #print('parse_diag_log_e303')
         #util.xxd(pkt)
         process = {
@@ -595,7 +592,7 @@ class SamsungParser:
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             print('Invalid packet structure')
             util.xxd(pkt)
-            return b''
+            return
 
         len_1 = pkt[1] | (pkt[2] << 8)
         len_2 = pkt[4] | (pkt[5] << 8)
@@ -617,7 +614,7 @@ class SamsungParser:
         else:
             print('Invalid main command ID %02x' % main_cmd)
 
-        return b''
+        return
 
 __entry__ = SamsungParser
 

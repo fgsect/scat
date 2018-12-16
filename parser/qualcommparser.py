@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 # coding: utf8
+
 import util
 import usb
 import struct
@@ -45,19 +46,19 @@ class QualcommParser:
         self.writerSIM1 = writerSIM1
         self.writerSIM2 = writerSIM2
 
-    def writeCP(self, pkt_content, radio_id):
+    def writeCP(self, pkt_content, radio_id, ts=None):
         if radio_id == 0:
-            self.writerSIM1.write_cp(pkt_content)
+            self.writerSIM1.write_cp(pkt_content, ts)
         elif radio_id == 1:
-            self.writerSIM2.write_cp(pkt_content)
+            self.writerSIM2.write_cp(pkt_content, ts)
         else:
             util.warning("Unknown radio_id {}".format(radio_id))
 
-    def writeUP(self, pkt_content, radio_id):
+    def writeUP(self, pkt_content, radio_id, ts=None):
         if radio_id == 0:
-            self.writerSIM1.write_up(pkt_content)
+            self.writerSIM1.write_up(pkt_content, ts)
         elif radio_id == 1:
-            self.writerSIM2.write_up(pkt_content)
+            self.writerSIM2.write_up(pkt_content, ts)
         else:
             util.warning("Unknown radio_id {}".format(radio_id))
 
@@ -147,13 +148,6 @@ class QualcommParser:
 
         if pkt[0] == diagcmd.DIAG_LOG_F:
             self.parse_diag_log(pkt, radio_id)
-
-#            if parse_ts:
-#                ts = struct.unpack('<Q', pkt[10:16] + b'\x00\x00')[0]
-#                ts = util.parse_qxdm_ts(ts)
-#                self.writerSIM1.write_cp(sock_content, ts)
-#            else:
-#                self.writerSIM1.write_cp(sock_content)
         elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F:
             # TODO: handle event packets
             # self.parse_diag_event(pkt)
