@@ -6,6 +6,7 @@ import usb
 import struct
 import calendar, datetime
 import binascii
+import logging
 
 class SamsungParser:
     def __init__(self):
@@ -40,6 +41,8 @@ class SamsungParser:
         self.name = 'samsung'
         self.shortname = 'sec'
 
+        self.logger = logging.getLogger('scat.samsungparser')
+
     def setHandler(self, handler):
         self.handler = handler
 
@@ -53,7 +56,7 @@ class SamsungParser:
         elif radio_id == 1:
             self.writerSIM2.write_cp(pkt_content, ts)
         else:
-            util.warning("Unknown radio_id {}".format(radio_id))
+            self.logger.log(logging.WARNING, "Unknown radio_id {}".format(radio_id))
 
     def writeUP(self, pkt_content, radio_id, ts=None):
         if radio_id == 0:
@@ -61,12 +64,14 @@ class SamsungParser:
         elif radio_id == 1:
             self.writerSIM2.write_up(pkt_content, ts)
         else:
-            util.warning("Unknown radio_id {}".format(radio_id))
+            self.logger.log(logging.WARNING, "Unknown radio_id {}".format(radio_id))
 
     def setParameter(self, params):
         for p in params:
             if p == 'model':
                 self.model = params[p]
+            elif p == 'log_level':
+                self.logger.setLevel(params[p])
 
     def init_diag_e333(self):
         self.handler.write(b'\x7f\x12\x00\x00\x0f\x00\x00\x00\xa0\x00\x90\x00\x00\x00\x00\xdc\x05\xdc\x05\x7e')
@@ -120,7 +125,7 @@ class SamsungParser:
         return self.init_diag_e303()
 
     def init_diag(self):
-        print('-------- initialize diag --------')
+        self.logger.log(logging.INFO, 'Initialize diag')
         if self.model == 'e333':
             self.init_diag_e333()
         elif self.model == 'e303':
@@ -141,7 +146,7 @@ class SamsungParser:
             self.parse_diag_log_e303(pkt, radio_id)
 
     def run_diag(self):
-        print('-------- start diag --------')
+        self.logger.log(logging.INFO, 'Starting diag')
 
         oldbuf = b''
         cur_pos = 0
@@ -156,8 +161,8 @@ class SamsungParser:
                     #print('---- subpacket ----')
                     #assert buf[cur_pos] == 0x7f
                     if buf[cur_pos] != 0x7f:
-                        print('Something wrong')
-                        util.xxd(buf)
+                        self.logger.warning(logging.WARNING, 'Something wrong')
+                        uself.logger.log(logging.DEBUG, util.xxd(buf))
                         break
                     len_1 = buf[cur_pos + 1] | (buf[cur_pos + 2] << 8)
                     len_2 = buf[cur_pos + 3] | (buf[cur_pos + 4] << 8)
@@ -171,7 +176,7 @@ class SamsungParser:
             return
 
     def stop_diag(self):
-        print('-------- stop diag --------')
+        self.logger.log(logging.INFO, 'Stopping diag')
         # DIAG Disable
         self.handler.write(b'\x7f\x0e\x00\x00\x0b\x00\x00\x00\xa0\x00\x02\x00\x00\x00\x00\x7e')
 
@@ -197,7 +202,7 @@ class SamsungParser:
 
         if ip_hdr[0] == 0x00:
             if ip_hdr[5] != len(ip_payload):
-                util.warning('IP length mismatch, expected %04x, got %04x' % (ip_hdr[5], len(ip_payload)))
+                self.logger.log(logging.WARNING, 'IP length mismatch, expected %04x, got %04x' % (ip_hdr[5], len(ip_payload)))
             writeUP(ip_payload, 0)
 
     def process_control_message(self, pkt):
@@ -236,7 +241,7 @@ class SamsungParser:
                     subtype = chan_map_ul[chan_subtype]
                     arfcn = self.umts_last_uarfcn_ul[0]
                 else:
-                    print('Unknown direction %02x' % direction)
+                    self.logger.log(logging.WARNING, 'Unknown direction %02x' % direction)
                     return
 
                 gsmtap_hdr = util.create_gsmtap_header(
@@ -265,7 +270,7 @@ class SamsungParser:
                     lapdm_control = b'\x03'
                     # length field
                     if msg_len > 63:
-                        util.warning('message length longer than 63 (%s)' % msg_len)
+                        self.logger.log(logging.WARNING, 'message length longer than 63 (%s)' % msg_len)
                         return
                     lapdm_len = bytes([(msg_len << 2) | 0x01])
 
@@ -293,10 +298,10 @@ class SamsungParser:
                 #return gsmtap_hdr + msg_content
                 return
             else:
-                print('Unknown channel type %02x for subcommand 0x03' % chan_type)
+                self.logger.log(logging.WARNING, 'Unknown channel type %02x for subcommand 0x03' % chan_type)
                 return
         else:
-            print('Unknown subcommand %02x for command 0x21' % pkt[0])
+            self.logger.log(logging.WARNING, 'Unknown subcommand %02x for command 0x21' % pkt[0])
             #util.xxd(pkt)
             return
 
@@ -330,7 +335,7 @@ class SamsungParser:
                 self.umts_last_uarfcn_dl[0] = cell_info[1]
                 self.umts_last_cell_id[0] = cell_info[2]
             else:
-                print('Unhandled RAT %02x' % cell_info[0])
+                self.logger.log(logging.WARNING, 'Unhandled RAT %02x' % cell_info[0])
         else:
             pass
             #print('process_lte_basic')
@@ -420,8 +425,8 @@ class SamsungParser:
                 else:
                     subtype = rrc_subtype_ul[channel]
             except KeyError:
-                print("Unknown LTE RRC channel type %d" % channel)
-                util.xxd(pkt)
+                self.logger.log(logging.WARNING, "Unknown LTE RRC channel type %d" % channel)
+                self.logger.log(logging.DEBUG, util.xxd(pkt))
 
             if direction == 0:
                 arfcn = self.lte_last_earfcn_dl[0]
@@ -476,7 +481,7 @@ class SamsungParser:
             return
 
     def process_edge_data(self, pkt):
-        print('TODO: command 0x23')
+        self.logger.log(logging.WARNING, 'TODO: command 0x23')
         pkt = pkt[10:-1]
         if pkt[0] == 0x10:
             # DL?
@@ -485,7 +490,7 @@ class SamsungParser:
             # UL?
             pass
         else:
-            print("Unknown packet[0] %02x" % pkt[0])
+            self.logger.log(logging.WARNING, "Unknown packet[0] %02x" % pkt[0])
         return
 
     def process_hspa_basic(self, pkt):
@@ -527,8 +532,8 @@ class SamsungParser:
         }
 
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
-            print('Invalid packet structure')
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'Invalid packet structure')
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return
 
         len_1 = pkt[1] | (pkt[2] << 8)
@@ -552,12 +557,12 @@ class SamsungParser:
             else:
                 #print('TODO: subcommand %02x' % sub_cmd)
                 pass
-            print('TODO: IpcCtCmd')
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'TODO: IpcCtCmd')
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
         elif main_cmd == 0xa2: # IpcHimCmd
-            print('TODO: IpcHimCmd')
+            self.logger.log(logging.WARNING, 'TODO: IpcHimCmd')
         else:
-            print('Invalid main command ID %02x' % main_cmd)
+            self.logger.log(logging.WARNING, 'Invalid main command ID %02x' % main_cmd)
 
         #print("%s %s %s %s %s %s %s %s" % (binascii.hexlify(pkt[0:1]).decode('ascii'),
         #                                   binascii.hexlify(pkt[1:4]).decode('ascii'),
@@ -590,8 +595,8 @@ class SamsungParser:
         }
 
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
-            print('Invalid packet structure')
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'Invalid packet structure')
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return
 
         len_1 = pkt[1] | (pkt[2] << 8)
@@ -608,11 +613,11 @@ class SamsungParser:
                 #print('TODO: subcommand %02x' % sub_cmd)
                 pass
         elif main_cmd == 0xa1: # IpcCtCmd
-            print('TODO: IpcCtCmd')
+            self.logger.log(logging.WARNING, 'TODO: IpcCtCmd')
         elif main_cmd == 0xa2: # IpcHimCmd
-            print('TODO: IpcHimCmd')
+            self.logger.log(logging.WARNING, 'TODO: IpcHimCmd')
         else:
-            print('Invalid main command ID %02x' % main_cmd)
+            self.logger.log(logging.WARNING, 'Invalid main command ID %02x' % main_cmd)
 
         return
 

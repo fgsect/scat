@@ -81,22 +81,33 @@ def parse_qxdm_ts(ts):
         ts_delta = datetime.timedelta(seconds=0)
     return epoch + ts_delta
 
-def xxd(buf):
+def xxd(buf, stdout = False):
+    xxd_str = ''
     i = 0
     while i < len(buf):
         if (i + 16) < len(buf):
-            print((' '.join(('%02x' % x) for x in buf[i:i+16])) + '\t' + (''.join((chr(x) if chr(x) in XXD_SET else '.') for x in buf[i:i+16])))
+            xxd_str += (' '.join(('%02x' % x) for x in buf[i:i+16])) + '\t' + (''.join((chr(x) if chr(x) in XXD_SET else '.') for x in buf[i:i+16]))
         else:
-            print((' '.join(('%02x' % x) for x in buf[i:len(buf)])) + '   ' * (16 - (len(buf) - i)) + '\t' + (''.join((chr(x) if chr(x) in XXD_SET else '.') for x in buf[i:len(buf)])))
+            xxd_str += (' '.join(('%02x' % x) for x in buf[i:len(buf)])) + '   ' * (16 - (len(buf) - i)) + '\t' + (''.join((chr(x) if chr(x) in XXD_SET else '.') for x in buf[i:len(buf)]))
+        xxd_str += '\n'
         i += 16
-    print('-------- end --------')
+    xxd_str += '-------- end --------'
 
-def xxd_oneline(buf):
-    print(' '.join(('%02x' % x) for x in buf))
-    print('-------- end --------')
+    if stdout:
+        print(xxd_str)
+    else:
+        return 'Hexdump: \n' + xxd_str
 
-def warning(*objs):
-    print('Warning: ', *objs, file=sys.stderr)
+def xxd_oneline(buf, stdout = False):
+    xxd_str = ''
+    xxd_str += ' '.join(('%02x' % x) for x in buf)
+    xxd_str += '\n'
+    xxd_str += '-------- end --------'
+
+    if stdout:
+        print(xxd_str)
+    else:
+        return 'Hexdump: \n' + xxd_str
 
 # Definition copied from libosmocore's include/osmocom/core/gsmtap.h
 

@@ -6,6 +6,7 @@ import usb
 import struct
 import calendar, datetime
 import parser.qualcomm_diagcmd as diagcmd
+import logging
 
 class QualcommParser:
     def __init__(self):
@@ -39,6 +40,8 @@ class QualcommParser:
         self.name = 'qualcomm'
         self.shortname = 'qc'
 
+        self.logger = logging.getLogger('scat.qualcommparser')
+
     def setHandler(self, handler):
         self.handler = handler
 
@@ -52,7 +55,7 @@ class QualcommParser:
         elif radio_id == 1:
             self.writerSIM2.write_cp(pkt_content, ts)
         else:
-            util.warning("Unknown radio_id {}".format(radio_id))
+            self.logger.log(logging.WARNING, "Unknown radio_id {}".format(radio_id))
 
     def writeUP(self, pkt_content, radio_id, ts=None):
         if radio_id == 0:
@@ -60,70 +63,73 @@ class QualcommParser:
         elif radio_id == 1:
             self.writerSIM2.write_up(pkt_content, ts)
         else:
-            util.warning("Unknown radio_id {}".format(radio_id))
+            self.logger.log(logging.WARNING, "Unknown radio_id {}".format(radio_id))
 
     def setParameter(self, params):
+        for p in params:
+            if p == 'log_level':
+                self.logger.setLevel(params[p])
         pass
 
-    def _write_then_read_discard(self, buf, hdlc_encoded = False, xxd = False):
+    def _write_then_read_discard(self, buf, hdlc_encoded = False):
         if not hdlc_encoded:
             buf = util.generate_packet(buf)
         self.handler.write(buf)
 
         rbuf = self.handler.read(0x1000)
-        if xxd:
-            rbuf = util.unwrap(rbuf)
-            util.xxd(rbuf)
+        rbuf = util.unwrap(rbuf)
+        self.logger.log(logging.DEBUG, util.xxd(rbuf))
 
     def init_diag(self):
-        print('-------- initialize diag --------')
+        self.logger.log(logging.INFO, 'Initializing diag')
         # Disable static event reporting
+        self.handler.read(0x1000)
         self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00))
 
         # Send empty masks
-        self._write_then_read_discard(diagcmd.log_mask_empty_1x(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_empty_wcdma(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_empty_gsm(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_empty_umts(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_empty_dtv(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_empty_lte(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_empty_tdscdma(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_empty_1x(), False)
+        self._write_then_read_discard(diagcmd.log_mask_empty_wcdma(), False)
+        self._write_then_read_discard(diagcmd.log_mask_empty_gsm(), False)
+        self._write_then_read_discard(diagcmd.log_mask_empty_umts(), False)
+        self._write_then_read_discard(diagcmd.log_mask_empty_dtv(), False)
+        self._write_then_read_discard(diagcmd.log_mask_empty_lte(), False)
+        self._write_then_read_discard(diagcmd.log_mask_empty_tdscdma(), False)
 
         emr = lambda x, y: diagcmd.create_extended_message_config_set_mask(x, y)
-        self._write_then_read_discard(emr(0x0000, 0x0065), False, True)
-        self._write_then_read_discard(emr(0x01f4, 0x01fa), False, True)
-        self._write_then_read_discard(emr(0x03e8, 0x033f), False, True)
-        self._write_then_read_discard(emr(0x07d0, 0x07d8), False, True)
-        self._write_then_read_discard(emr(0x0bb8, 0x0bc6), False, True)
-        self._write_then_read_discard(emr(0x0fa0, 0x0faa), False, True)
-        self._write_then_read_discard(emr(0x1194, 0x11ae), False, True)
-        self._write_then_read_discard(emr(0x11f8, 0x1206), False, True)
-        self._write_then_read_discard(emr(0x1388, 0x13a6), False, True)
-        self._write_then_read_discard(emr(0x157c, 0x158c), False, True)
-        self._write_then_read_discard(emr(0x1770, 0x17c0), False, True)
-        self._write_then_read_discard(emr(0x1964, 0x1979), False, True)
-        self._write_then_read_discard(emr(0x1b58, 0x1b5b), False, True)
-        self._write_then_read_discard(emr(0x1bbc, 0x1bc7), False, True)
-        self._write_then_read_discard(emr(0x1c20, 0x1c21), False, True)
-        self._write_then_read_discard(emr(0x1f40, 0x1f40), False, True)
-        self._write_then_read_discard(emr(0x2134, 0x214c), False, True)
-        self._write_then_read_discard(emr(0x2328, 0x2330), False, True)
-        self._write_then_read_discard(emr(0x251c, 0x2525), False, True)
-        self._write_then_read_discard(emr(0x27d8, 0x27e2), False, True)
-        self._write_then_read_discard(emr(0x280b, 0x280f), False, True)
-        self._write_then_read_discard(emr(0x283c, 0x283c), False, True)
-        self._write_then_read_discard(emr(0x286e, 0x2886), False, True)
+        self._write_then_read_discard(emr(0x0000, 0x0065), False)
+        self._write_then_read_discard(emr(0x01f4, 0x01fa), False)
+        self._write_then_read_discard(emr(0x03e8, 0x033f), False)
+        self._write_then_read_discard(emr(0x07d0, 0x07d8), False)
+        self._write_then_read_discard(emr(0x0bb8, 0x0bc6), False)
+        self._write_then_read_discard(emr(0x0fa0, 0x0faa), False)
+        self._write_then_read_discard(emr(0x1194, 0x11ae), False)
+        self._write_then_read_discard(emr(0x11f8, 0x1206), False)
+        self._write_then_read_discard(emr(0x1388, 0x13a6), False)
+        self._write_then_read_discard(emr(0x157c, 0x158c), False)
+        self._write_then_read_discard(emr(0x1770, 0x17c0), False)
+        self._write_then_read_discard(emr(0x1964, 0x1979), False)
+        self._write_then_read_discard(emr(0x1b58, 0x1b5b), False)
+        self._write_then_read_discard(emr(0x1bbc, 0x1bc7), False)
+        self._write_then_read_discard(emr(0x1c20, 0x1c21), False)
+        self._write_then_read_discard(emr(0x1f40, 0x1f40), False)
+        self._write_then_read_discard(emr(0x2134, 0x214c), False)
+        self._write_then_read_discard(emr(0x2328, 0x2330), False)
+        self._write_then_read_discard(emr(0x251c, 0x2525), False)
+        self._write_then_read_discard(emr(0x27d8, 0x27e2), False)
+        self._write_then_read_discard(emr(0x280b, 0x280f), False)
+        self._write_then_read_discard(emr(0x283c, 0x283c), False)
+        self._write_then_read_discard(emr(0x286e, 0x2886), False)
 
     def prepare_diag(self):
-        print('-------- start diag --------')
+        self.logger.log(logging.INFO, 'Starting diag')
         # Static event reporting Enable
         self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x01))
 
-        self._write_then_read_discard(diagcmd.log_mask_scat_1x(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_scat_wcdma(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_scat_gsm(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_scat_umts(), False, True)
-        self._write_then_read_discard(diagcmd.log_mask_scat_lte(), False, True)
+        self._write_then_read_discard(diagcmd.log_mask_scat_1x(), False)
+        self._write_then_read_discard(diagcmd.log_mask_scat_wcdma(), False)
+        self._write_then_read_discard(diagcmd.log_mask_scat_gsm(), False)
+        self._write_then_read_discard(diagcmd.log_mask_scat_umts(), False)
+        self._write_then_read_discard(diagcmd.log_mask_scat_lte(), False)
 
     def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, radio_id = 0):
         # Should contain DIAG command and CRC16
@@ -142,8 +148,8 @@ class QualcommParser:
             crc = util.dm_crc16(pkt[:-2])
             crc_pkt = (pkt[-1] << 8) | pkt[-2]
             if crc != crc_pkt:
-                util.warning("CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
-                util.xxd(pkt)
+                self.logger.log(logging.WARNING, "CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
+                self.logger.log(logging.DEBUG, util.xxd(pkt))
             pkt = pkt[:-2]
 
         if pkt[0] == diagcmd.DIAG_LOG_F:
@@ -162,11 +168,15 @@ class QualcommParser:
 
     def run_diag(self, writer_qmdl = None):
         oldbuf = b''
+        loop = True
         try:
-            while True:
+            while loop:
                 buf = self.handler.read(0x1000)
                 if len(buf) == 0:
-                    continue
+                    if self.handler.block_until_data:
+                        continue
+                    else:
+                        loop = False
                 buf = oldbuf + buf
                 buf_atom = buf.split(b'\x7e')
 
@@ -187,11 +197,11 @@ class QualcommParser:
 
     def stop_diag(self):
         self.handler.read(0x1000)
-        print('-------- stop diag --------')
+        self.logger.log(logging.INFO, 'Stopping diag')
         # Static event reporting Disable
-        self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00), False, True)
-        self._write_then_read_discard(struct.pack('<LL', diagcmd.DIAG_LOG_CONFIG_F, diagcmd.LOG_CONFIG_DISABLE_OP), False, True)
-        self._write_then_read_discard(b'\x7d\x05\x00\x00\x00\x00\x00\x00', False, True)
+        self._write_then_read_discard(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00), False)
+        self._write_then_read_discard(struct.pack('<LL', diagcmd.DIAG_LOG_CONFIG_F, diagcmd.LOG_CONFIG_DISABLE_OP), False)
+        self._write_then_read_discard(b'\x7d\x05\x00\x00\x00\x00\x00\x00', False)
 
     def parse_dlf(self):
         oldbuf = b''
@@ -222,13 +232,13 @@ class QualcommParser:
 
     def read_dump(self):
         while self.handler.file_available:
-            print("Reading from {}".format(self.handler.fname))
+            self.logger.log(logging.INFO, "Reading from {}".format(self.handler.fname))
             if self.handler.fname.find('.qmdl') > 0:
                 self.run_diag()
             elif self.handler.fname.find('.dlf') > 0:
                 self.parse_dlf()
             else:
-                print('Unknown baseband dump type, assuming QMDL')
+                self.logger.log(logging.INFO, 'Unknown baseband dump type, assuming QMDL')
                 self.run_diag()
             self.handler.open_next_file()
 
@@ -244,7 +254,7 @@ class QualcommParser:
     def parse_gsm_dsds_fcch(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_fcch(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -254,7 +264,7 @@ class QualcommParser:
     def parse_gsm_dsds_sch(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_sch(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -292,7 +302,7 @@ class QualcommParser:
                     print('Radio {}: 2G Serving Cell New: ARFCN {}/BC {}, RxPwr {:.2f}'.format(radio_id, c_arfcn, c_band, c_rxpwr_real))
                 i += 1
         else:
-            print('Unsupported GSM L1 New Burst Metric version {}'.format(pkt[0]))
+            self.logger.log(logging.WARNING, 'Unsupported GSM L1 New Burst Metric version {}'.format(pkt[0]))
 
     def parse_gsm_l1_burst_metric(self, pkt_ts, pkt, radio_id):
         chan = pkt[0]
@@ -323,7 +333,7 @@ class QualcommParser:
     def parse_gsm_dsds_l1_burst_metric(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_burst_metric(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -346,7 +356,7 @@ class QualcommParser:
     def parse_gsm_dsds_l1_surround_cell_ba(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_surround_cell_ba(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -360,7 +370,7 @@ class QualcommParser:
     def parse_gsm_dsds_l1_serv_aux_meas(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_serv_aux_meas(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -380,7 +390,7 @@ class QualcommParser:
     def parse_gsm_dsds_l1_neig_aux_meas(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_l1_neig_aux_meas(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -397,7 +407,7 @@ class QualcommParser:
     def parse_gsm_dsds_cell_info(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_cell_info(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -436,7 +446,7 @@ class QualcommParser:
             lapdm_control = b'\x03'
             # length field
             if msg_len > 63:
-                util.warning('message length longer than 63 ({})'.format(msg_len))
+                self.logger.log(logging.WARNING, 'message length longer than 63 ({})'.format(msg_len))
                 return 
             lapdm_len = bytes([(msg_len << 2) | 0x01])
 
@@ -451,7 +461,7 @@ class QualcommParser:
             lapdm_control = b'\x03'
             # length field
             if msg_len > 63:
-                util.warning('message length longer than 63 ({})'.format(msg_len))
+                self.logger.log(logging.WARNING, 'message length longer than 63 ({})'.format(msg_len))
                 return
             lapdm_len = bytes([(msg_len << 2) | 0x01])
 
@@ -472,12 +482,12 @@ class QualcommParser:
     def parse_gsm_dsds_rr(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_gsm_rr(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
     def parse_gprs_mac(self, pkt_ts, pkt, radio_id):
-        print("Unhandled XDM Header 0x5226: GPRS MAC Packet")
+        self.logger.log(logging.WARNING, "Unhandled XDM Header 0x5226: GPRS MAC Packet")
 
         chan_type_dir = pkt[0]
         msg_type = pkt[1]
@@ -575,8 +585,8 @@ class QualcommParser:
         elif pkt_version == 2:
             self.parse_wcdma_search_cell_reselection_v2(pkt_ts, pkt, radio_id)
         else:
-            print('Unsupported WCDMA search cell reselection version {}'.format(pkt_version))
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'Unsupported WCDMA search cell reselection version {}'.format(pkt_version))
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
 
     def parse_wcdma_cell_id(self, pkt_ts, pkt, radio_id):
         result = struct.unpack('<LLLHHHBBBBBBLL', pkt[0:32])
@@ -717,7 +727,7 @@ class QualcommParser:
                 subtype = sib_type_map[pkt[4]]
                 msg_content = pkt[5:]
             else:
-                print("Unknown WCDMA SIB Class {}".format(pkt[4]))
+                self.logger.log(logging.WARNING, "Unknown WCDMA SIB Class {}".format(pkt[4]))
                 return
         elif channel_type in channel_type_map_new.keys():
             # uint16 uarfcn, uint16 psc, uint8 msg[]
@@ -733,11 +743,11 @@ class QualcommParser:
                 subtype = sib_type_map_new[pkt[8]]
                 msg_content = pkt[9:]
             else:
-                print("Unknown WCDMA new SIB Class {}".format(pkt[8]))
+                self.logger.log(logging.WARNING, "Unknown WCDMA new SIB Class {}".format(pkt[8]))
                 return
         else:
-            print("Unknown WCDMA RRC channel type {}".format(pkt[0]))
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, "Unknown WCDMA RRC channel type {}".format(pkt[0]))
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return
 
         ts_sec = calendar.timegm(pkt_ts.timetuple())
@@ -780,7 +790,7 @@ class QualcommParser:
     def parse_umts_ue_ota_dsds(self, pkt_ts, pkt, radio_id):
         radio_id_pkt = pkt[0]
         if radio_id_pkt < 1 or radio_id_pkt > 2:
-            print('Unexpected radio ID {}'.format(radio_id_pkt))
+            self.logger.log(logging.WARNING, 'Unexpected radio ID {}'.format(radio_id_pkt))
             return
         self.parse_umts_ue_ota(pkt_ts, pkt[1:], radio_id_pkt - 1)
 
@@ -821,7 +831,7 @@ class QualcommParser:
                 s_intra_search_q = (r9_data_interim >> 14) & 0x3f
                 s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
             else:
-                print('Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(rrc_rel))
+                self.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(rrc_rel))
             real_rsrp = -180 + meas_rsrp * 0.0625
             real_rssi = -110 + meas_rssi * 0.0625
             real_rsrq = -30 + meas_rsrq * 0.0625
@@ -863,13 +873,13 @@ class QualcommParser:
                 s_intra_search_q = (r9_data_interim >> 14) & 0x3f
                 s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
             else:
-                print('Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(rrc_rel))
+                self.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(rrc_rel))
             real_rsrp = -180 + meas_rsrp * 0.0625
             real_rssi = -110 + meas_rssi * 0.0625
             real_rsrq = -30 + meas_rsrq * 0.0625
             print('Radio {}: LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}'.format(radio_id, earfcn, pci, real_rsrp, real_rssi))
         else:
-            print('Unknown LTE ML1 Serving Cell Meas packet version {}'.format(pkt[0]))
+            self.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet version {}'.format(pkt[0]))
             return
 
     def parse_lte_ml1_ncell_meas(self, pkt_ts, pkt, radio_id):
@@ -942,7 +952,7 @@ class QualcommParser:
 
                 print('Radio {}: Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}'.format(radio_id, i, n_pci, n_real_rsrp, n_real_rssi))
         else:
-            print('Radio {}: Unknown LTE ML1 Neighbor Meas packet version {}'.format(radio_id, pkt[0]))
+            self.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Neighbor Meas packet version {}'.format(radio_id, pkt[0]))
 
     def parse_lte_ml1_cell_info(self, pkt_ts, pkt, radio_id):
         mib_payload = bytes([0, 0, 0])
@@ -969,7 +979,7 @@ class QualcommParser:
 
             mib_payload = bytes([pkt[31], pkt[30], pkt[29]])
         else:
-            print('Unknown LTE ML1 cell info packet version {}'.format(pkt[0]))
+            self.logger.log(logging.WARNING, 'Unknown LTE ML1 cell info packet version {}'.format(pkt[0]))
 
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
@@ -986,7 +996,7 @@ class QualcommParser:
 
     def parse_lte_mac_rach_trigger(self, pkt_ts, pkt, radio_id):
         # XXX: Wireshark's GSMTAP dissector does not support PRACH preamble
-        print("Unhandled XDM Header 0xB061: LTE MAC RACH Trigger")
+        self.logger.log(logging.WARNING, "Unhandled XDM Header 0xB061: LTE MAC RACH Trigger")
         return
 
     def parse_lte_mac_rach_response(self, pkt_ts, pkt, radio_id):
@@ -997,22 +1007,22 @@ class QualcommParser:
         earfcn = self.lte_last_earfcn_dl[radio_id] | (1 << 14)
 
         if msg_content[0] != 0x01:
-            print('Unsupported LTE MAC RACH response packet version %02x' % msg_content[0])
+            self.logger.log(logging.WARNING, 'Unsupported LTE MAC RACH response packet version %02x' % msg_content[0])
             return
 
         if msg_content[1] != 0x01:
-            print('More than 1 subpacket not supported: %02x' % msg_content[1])
+            self.logger.log(logging.WARNING, 'More than 1 subpacket not supported: %02x' % msg_content[1])
             return 
         
         if msg_content[4] != 0x06:
-            print('Expected MAC RACH attempt subpacket, got %02x' % msg_content[4])
+            self.logger.log(logging.WARNING, 'Expected MAC RACH attempt subpacket, got %02x' % msg_content[4])
             return 
 
         if msg_content[5] == 0x02:
             if msg_content[9] == 0x01: # RACH Failure, 0x00 == Success
                 return 
             if msg_content[11] != 0x07: # not all message present
-                print('Not enough message to generate RAR')
+                self.logger.log(logging.WARNING, 'Not enough message to generate RAR')
                 return
 
             rapid = msg_content[12]
@@ -1048,8 +1058,8 @@ class QualcommParser:
 
         else:
             # TODO: RACH response v3, v4
-            print('Unsupported RACH response version %02x' % msg_content[5])
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'Unsupported RACH response version %02x' % msg_content[5])
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
 
         ts_sec = calendar.timegm(pkt_ts.timetuple())
@@ -1089,7 +1099,7 @@ class QualcommParser:
                 subpkt_ver = pkt[pos + 1]
                 subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
                 if subpkt_id != 0x07:
-                    print('Unexpected DL MAC Subpacket ID %s' % subpkt_id)
+                    self.logger.log(logging.WARNING, 'Unexpected DL MAC Subpacket ID %s' % subpkt_id)
                     pos += subpkt_size
                     continue
 
@@ -1212,10 +1222,10 @@ class QualcommParser:
                         pos_sample += (14 + header_len)
 
                 else:
-                    print('Unexpected DL MAC Subpacket version %s' % subpkt_ver)
+                    self.logger.log(logging.WARNING, 'Unexpected DL MAC Subpacket version %s' % subpkt_ver)
                 pos += subpkt_size
         else:
-            print('Unknown LTE MAC DL packet version %s' % pkt[0])
+            self.logger.log(logging.WARNING, 'Unknown LTE MAC DL packet version %s' % pkt[0])
 
     def parse_lte_mac_ul_block(self, pkt_ts, pkt, radio_id):
         earfcn = self.lte_last_earfcn_dl[radio_id] | (1 << 14)
@@ -1253,7 +1263,7 @@ class QualcommParser:
                 subpkt_ver = pkt[pos + 1]
                 subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
                 if subpkt_id != 0x08:
-                    print('Unexpected LTE MAC UL Subpacket ID %s' % subpkt_id)
+                    self.logger.log(logging.WARNING, 'Unexpected LTE MAC UL Subpacket ID %s' % subpkt_id)
                     pos += subpkt_size
                     continue
 
@@ -1351,11 +1361,11 @@ class QualcommParser:
                         self.writeCP(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, radio_id)
                         pos_sample += (14 + header_len)
                 else:
-                    print('Unexpected LTE MAC UL Subpacket version %s' % subpkt_ver)
+                    self.logger.log(logging.WARNING, 'Unexpected LTE MAC UL Subpacket version %s' % subpkt_ver)
 
                 pos += subpkt_size
         else:
-            print('Unknown LTE MAC UL packet version %s' % pkt[0])
+            self.logger.log(logging.WARNING, 'Unknown LTE MAC UL packet version %s' % pkt[0])
 
     # 0x4021: 01|00 000|0 00|10 0001 (valid, bearer id=0, mode=AM, sn=5b, cidx = 33)
     # 0x4222: 01|00 001|0 00|10 0010 (valid, bearer id=1, mode=AM, sn=5b, cidx = 34)
@@ -1388,7 +1398,7 @@ class QualcommParser:
                 subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
 
                 if subpkt_id != 0xC6:
-                    print('Unexpected PDCP DL SRB Subpacket ID %s' % subpkt_id)
+                    self.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket ID %s' % subpkt_id)
                     pos += subpkt_size
                     continue
 
@@ -1415,11 +1425,11 @@ class QualcommParser:
                         pos_sample += (20 + pdu_hdr[2])
 
                 else:
-                    print('Unexpected PDCP DL SRB Subpacket version %s' % subpkt_ver)
+                    self.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket version %s' % subpkt_ver)
                     pos += subpkt_size
                     continue
         else:
-            print('Unknown PDCP DL SRB packet version %s' % pkt[16])
+            self.logger.log(logging.WARNING, 'Unknown PDCP DL SRB packet version %s' % pkt[16])
 
     def parse_lte_pdcp_ul_srb_int(self, pkt_ts, pkt, radio_id):
         earfcn = self.lte_last_earfcn_dl[radio_id] | (1 << 14)
@@ -1441,7 +1451,7 @@ class QualcommParser:
                 subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
 
                 if subpkt_id != 0xC7:
-                    print('Unexpected PDCP DL SRB Subpacket ID %s' % subpkt_id)
+                    self.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket ID %s' % subpkt_id)
                     pos += subpkt_size
                     continue
 
@@ -1468,11 +1478,11 @@ class QualcommParser:
                         pos_sample += (16 + pdu_hdr[2])
 
                 else:
-                    print('Unexpected PDCP UL SRB Subpacket version %s' % subpkt_ver)
+                    self.logger.log(logging.WARNING, 'Unexpected PDCP UL SRB Subpacket version %s' % subpkt_ver)
                     pos += subpkt_size
                     continue
         else:
-            print('Unknown PDCP UL SRB packet version %s' % pkt[16])
+            self.logger.log(logging.WARNING, 'Unknown PDCP UL SRB packet version %s' % pkt[16])
 
     def parse_lte_mib(self, pkt_ts, pkt, radio_id):
         msg_content = pkt
@@ -1508,8 +1518,8 @@ class QualcommParser:
             self.lte_last_bw_ul[radio_id] = msg_content[5]
         else:
             # TODO: LTE RRC MIB packet version 17 (0x11)
-            print('Unknown LTE RRC MIB packet version %s' % pkt[0])
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'Unknown LTE RRC MIB packet version %s' % pkt[0])
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
 
         sfn4 = int(self.lte_last_sfn[radio_id] / 4)
@@ -1555,7 +1565,7 @@ class QualcommParser:
             self.lte_last_bw_dl[radio_id] = pkt_content[3]
             self.lte_last_bw_ul[radio_id] = pkt_content[4]
         else:
-            print('Unknown LTE RRC cell info packet version %s' % pkt[0])
+            self.logger.log(logging.WARNING, 'Unknown LTE RRC cell info packet version %s' % pkt[0])
 
     def parse_lte_rrc(self, pkt_ts, pkt, radio_id):
         msg_hdr = b''
@@ -1631,8 +1641,8 @@ class QualcommParser:
             # XXX: needs proper field for physical cell id
             sfn = sfn | (p_cell_id << 16)
         else:
-            print('Unhandled LTE RRC packet version %s' % pkt[0])
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, 'Unhandled LTE RRC packet version %s' % pkt[0])
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
 
         if pkt[0] < 9:
@@ -1726,8 +1736,8 @@ class QualcommParser:
         ts_usec = pkt_ts.microsecond
 
         if not (subtype in rrc_subtype_map.keys()):
-            print("Unknown RRC subtype 0x%02x for RRC packet version 0x%02x" % (subtype, pkt[0]))
-            util.xxd(pkt)
+            self.logger.log(logging.WARNING, "Unknown RRC subtype 0x%02x for RRC packet version 0x%02x" % (subtype, pkt[0]))
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
         
         gsmtap_hdr = util.create_gsmtap_header(
@@ -1790,7 +1800,7 @@ class QualcommParser:
                 pending_pkt = self.pending_pkts.get(pkt_id)
                 for x in range(segn):
                     if not (x in pending_pkt.keys()):
-                        print("Warning: segment %d for data packet (%d, %s, %d) missing" % (x, ifname_id, is_tx, seqn))
+                        self.logger.log(logging.WARNING, "Warning: segment %d for data packet (%d, %s, %d) missing" % (x, ifname_id, is_tx, seqn))
                         continue
                     pkt_buf += pending_pkt[x]
                 del self.pending_pkts[pkt_id]
@@ -1825,7 +1835,7 @@ class QualcommParser:
                 # 0x01: Timestamp
                 pos += 9
             else:
-                print('Not handling unknown type 0x%02x' % msg_content[pos])
+                self.logger.log(logging.WARNING, 'Not handling unknown type 0x%02x' % msg_content[pos])
                 break
 
         gsmtap_hdr = util.create_gsmtap_header(
@@ -1858,7 +1868,7 @@ class QualcommParser:
         pkt_body = pkt[16:]
 
         if len(pkt_body) != (xdm_hdr[0] - 12):
-            util.warning("Packet length mismatch: expected {}, got {}".format(xdm_hdr[0], len(pkt_body)))
+            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(xdm_hdr[0], len(pkt_body)))
 
         no_process = {
             0xB061: 'LTE MAC RACH Trigger',
@@ -1962,7 +1972,7 @@ class QualcommParser:
         xdm_hdr = struct.unpack('<BBHL', xdm_hdr) # cmd_id, unknown, dummy, subscription_id
         if xdm_hdr[3] < 1 or xdm_hdr[3] > 2:
             print("Multi radio packet, unknown_1 = {}, subscription_id = {}".format(xdm_hdr[1], xdm_hdr[3]))
-            util.xxd(pkt)
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
         pkt_body = pkt[8:]
 
         self.parse_diag(pkt_body, hdlc_encoded=False, check_crc=False, 

@@ -13,21 +13,18 @@ import struct
 import util
 import datetime
 import gzip, bz2
-
-GSMTAP_IP = "127.0.0.1"
-GSMTAP_PORT = 4729
-IP_OVER_UDP_PORT = 47290
+import faulthandler
+import logging
 
 current_parser = None
-
-ip_id = 10
-
-eth_hdr = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00'
+logger = logging.getLogger('scat')
+faulthandler.register(signal.SIGUSR1)
 
 # Device Handler
 class SerialHandler:
     def __init__(self, port_name):
         self.port = serial.Serial(port_name, baudrate=115200, timeout=0.1, rtscts=True, dsrdtr=True)
+        self.block_until_data = True
 
     def __enter__(self):
         return self
@@ -55,6 +52,7 @@ class USBHandler:
         self.r_handle = usb.util.find_descriptor(self.intf, custom_match =
                 lambda e: usb.util.endpoint_direction(e.bEndpointAddress) ==
                 usb.util.ENDPOINT_IN)
+        self.block_until_data = True
 
     def __enter__(self):
         return self
@@ -92,6 +90,7 @@ class FileHandler:
         self.fname = ''
         self.file_available = True
         self.f = None
+        self.block_until_data = False
 
         self.open_next_file()
 
@@ -151,6 +150,7 @@ class PcapWriter:
         self.port_up = port_up
         self.ip_id = 0
         self.pcap_file = open(fname, 'wb')
+        self.eth_hdr = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00'
         pcap_global_hdr = struct.pack('<LHHLLLL',
                 0xa1b2c3d4,
                 2,
@@ -193,7 +193,7 @@ class PcapWriter:
                 0xffff,                # checksum
                 )
 
-        self.pcap_file.write(pcap_hdr + eth_hdr + ip_hdr + udp_hdr + sock_content)
+        self.pcap_file.write(pcap_hdr + self.eth_hdr + ip_hdr + udp_hdr + sock_content)
         self.ip_id += 1
         if self.ip_id > 65535:
             self.ip_id = 0
@@ -263,6 +263,7 @@ if __name__ == '__main__':
     parsers_desc = ', '.join(parsers.keys())
 
     parser = argparse.ArgumentParser(description='Reads diagnostic messages from smartphone baseband.')
+    parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
     parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: %s' % parsers_desc, required=True)
 
     input_group = parser.add_mutually_exclusive_group(required=True)
@@ -370,11 +371,23 @@ if __name__ == '__main__':
     current_parser.setHandler(handler)
     current_parser.setWriter(writer_cpup_sim1, writer_cpup_sim2)
 
+    if args.debug:
+        logger.setLevel(logging.DEBUG)
+        current_parser.setParameter({'log_level': logging.DEBUG})
+    else:
+        logger.setLevel(logging.INFO)
+        current_parser.setParameter({'log_level': logging.INFO})
+    ch = logging.StreamHandler(stream = sys.stdout)
+    f = logging.Formatter('%(asctime)s %(name)s (%(funcName)s) %(levelname)s: %(message)s')
+    ch.setFormatter(f)
+    logger.addHandler(ch)
+
     if args.type == 'sec':
         current_parser.setParameter({'model': args.model})
 
     # Run process
     if args.serial or args.usb:
+        current_parser.stop_diag()
         current_parser.init_diag()
         current_parser.prepare_diag()
 
