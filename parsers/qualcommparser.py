@@ -157,6 +157,8 @@ class QualcommParser:
             # TODO: handle event packets
             # self.parse_diag_event(pkt)
             pass
+        elif pkt[0] == diagcmd.DIAG_EXT_MSG_F:
+            self.parse_diag_ext_msg(pkt)
         elif pkt[0] == 0x98:
             # Found on some newer dual SIMs
             self.parse_diag_multisim(pkt)
@@ -560,6 +562,22 @@ class QualcommParser:
             n_cell_rank_ecio = cell_pkt_vals[5]
             print('Radio {}: Cell {}: UARFCN {}, PSC {:3d}, RSCP {}, Ec/Io {:.2f}'.format(radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
 
+    def parse_wcdma_search_cell_reselection_v1(self, pkt_ts, pkt, radio_id):
+        num_wcdma_cells = pkt[0] & 0x3f # lower 6b
+        num_gsm_cells = pkt[1] # TODO: check if num_gsm_cells > 0
+
+        print('Radio {}: 3G Cell: # cells {}'.format(radio_id, num_wcdma_cells))
+        for i in range(num_wcdma_cells):
+            cell_pkt = pkt[2 + 11 * i:2 + 11 * (i + 1)]
+            cell_pkt_vals = struct.unpack('<HHbhbh', cell_pkt[:10])
+            n_cell_uarfcn = cell_pkt_vals[0]
+            n_cell_psc = cell_pkt_vals[1]
+            n_cell_rscp = cell_pkt_vals[2]
+            n_cell_rank_rscp = cell_pkt_vals[3]
+            n_cell_ecio = cell_pkt_vals[4]
+            n_cell_rank_ecio = cell_pkt_vals[5]
+            print('Radio {}: Cell {}: UARFCN {}, PSC {:3d}, RSCP {}, Ec/Io {:.2f}'.format(radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
+
     def parse_wcdma_search_cell_reselection_v2(self, pkt_ts, pkt, radio_id):
         num_wcdma_cells = pkt[0] & 0x3f # lower 6b
         num_gsm_cells = pkt[1] # TODO: check if num_gsm_cells > 0
@@ -581,6 +599,8 @@ class QualcommParser:
 
         if pkt_version == 0:
             self.parse_wcdma_search_cell_reselection_v0(pkt_ts, pkt, radio_id)
+        elif pkt_version == 1:
+            self.parse_wcdma_search_cell_reselection_v1(pkt_ts, pkt, radio_id)
         elif pkt_version == 2:
             self.parse_wcdma_search_cell_reselection_v2(pkt_ts, pkt, radio_id)
         else:
@@ -2020,6 +2040,40 @@ class QualcommParser:
             #print("Unhandled XDM Header 0x%04x" % xdm_hdr[1])
             #util.xxd(pkt)
             return
+
+    def parse_diag_ext_msg(self, pkt):
+        # 79 | 00 | 00 | 00 | 00 00 1c fc 0f 16 e4 00 | e6 04 | 94 13 | 02 00 00 00 
+        # cmd_code, ts_type, num_args, drop_cnt, TS, Line number, Message subsystem ID, ?
+        # Message: two null-terminated strings, one for log and another for filename
+        xdm_hdr = pkt[0:20]
+        xdm_hdr = struct.unpack('<BBBBQHHL', xdm_hdr)
+        pkt_ts = util.parse_qxdm_ts(xdm_hdr[4])
+        pkt_body = pkt[20 + 4 * xdm_hdr[2]:]
+        pkt_body = pkt_body.rstrip(b'\0').rsplit(b'\0', maxsplit=1)
+
+        if len(pkt_body) == 2:
+            src_fname = pkt_body[1]
+            log_content = pkt_body[0]
+        else:
+            src_fname = b''
+            log_content = pkt_body[0]
+
+        osmocore_log_hdr = struct.pack('!LL16sLB3x16s32sL',
+            int(pkt_ts.timestamp()), # uint32_t sec
+            pkt_ts.microsecond, # uint32_t usec
+            b'', # uint8_t proc_name[16]
+            0, # uint32_t pid
+            0, # uint8_t level
+            str(xdm_hdr[6]).encode('utf-8'), # uint8_t subsys[16]
+            src_fname, # uint8_t filename[32]
+            xdm_hdr[5] # uint32_t line_nr
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        self.writeCP(gsmtap_hdr + osmocore_log_hdr + log_content, 0)
 
     def parse_diag_multisim(self, pkt):
         # 98 01 00 00 | 01 00 00 00 -> Subscription ID=1
