@@ -69,7 +69,6 @@ class QualcommParser:
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
-        pass
 
     def _write_then_read_discard(self, buf, hdlc_encoded = False):
         if not hdlc_encoded:
@@ -1710,7 +1709,7 @@ class QualcommParser:
                 48: util.gsmtap_lte_rrc_types.DL_CCCH_NB,
                 49: util.gsmtap_lte_rrc_types.DL_DCCH_NB,
                 50: util.gsmtap_lte_rrc_types.UL_CCCH_NB,
-                51: util.gsmtap_lte_rrc_types.UL_DCCH_NB
+                52: util.gsmtap_lte_rrc_types.UL_DCCH_NB
             }
         elif pkt[0] == 20:
             # RRC Packet v20
