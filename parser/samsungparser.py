@@ -159,14 +159,16 @@ class SamsungParser:
                 cur_pos = 0
                 while cur_pos < len(buf):
                     #print('---- subpacket ----')
+                    #print(buf)
                     #assert buf[cur_pos] == 0x7f
                     if buf[cur_pos] != 0x7f:
                         self.logger.warning(logging.WARNING, 'Something wrong')
-                        uself.logger.log(logging.DEBUG, util.xxd(buf))
+                        self.logger.log(logging.DEBUG, util.xxd(buf))
                         break
                     len_1 = buf[cur_pos + 1] | (buf[cur_pos + 2] << 8)
                     len_2 = buf[cur_pos + 3] | (buf[cur_pos + 4] << 8)
                     #util.xxd(buf[cur_pos:cur_pos+len_1 + 2])
+                    #util.xxd(buf[cur_pos: cur_pos + len_1 + 2], True)
                     self.parse_diag(buf[cur_pos:cur_pos + len_1 + 2])
                     cur_pos += (len_1 + 2)
                     #print('%s/%s' % (cur_pos, len(buf)))
@@ -203,7 +205,7 @@ class SamsungParser:
         if ip_hdr[0] == 0x00:
             if ip_hdr[5] != len(ip_payload):
                 self.logger.log(logging.WARNING, 'IP length mismatch, expected %04x, got %04x' % (ip_hdr[5], len(ip_payload)))
-            writeUP(ip_payload, 0)
+            self.writeUP(ip_payload, 0)
 
     def process_control_message(self, pkt):
         pass
@@ -302,7 +304,7 @@ class SamsungParser:
                 return
         else:
             self.logger.log(logging.WARNING, 'Unknown subcommand %02x for command 0x21' % pkt[0])
-            #util.xxd(pkt)
+            #util.xxd(pkt, True)
             return
 
     def process_common_basic(self, pkt):
@@ -533,6 +535,8 @@ class SamsungParser:
 
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
+            print("aaaaa\n")
+            #util.xxd(pkt, True)
             self.logger.log(logging.DEBUG, util.xxd(pkt))
             return
 

@@ -797,6 +797,7 @@ class QualcommParser:
 
     def parse_lte_ml1_scell_meas(self, pkt_ts, pkt, radio_id):
         # Version 1b
+        print(pkt)
         if pkt[0] == 5: # Version 5
             # EARFCN -> 4 bytes
             # PCI, Serv Layer Priority -> 4 bytes
@@ -1050,6 +1051,30 @@ class QualcommParser:
             # UEID 2b
             # SysFN 2b, SubFN 2b
             # Reserved 1b
+            mac_header = bytes([0x01, 0x01, 0x02, 0x00, 0x02, 0x00, 0x02, 0x03,
+                                0xff, 0x00, 0x08, 0x01])
+
+            self.lte_last_tcrnti[radio_id] = tc_rnti
+        elif msg_content[5] == 0x04:
+            if msg_content[9] == 0x01:
+                return
+            if msg_content[11] != 0x07:
+                self.logger.log(logging.WARNING, 'Not enough message to generate RAR')
+                return
+            
+            rapid = msg_content[12]
+            tc_rnti = msg_content[19] | (msg_content[20] << 8)
+            ta = msg_content[21] | (msg_content[22] << 8)
+            grant = ((msg_content[24] & 0xf) << 16) | (msg_content[25] << 8) | msg_content[26]
+
+            mac_body = bytes([(1 << 6) | (rapid & 0x3f),
+                              (ta & 0x07f0) >> 4,
+                              ((ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
+                              (grant & 0x00ff00) >> 8,
+                              (grant & 0x0000ff),
+                              (tc_rnti & 0xff00) >> 8,
+                              tc_rnti & 0x00ff])
+
             mac_header = bytes([0x01, 0x01, 0x02, 0x00, 0x02, 0x00, 0x02, 0x03,
                                 0xff, 0x00, 0x08, 0x01])
 
@@ -1515,32 +1540,63 @@ class QualcommParser:
             self.lte_last_tx_ant[radio_id] = msg_content[4]
             self.lte_last_bw_dl[radio_id] = msg_content[5]
             self.lte_last_bw_ul[radio_id] = msg_content[5]
-        else:
-            # TODO: LTE RRC MIB packet version 17 (0x11)
-            self.logger.log(logging.WARNING, 'Unknown LTE RRC MIB packet version %s' % pkt[0])
-            self.logger.log(logging.DEBUG, util.xxd(pkt))
-            return 
+        elif pkt[0] == 17:
+            if len(msg_content) != 18:  #Version 17 : MIB-NB (only 1 PRB)
+                return
+            # 11 | 0b 00 | fa 09 00 00 | b9 03 | 0e 00 | 02 02 | 00 02 02 d0 02 
+            # Version, Physical CID, EARFCN, SFN,
+            # SFN_MSB 4b, HSFN_LSB2 2b, SIB1_SCH_INFO 4b, SYS_INFO_VALUE_TAG 5b , ACCESS_BARRING 1b, OP_TYPE 2b, OP_INFO 5b, Spare 9b Tx Ant, 
+            msg_content = struct.unpack('<BHLHBBBBLB', msg_content)
+            #  
+            self.lte_last_cell_id[radio_id] = msg_content[1]
+            self.lte_last_earfcn_dl[radio_id] = msg_content[2]
+            self.lte_last_earfcn_ul[radio_id] = msg_content[2] + 18000
+            self.lte_last_sfn[radio_id] = msg_content[3]
+            self.lte_last_tx_ant[radio_id] = msg_content[9]
+            #self.lte_last_bw_dl[radio_id] = msg_content[5]
+            #self.lte_last_bw_ul[radio_id] = msg_content[5]
 
-        sfn4 = int(self.lte_last_sfn[radio_id] / 4)
-        # BCCH BCH payload: DL bandwidth 3b, PHICH config (duration 1b, resource 2b), SFN 8b, Spare 10b (all zero)
-        if prb_to_bitval.get(self.lte_last_bw_dl[radio_id]) != None:
-            mib_payload[0] = (prb_to_bitval.get(self.lte_last_bw_dl[radio_id]) << 5) | (2 << 2) | ((sfn4 & 0b11000000) >> 6)
-            mib_payload[1] = (sfn4 & 0b111111) << 2
+            mib_payload[0] = msg_content[5]
+            mib_payload[1] = msg_content[4]
+            mib_payload[2] = msg_content[7]
+            mib_payload.append(msg_content[6])
 
-        mib_payload = bytes(mib_payload)
+            ts_sec = calendar.timegm(pkt_ts.timetuple())
+            ts_usec = pkt_ts.microsecond
+            
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtap_type.LTE_RRC,
+                arfcn = self.lte_last_earfcn_dl[radio_id],
+                sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH_NB,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+            
+            mib_payload = bytes(mib_payload)
+            self.writeCP(gsmtap_hdr + mib_payload, radio_id)
 
-        ts_sec = calendar.timegm(pkt_ts.timetuple())
-        ts_usec = pkt_ts.microsecond
+
+        if pkt[0] == 1 or pkt[0] == 2:
+            sfn4 = int(self.lte_last_sfn[radio_id] / 4)
+            # BCCH BCH payload: DL bandwidth 3b, PHICH config (duration 1b, resource 2b), SFN 8b, Spare 10b (all zero)
+            if prb_to_bitval.get(self.lte_last_bw_dl[radio_id]) != None:
+                mib_payload[0] = (prb_to_bitval.get(self.lte_last_bw_dl[radio_id]) << 5) | (2 << 2) | ((sfn4 & 0b11000000) >> 6)
+                mib_payload[1] = (sfn4 & 0b111111) << 2
+
+            mib_payload = bytes(mib_payload)
+
+            ts_sec = calendar.timegm(pkt_ts.timetuple())
+            ts_usec = pkt_ts.microsecond
         
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
-            payload_type = util.gsmtap_type.LTE_RRC,
-            arfcn = self.lte_last_earfcn_dl[radio_id],
-            sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtap_type.LTE_RRC,
+                arfcn = self.lte_last_earfcn_dl[radio_id],
+                sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
 
-        self.writeCP(gsmtap_hdr + mib_payload, radio_id)
+            self.writeCP(gsmtap_hdr + mib_payload, radio_id)
 
     def parse_lte_rrc_cell_info(self, pkt_ts, pkt, radio_id):
         if pkt[0] == 2:
@@ -1553,9 +1609,10 @@ class QualcommParser:
             self.lte_last_earfcn_ul[radio_id] = pkt_content[2]
             self.lte_last_bw_dl[radio_id] = pkt_content[3]
             self.lte_last_bw_ul[radio_id] = pkt_content[4]
-        elif pkt[16] == 3:
+        elif pkt[16] == 3 or pkt[0] == 3:
             # Version, Physical CID, DL EARFCN, UL EARFCN, DL BW, UL BW, Cell ID, TAC, Band, MCC, MNC Digit/MNC, Allowed Access
             # 03 | 4D 00 | 21 07 00 00 | 71 4D 00 00 | 4B | 4B | 33 C8 B0 09 | 15 9B | 03 00 00 00 | CC 01 | 02 0B 00 00
+            # 03 | 0b 00 | fa 09 00 00 | 4A 50 00 00 | 00 | 00 | 0b 06 92 00 | 0b 90 | 05 00 00 00 | c2 01 | 02 06 00 00
             pkt_content = struct.unpack('<HLLBB', pkt[1:13])
 
             self.lte_last_cell_id[radio_id] = pkt_content[0]
@@ -1582,8 +1639,12 @@ class QualcommParser:
             msg_content = pkt[19:] # Rest of packet
             if len(msg_hdr) != 19:
                 return 
-
+            #print(msg_hdr)
+            #print("---------------------")
+            #print(msg_content)
             msg_hdr = struct.unpack('<BHBHLHBLH', msg_hdr) # Version, RRC Release, RBID, Physical CID, EARFCN, SysFN/SubFN, PDUN, Len0, Len1
+            #print("msg_hdr = ")
+            #print(msg_hdr)
             p_cell_id = msg_hdr[3]
             earfcn = msg_hdr[4]
             self.lte_last_earfcn_dl[radio_id] = earfcn
@@ -1738,7 +1799,7 @@ class QualcommParser:
             self.logger.log(logging.WARNING, "Unknown RRC subtype 0x%02x for RRC packet version 0x%02x" % (subtype, pkt[0]))
             self.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
-        
+
         gsmtap_hdr = util.create_gsmtap_header(
             version = 3,
             payload_type = util.gsmtap_type.LTE_RRC,
@@ -1951,6 +2012,7 @@ class QualcommParser:
             0x11EB: lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
         }
 
+        print(hex(xdm_hdr[1]))
         if xdm_hdr[1] in process.keys():
             process[xdm_hdr[1]](pkt_ts, pkt_body, radio_id)
         elif xdm_hdr[1] in no_process.keys():
