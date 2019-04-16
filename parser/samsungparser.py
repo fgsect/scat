@@ -535,7 +535,6 @@ class SamsungParser:
 
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
-            print("aaaaa\n")
             #util.xxd(pkt, True)
             self.logger.log(logging.DEBUG, util.xxd(pkt))
             return

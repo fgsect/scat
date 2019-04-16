@@ -797,7 +797,6 @@ class QualcommParser:
 
     def parse_lte_ml1_scell_meas(self, pkt_ts, pkt, radio_id):
         # Version 1b
-        print(pkt)
         if pkt[0] == 5: # Version 5
             # EARFCN -> 4 bytes
             # PCI, Serv Layer Priority -> 4 bytes
@@ -2012,7 +2011,6 @@ class QualcommParser:
             0x11EB: lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
         }
 
-        print(hex(xdm_hdr[1]))
         if xdm_hdr[1] in process.keys():
             process[xdm_hdr[1]](pkt_ts, pkt_body, radio_id)
         elif xdm_hdr[1] in no_process.keys():
