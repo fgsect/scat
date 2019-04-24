@@ -49,7 +49,7 @@ class QualcommParser:
         self.writerSIM1 = writerSIM1
         self.writerSIM2 = writerSIM2
 
-    def writeCP(self, pkt_content, radio_id, ts=None):
+    def writeCP(self, pkt_content, radio_id, ts=datetime.datetime.now()):
         if radio_id == 0:
             self.writerSIM1.write_cp(pkt_content, ts)
         elif radio_id == 1:
@@ -57,7 +57,7 @@ class QualcommParser:
         else:
             self.logger.log(logging.WARNING, "Unknown radio_id {}".format(radio_id))
 
-    def writeUP(self, pkt_content, radio_id, ts=None):
+    def writeUP(self, pkt_content, radio_id, ts=datetime.datetime.now()):
         if radio_id == 0:
             self.writerSIM1.write_up(pkt_content, ts)
         elif radio_id == 1:
