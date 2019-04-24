@@ -5,7 +5,7 @@ import util
 import usb
 import struct
 import calendar, datetime
-import parser.qualcomm_diagcmd as diagcmd
+import parsers.qualcomm_diagcmd as diagcmd
 import logging
 
 class QualcommParser:

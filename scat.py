@@ -251,15 +251,15 @@ if __name__ == '__main__':
     pysearchre = re.compile('.py$', re.IGNORECASE)
     pluginfiles = filter(pysearchre.search,
                            os.listdir(os.path.join(os.path.dirname(__file__),
-                                                 'parser')))
+                                                 'parsers')))
     form_module = lambda fp: '.' + os.path.splitext(fp)[0]
     parsers_dir = map(form_module, pluginfiles)
     # import parent module / namespace
-    importlib.import_module('parser')
+    importlib.import_module('parsers')
     parsers = {}
     for p in parsers_dir:
         if not p.startswith('.__') and p.endswith('parser'):
-            m = importlib.import_module(p, package="parser")
+            m = importlib.import_module(p, package="parsers")
             parsers[m.shortname()] = m.__entry__
 
     parsers_desc = ', '.join(parsers.keys())
