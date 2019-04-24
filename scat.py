@@ -18,7 +18,9 @@ import logging
 
 current_parser = None
 logger = logging.getLogger('scat')
-faulthandler.register(signal.SIGUSR1)
+
+if os.name != 'nt':
+    faulthandler.register(signal.SIGUSR1)
 
 # Device Handler
 class SerialHandler:
