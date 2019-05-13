@@ -181,7 +181,7 @@ class QualcommParser:
                 buf = oldbuf + buf
                 buf_atom = buf.split(b'\x7e')
 
-                if buf[-1] != 0x7e:
+                if len(buf) < 1 or buf[-1] != 0x7e:
                     oldbuf = buf_atom.pop()
                 else:
                     oldbuf = b''
