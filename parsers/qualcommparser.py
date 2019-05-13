@@ -976,7 +976,7 @@ class QualcommParser:
     def parse_lte_ml1_cell_info(self, pkt_ts, pkt, radio_id):
         mib_payload = bytes([0, 0, 0])
 
-        if pkt[0] == 1:
+        if pkt[0] == 1: # Version 1
             # Version, DL BW, SFN, EARFCN, (Cell ID, PBCH, PHICH Duration, PHICH Resource), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
             # 01 | 64 | A4 01 | 14 05 | 24 42 | 41 05 00 00 | D3 2D 00 00 | 80 53 3D 00 00 00 00 00 | 00 00 A4 A9 | 1D FF | 01 00 
             pkt_content = struct.unpack('<BHH', pkt[1:6])
@@ -986,8 +986,7 @@ class QualcommParser:
             self.lte_last_earfcn_dl[radio_id] = pkt_content[2]
 
             mib_payload = bytes([pkt[27], pkt[26], pkt[25]])
-        elif pkt[16] == 2:
-            # XXX: not complete
+        elif pkt[0] == 2: # Version 2
             # Version, DL BW, SFN, EARFCN, (Cell ID 9, PBCH 1, PHICH Duration 3, PHICH Resource 3), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
             # 02 | 4B | F8 00 | 21 07 00 00 | 03 23 00 00 | 00 00 00 00 | 0F 05 00 00 | 2A BD 0B 17 00 00 00 00 | 00 00 F8 84 | 00 00 | 01 00 
             pkt_content = struct.unpack('<BHL', pkt[1:8])
