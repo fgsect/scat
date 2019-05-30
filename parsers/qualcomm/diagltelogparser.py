@@ -886,7 +886,27 @@ class DiagLteLogParser:
         msg_hdr = b''
         msg_content = b''
 
-        if pkt[0] in (0x08, 0x09, 0x0c, 0x0d, 0x0f, 0x13, 0x14): # Version 8, 9, 12, 13, 15, 19, 20
+        if pkt[0] in (0x1a,): # Version 26
+            # 1a | 0f 40 | 0f 40 | 01 | 0e 01 | 13 07 00 00 | 00 00 | 0b | 00 00 00 00 | 02 00 | 10 15	
+            msg_hdr = pkt[0:21] # 21 bytes
+            msg_content = pkt[21:] # Rest of packet
+            if len(msg_hdr) != 21:
+                return 
+            msg_hdr = struct.unpack('<BHHBHLHBLH', msg_hdr) # Version, RRC Release, NR RRC Release, RBID, Physical CID, EARFCN, SysFN/SubFN, PDUN, Len0, Len1
+            p_cell_id = msg_hdr[4]
+            earfcn = msg_hdr[5]
+            self.lte_last_earfcn_dl[radio_id] = earfcn
+            self.lte_last_cell_id[radio_id] = p_cell_id
+            if msg_hdr[7] == 7 or msg_hdr[7] == 8: # Invert EARFCN for UL-CCCH/UL-DCCH
+                earfcn = earfcn | 0x4000
+            sfn = (msg_hdr[6] & 0xfff0) >> 4
+            self.lte_last_sfn[radio_id] = sfn
+            subfn = msg_hdr[6] & 0xf
+            subtype = msg_hdr[7]
+            # XXX: needs proper field for physical cell id
+            sfn = sfn | (p_cell_id << 16)
+
+        elif pkt[0] in (0x08, 0x09, 0x0c, 0x0d, 0x0f, 0x10, 0x13, 0x14, 0x16): # Version 8, 9, 12, 13, 15, 16, 19, 20, 22
             # 08 | 0a 72 | 01 | 0e 00 | 9c 18 00 00 | a9 33 | 06 | 00 00 00 00 | 02 00 | 2e 02
             # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b 8e c1 dd 13 b0
             # 0d | 0c 74 | 01 | 32 00 | 38 18 00 00 | 00 00 | 08 | 00 00 00 00 | 02 00 | 2c 00
@@ -959,8 +979,8 @@ class DiagLteLogParser:
             self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
 
-        if pkt[0] < 9:
-            # RRC Packet <v9
+        if pkt[0] in (0x02, 0x03, 0x04, 0x06, 0x07, 0x08, 0x0d, 0x16):
+            # RRC Packet <v9, v13, v22
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
@@ -971,7 +991,7 @@ class DiagLteLogParser:
                 7: util.gsmtap_lte_rrc_types.UL_CCCH,
                 8: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[0] < 13:
+        elif pkt[0] in (0x09, 0x0c):
             # RRC Packet v9-v12
             rrc_subtype_map = {
                 8: util.gsmtap_lte_rrc_types.BCCH_BCH,
@@ -983,32 +1003,32 @@ class DiagLteLogParser:
                 14: util.gsmtap_lte_rrc_types.UL_CCCH,
                 15: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[0] < 15:
-            # RRC Packet v13-v14
+        elif pkt[0] in (0x0e,):
+            # RRC Packet v14
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-                3: util.gsmtap_lte_rrc_types.MCCH,
-                4: util.gsmtap_lte_rrc_types.PCCH,
-                5: util.gsmtap_lte_rrc_types.DL_CCCH,
-                6: util.gsmtap_lte_rrc_types.DL_DCCH,
-                7: util.gsmtap_lte_rrc_types.UL_CCCH,
-                8: util.gsmtap_lte_rrc_types.UL_DCCH
-            }
-        elif pkt[0] < 19:
-            # RRC Packet v15-v18
-            rrc_subtype_map = {
-                1: util.gsmtap_lte_rrc_types.BCCH_BCH,
-                2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-                3: util.gsmtap_lte_rrc_types.MCCH,
+                4: util.gsmtap_lte_rrc_types.MCCH,
                 5: util.gsmtap_lte_rrc_types.PCCH,
                 6: util.gsmtap_lte_rrc_types.DL_CCCH,
                 7: util.gsmtap_lte_rrc_types.DL_DCCH,
                 8: util.gsmtap_lte_rrc_types.UL_CCCH,
                 9: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[0] == 19:
-            # RRC Packet v19
+        elif pkt[0] in (0x0f, 0x10):
+            # RRC Packet v15, v16
+            rrc_subtype_map = {
+                1: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
+                4: util.gsmtap_lte_rrc_types.MCCH,
+                5: util.gsmtap_lte_rrc_types.PCCH,
+                6: util.gsmtap_lte_rrc_types.DL_CCCH,
+                7: util.gsmtap_lte_rrc_types.DL_DCCH,
+                8: util.gsmtap_lte_rrc_types.UL_CCCH,
+                9: util.gsmtap_lte_rrc_types.UL_DCCH
+            }
+        elif pkt[0] in (0x13, 0x1a):
+            # RRC Packet v19, v26
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 3: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
@@ -1026,7 +1046,7 @@ class DiagLteLogParser:
                 50: util.gsmtap_lte_rrc_types.UL_CCCH_NB,
                 52: util.gsmtap_lte_rrc_types.UL_DCCH_NB
             }
-        elif pkt[0] == 20:
+        elif pkt[0] in (0x14,):
             # RRC Packet v20
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
