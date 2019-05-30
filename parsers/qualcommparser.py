@@ -1713,6 +1713,26 @@ class QualcommParser:
             subtype = msg_hdr[6]
             # XXX: needs proper field for physical cell id
             sfn = sfn | (p_cell_id << 16)
+
+        elif pkt[0] in (0x1a,): # Version 26
+            # 1a | 0f 40 | 0f 40 | 01 | 0e 01 | 13 07 00 00 | 00 00 | 0b | 00 00 00 00 | 02 00 | 10 15	
+            msg_hdr = pkt[0:21] # 21 bytes
+            msg_content = pkt[21:] # Rest of packet
+            if len(msg_hdr) != 21:
+                return 
+            msg_hdr = struct.unpack('<BHHBHLHBLH', msg_hdr) # Version, RRC Release, NR RRC Release, RBID, Physical CID, EARFCN, SysFN/SubFN, PDUN, Len0, Len1
+            p_cell_id = msg_hdr[4]
+            earfcn = msg_hdr[5]
+            self.lte_last_earfcn_dl[radio_id] = earfcn
+            self.lte_last_cell_id[radio_id] = p_cell_id
+            if msg_hdr[7] == 7 or msg_hdr[7] == 8: # Invert EARFCN for UL-CCCH/UL-DCCH
+                earfcn = earfcn | 0x4000
+            sfn = (msg_hdr[6] & 0xfff0) >> 4
+            self.lte_last_sfn[radio_id] = sfn
+            subfn = msg_hdr[6] & 0xf
+            subtype = msg_hdr[7]
+            # XXX: needs proper field for physical cell id
+            sfn = sfn | (p_cell_id << 16)
         else:
             self.logger.log(logging.WARNING, 'Unhandled LTE RRC packet version %s' % pkt[0])
             self.logger.log(logging.DEBUG, util.xxd(pkt))
@@ -1766,8 +1786,8 @@ class QualcommParser:
                 8: util.gsmtap_lte_rrc_types.UL_CCCH,
                 9: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[0] in (0x13,):
-            # RRC Packet v19
+        elif pkt[0] in (0x13,0x1a):
+            # RRC Packet v19, v26
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 3: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
