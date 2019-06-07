@@ -1726,7 +1726,7 @@ class QualcommParser:
             # XXX: needs proper field for physical cell id
             sfn = sfn | (p_cell_id << 16)
 
-        elif pkt[0] in (0x1a,): # Version 26
+        elif pkt[0] in (0x1a, ): # Version 26
             # 1a | 0f 40 | 0f 40 | 01 | 0e 01 | 13 07 00 00 | 00 00 | 0b | 00 00 00 00 | 02 00 | 10 15	
             msg_hdr = pkt[0:21] # 21 bytes
             msg_content = pkt[21:] # Rest of packet
@@ -1798,7 +1798,7 @@ class QualcommParser:
                 8: util.gsmtap_lte_rrc_types.UL_CCCH,
                 9: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[0] in (0x13,0x1a):
+        elif pkt[0] in (0x13, 0x1a):
             # RRC Packet v19, v26
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
