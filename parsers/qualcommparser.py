@@ -548,9 +548,9 @@ class QualcommParser:
     # 3G
     def parse_wcdma_search_cell_reselection_v0(self, pkt_ts, pkt, radio_id):
         num_wcdma_cells = pkt[0] & 0x3f # lower 6b
-        num_gsm_cells = pkt[1] # TODO: check if num_gsm_cells > 0
+        num_gsm_cells = pkt[1]
 
-        print('Radio {}: 3G Cell: # cells {}'.format(radio_id, num_wcdma_cells))
+        print('Radio {}: Number of 3G cells = {}, 2G cells = {}'.format(radio_id, num_wcdma_cells, num_gsm_cells))
         for i in range(num_wcdma_cells):
             cell_pkt = pkt[2 + 10 * i:2 + 10 * (i + 1)]
             cell_pkt_vals = struct.unpack('<HHbhbh', cell_pkt)
@@ -562,11 +562,15 @@ class QualcommParser:
             n_cell_rank_ecio = cell_pkt_vals[5]
             print('Radio {}: Cell {}: UARFCN {}, PSC {:3d}, RSCP {}, Ec/Io {:.2f}'.format(radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
 
+        if num_gsm_cells > 0:
+            self.logger.log(logging.WARNING, 'Number of 2G cells greater than 0, please report as an issue with following information:')
+            self.logger.log(logging.WARNING, util.xxd(pkt))
+
     def parse_wcdma_search_cell_reselection_v1(self, pkt_ts, pkt, radio_id):
         num_wcdma_cells = pkt[0] & 0x3f # lower 6b
-        num_gsm_cells = pkt[1] # TODO: check if num_gsm_cells > 0
+        num_gsm_cells = pkt[1]
 
-        print('Radio {}: 3G Cell: # cells {}'.format(radio_id, num_wcdma_cells))
+        print('Radio {}: Number of 3G cells = {}, 2G cells = {}'.format(radio_id, num_wcdma_cells, num_gsm_cells))
         for i in range(num_wcdma_cells):
             cell_pkt = pkt[2 + 11 * i:2 + 11 * (i + 1)]
             cell_pkt_vals = struct.unpack('<HHbhbh', cell_pkt[:10])
@@ -578,11 +582,15 @@ class QualcommParser:
             n_cell_rank_ecio = cell_pkt_vals[5]
             print('Radio {}: Cell {}: UARFCN {}, PSC {:3d}, RSCP {}, Ec/Io {:.2f}'.format(radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
 
+        if num_gsm_cells > 0:
+            self.logger.log(logging.WARNING, 'Number of 2G cells greater than 0, please report as an issue with following information:')
+            self.logger.log(logging.WARNING, util.xxd(pkt))
+
     def parse_wcdma_search_cell_reselection_v2(self, pkt_ts, pkt, radio_id):
         num_wcdma_cells = pkt[0] & 0x3f # lower 6b
-        num_gsm_cells = pkt[1] # TODO: check if num_gsm_cells > 0
+        num_gsm_cells = pkt[1]
 
-        print('Radio {}: 3G Cell: # cells {}'.format(radio_id, num_wcdma_cells))
+        print('Radio {}: Number of 3G cells = {}, 2G cells = {}'.format(radio_id, num_wcdma_cells, num_gsm_cells))
         for i in range(num_wcdma_cells):
             cell_pkt = pkt[7 + 16 * i:7 + 16 * (i + 1)]
             cell_pkt_vals = struct.unpack('<HHbhbh', cell_pkt[:10])
@@ -593,6 +601,10 @@ class QualcommParser:
             n_cell_ecio = cell_pkt_vals[4]
             n_cell_rank_ecio = cell_pkt_vals[5]
             print('Radio {}: Cell {}: UARFCN {}, PSC {:3d}, RSCP {}, Ec/Io {:.2f}'.format(radio_id, i, n_cell_uarfcn, n_cell_psc, n_cell_rscp - 21, n_cell_ecio / 2))
+
+        if num_gsm_cells > 0:
+            self.logger.log(logging.WARNING, 'Number of 2G cells greater than 0, please report as an issue with following information:')
+            self.logger.log(logging.WARNING, util.xxd(pkt))
 
     def parse_wcdma_search_cell_reselection(self, pkt_ts, pkt, radio_id):
         pkt_version = (pkt[0] >> 6) # upper 2b
