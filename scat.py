@@ -76,81 +76,69 @@ if __name__ == '__main__':
     ip_group = parser.add_argument_group('GSMTAP IP settings')
     ip_group.add_argument('-P', '--port', help='Change UDP port to emit GSMTAP packets', type=int, default=4729)
     ip_group.add_argument('--port-up', help='Change UDP port to emit user plane packets', type=int, default=47290)
-    ip_group.add_argument('-H', '--hostname', help='Change host name/IP to emit GSMTAP packets', type=str, default='127.0.0.1')
-    ip_group.add_argument('--port-sim2', help='Change UDP port to emit GSMTAP packets for SIM 2', type=int, default=4729)
-    ip_group.add_argument('--port-up-sim2', help='Change UDP port to emit user plane packets for SIM 2', type=int, default=47290)
-    ip_group.add_argument('--hostname-sim2', help='Change host name/IP to emit GSMTAP packets for SIM 2', type=str, default='127.0.0.2')
+    ip_group.add_argument('-H', '--hostname', help='Change base host name/IP to emit GSMTAP packets. For dual SIM devices the subsequent IP address will be used.', type=str, default='127.0.0.1')
 
     ip_group.add_argument('-F', '--pcap-file', help='Write GSMTAP packets directly to specified PCAP file')
-    ip_group.add_argument('--pcap-file-up', help='Write user plane packets directly to specified PCAP file')
-    ip_group.add_argument('--pcap-file-sim2', help='Write GSMTAP packets directly to specified PCAP file for SIM 2')
-    ip_group.add_argument('--pcap-file-up-sim2', help='Write user plane packets directly to specified PCAP file for SIM 2')
 
     args = parser.parse_args()
 
-    GSMTAP_IP_SIM1 = args.hostname
-    GSMTAP_PORT_SIM1 = args.port
-    IP_OVER_UDP_PORT_SIM1 = args.port_up
-
-    GSMTAP_IP_SIM2 = args.hostname_sim2
-    GSMTAP_PORT_SIM2 = args.port_sim2
-    IP_OVER_UDP_PORT_SIM2 = args.port_up_sim2
+    GSMTAP_IP = args.hostname
+    GSMTAP_PORT = args.port
+    IP_OVER_UDP_PORT = args.port_up
 
     if not args.type in parsers.keys():
         print('Error: invalid baseband type specified. Available modules: %s' % parsers_desc)
         sys.exit(0)
 
     # Device preparation
-    handler = None
+    io_device = None
     if args.serial:
-        handler = iodevices.SerialIO(args.serial)
+        io_device = iodevices.SerialIO(args.serial)
     elif args.usb:
-        handler = iodevices.USBIO()
+        io_device = iodevices.USBIO()
         if args.address:
             usb_bus, usb_device = args.address.split(':')
             usb_bus = int(usb_bus, base=10)
             usb_device = int(usb_device, base=10)
-            handler.probe_device_by_vid_pid(usb_bus, usb_device)
+            io_device.probe_device_by_vid_pid(usb_bus, usb_device)
         elif args.vendor == None:
-            handler.guess_device()
+            io_device.guess_device()
         else:
-            handler.probe_device_by_vid_pid(args.vendor, args.product)
+            io_device.probe_device_by_vid_pid(args.vendor, args.product)
 
         if args.config > 0:
-            handler.set_configuration(config)
+            io_device.set_configuration(config)
         print(dev.get_active_configuration())
-        handler.claim_interface(args.interface)
+        io_device.claim_interface(args.interface)
     elif args.dump:
-        handler = iodevices.FileIO(args.dump)
+        io_device = iodevices.FileIO(args.dump)
     else:
         print('Error: no device specified.')
         sys.exit(0)
 
     # Writer preparation
     if args.pcap_file == None:
-        writer_cpup_sim1 = writers.SocketWriter(GSMTAP_IP_SIM1, GSMTAP_PORT_SIM1, GSMTAP_IP_SIM1, IP_OVER_UDP_PORT_SIM1)
-        writer_cpup_sim2 = writers.SocketWriter(GSMTAP_IP_SIM2, GSMTAP_PORT_SIM2, GSMTAP_IP_SIM2, IP_OVER_UDP_PORT_SIM2)
+        writer = writers.SocketWriter(GSMTAP_IP, GSMTAP_PORT, IP_OVER_UDP_PORT)
     else:
-        writer_cpup_sim1 = writers.PcapWriter(args.pcap_file, GSMTAP_PORT_SIM1, IP_OVER_UDP_PORT_SIM1)
-        writer_cpup_sim2 = writers.PcapWriter(args.pcap_file_sim2, GSMTAP_PORT_SIM2, IP_OVER_UDP_PORT_SIM2)
+        writer = writers.PcapWriter(args.pcap_file, GSMTAP_PORT, IP_OVER_UDP_PORT)
 
     current_parser = parsers[args.type]()
-    current_parser.setHandler(handler)
-    current_parser.setWriter(writer_cpup_sim1, writer_cpup_sim2)
+    current_parser.set_io_device(io_device)
+    current_parser.set_writer(writer)
 
     if args.debug:
         logger.setLevel(logging.DEBUG)
-        current_parser.setParameter({'log_level': logging.DEBUG})
+        current_parser.set_parameter({'log_level': logging.DEBUG})
     else:
         logger.setLevel(logging.INFO)
-        current_parser.setParameter({'log_level': logging.INFO})
+        current_parser.set_parameter({'log_level': logging.INFO})
     ch = logging.StreamHandler(stream = sys.stdout)
     f = logging.Formatter('%(asctime)s %(name)s (%(funcName)s) %(levelname)s: %(message)s')
     ch.setFormatter(f)
     logger.addHandler(ch)
 
     if args.type == 'sec':
-        current_parser.setParameter({'model': args.model})
+        current_parser.set_parameter({'model': args.model})
 
     # Run process
     if args.serial or args.usb:

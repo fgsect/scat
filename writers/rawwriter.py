@@ -12,10 +12,10 @@ class RawWriter:
     def __enter__(self):
         return self
 
-    def write_cp(self, sock_content, ts=datetime.datetime.now()):
+    def write_cp(self, sock_content, radio_id=0, ts=datetime.datetime.now()):
         self.raw_file.write(sock_content)
 
-    def write_up(self, sock_content, ts=datetime.datetime.now()):
+    def write_up(self, sock_content, radio_id=0, ts=datetime.datetime.now()):
         self.raw_file.write(sock_content)
 
     def __exit__(self, exc_type, exc_value, traceback):

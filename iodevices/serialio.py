@@ -2,6 +2,7 @@
 # coding: utf8
 
 import serial
+import util
 
 class SerialIO:
     def __init__(self, port_name):
@@ -11,17 +12,21 @@ class SerialIO:
     def __enter__(self):
         return self
 
-    def read(self, read_size):
+    def read(self, read_size, decode_hdlc = False):
         buf = b''
         buf = self.port.read(read_size)
         buf = bytes(buf)
+        if decode_hdlc:
+            buf = util.unwrap(write_buf)
         return buf
 
-    def write(self, write_buf):
+    def write(self, write_buf, encode_hdlc = False):
+        if encode_hdlc:
+            write_buf = util.wrap(write_buf)
         self.port.write(write_buf)
 
-    def write_then_read_discard(self, write_buf, read_size):
-        self.write(write_buf)
+    def write_then_read_discard(self, write_buf, read_size, encode_hdlc = False):
+        self.write(write_buf, encode_hdlc)
         self.read(read_size)
 
     def __exit__(self, exc_type, exc_value, traceback):

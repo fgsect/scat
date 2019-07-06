@@ -2,6 +2,7 @@
 # coding: utf8
 
 import gzip, bz2
+import util
 
 class FileIO:
     def _open_file(self, fname):
@@ -25,13 +26,15 @@ class FileIO:
 
         self.open_next_file()
 
-    def read(self, read_size):
+    def read(self, read_size, decode_hdlc = False):
         buf = b''
         try:
             buf = self.f.read(read_size)
             buf = bytes(buf)
         except:
             return b''
+        if decode_hdlc:
+            buf = util.unwrap(write_buf)
         return buf
 
     def open_next_file(self):
@@ -42,8 +45,12 @@ class FileIO:
             return
         self._open_file(self.fname)
 
-    def write(self, write_buf):
+    def write(self, write_buf, encode_hdlc = False):
         pass
+
+    def write_then_read_discard(self, write_buf, read_size, encode_hdlc = False):
+        self.write(write_buf)
+        self.read(read_size)
         
     def __exit__(self, exc_type, exc_value, traceback):
         if self.f:

@@ -2,6 +2,7 @@
 # coding: utf8
 
 import usb
+import util
 
 class USBIO:
     def __init__(self):
@@ -11,20 +12,24 @@ class USBIO:
     def __enter__(self):
         return self
 
-    def read(self, read_size):
+    def read(self, read_size, decode_hdlc = False):
         buf = b''
         try:
             buf = self.r_handle.read(read_size)
             buf = bytes(buf)
         except usb.core.USBError:
             return b''
+        if decode_hdlc:
+            buf = util.unwrap(write_buf)
         return buf
 
-    def write(self, write_buf):
+    def write(self, write_buf, encode_hdlc = False):
+        if encode_hdlc:
+            write_buf = util.wrap(write_buf)
         self.w_handle.write(write_buf)
 
-    def write_then_read_discard(self, write_buf, read_size):
-        self.write(write_buf)
+    def write_then_read_discard(self, write_buf, read_size, encode_hdlc = False):
+        self.write(write_buf, encode_hdlc)
         self.read(read_size)
 
     def probe_device_by_vid_pid(self, vid, pid):
