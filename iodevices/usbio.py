@@ -41,8 +41,8 @@ class USBIO:
             raise ValueError('Device not found')
 
     def probe_device_by_bus_dev(self, bus, dev):
-        print('Trying USB device at address %s' % (args.address))
-        self.dev = usb.core.find(bus, dev)
+        print('Trying USB device at address {:03d}:{:03d}'.format(bus, dev))
+        self.dev = usb.core.find(bus=bus, address=dev)
         if self.dev is None:
             raise ValueError('Device not found')
 
@@ -61,8 +61,9 @@ class USBIO:
     def claim_interface(self, interface):
         # Nexus 5: Interface #2 is DIAG
         # GS6: Interface #4
-        self.usb_cfg = self.usb_dev.get_active_configuration()
-        self.intf = self.usb_cfg[(usb_iface, 0)]
+        self.usb_cfg = self.dev.get_active_configuration()
+        print(self.usb_cfg)
+        self.intf = self.usb_cfg[(interface, 0)]
         self.w_handle = usb.util.find_descriptor(self.intf, custom_match =
                 lambda e: usb.util.endpoint_direction(e.bEndpointAddress) ==
                 usb.util.ENDPOINT_OUT)

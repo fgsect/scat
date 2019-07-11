@@ -100,7 +100,7 @@ if __name__ == '__main__':
             usb_bus, usb_device = args.address.split(':')
             usb_bus = int(usb_bus, base=10)
             usb_device = int(usb_device, base=10)
-            io_device.probe_device_by_vid_pid(usb_bus, usb_device)
+            io_device.probe_device_by_bus_dev(usb_bus, usb_device)
         elif args.vendor == None:
             io_device.guess_device()
         else:
@@ -108,7 +108,6 @@ if __name__ == '__main__':
 
         if args.config > 0:
             io_device.set_configuration(config)
-        print(dev.get_active_configuration())
         io_device.claim_interface(args.interface)
     elif args.dump:
         io_device = iodevices.FileIO(args.dump)
