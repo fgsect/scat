@@ -1,11 +1,12 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # coding: utf8
+
+from . import diagcmd
 
 import util
 import usb
 import struct
 import calendar, datetime
-import parsers.qualcomm_diagcmd as diagcmd
 import logging
 
 class QualcommParser:

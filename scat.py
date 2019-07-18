@@ -5,6 +5,7 @@ __version__ = "0.9"
 
 import iodevices
 import writers
+import parsers
 
 import os, sys, re, importlib
 import argparse
@@ -33,21 +34,15 @@ def hexint(string):
 
 if __name__ == '__main__':
     # Load parser modules
-    pysearchre = re.compile('.py$', re.IGNORECASE)
-    pluginfiles = filter(pysearchre.search,
-                           os.listdir(os.path.join(os.path.dirname(__file__),
-                                                 'parsers')))
-    form_module = lambda fp: '.' + os.path.splitext(fp)[0]
-    parsers_dir = map(form_module, pluginfiles)
-    # import parent module / namespace
-    importlib.import_module('parsers')
-    parsers = {}
-    for p in parsers_dir:
-        if not p.startswith('.__') and p.endswith('parser'):
-            m = importlib.import_module(p, package="parsers")
-            parsers[m.shortname()] = m.__entry__
+    parser_dict = {}
+    for parser_module in dir(parsers):
+        if parser_module.startswith('__'):
+            continue
+        if type(getattr(parsers, parser_module)) == type:
+            c = getattr(parsers, parser_module)()
+            parser_dict[c.shortname] = c
 
-    parsers_desc = ', '.join(parsers.keys())
+    parsers_desc = ', '.join(parser_dict.keys())
 
     parser = argparse.ArgumentParser(description='Reads diagnostic messages from smartphone baseband.')
     parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
@@ -65,11 +60,11 @@ if __name__ == '__main__':
     usb_group.add_argument('-c', '--config', help='Specify USB configuration number for DM port', type=int, default=-1)
     usb_group.add_argument('-i', '--interface', help='Specify USB interface number for DM port', type=int, default=2)
 
-    if 'qc' in parsers.keys():
+    if 'qc' in parser_dict.keys():
         qc_group = parser.add_argument_group('Qualcomm specific settings')
         qc_group.add_argument('--qmdl', help='Store log as QMDL file (Qualcomm only)')
 
-    if 'sec' in parsers.keys():
+    if 'sec' in parser_dict.keys():
         sec_group = parser.add_argument_group('Samsung specific settings')
         sec_group.add_argument('-m', '--model', help='Device model for analyzing diagnostic messages', type=str)
 
@@ -86,7 +81,7 @@ if __name__ == '__main__':
     GSMTAP_PORT = args.port
     IP_OVER_UDP_PORT = args.port_up
 
-    if not args.type in parsers.keys():
+    if not args.type in parser_dict.keys():
         print('Error: invalid baseband type specified. Available modules: %s' % parsers_desc)
         sys.exit(0)
 
@@ -121,7 +116,7 @@ if __name__ == '__main__':
     else:
         writer = writers.PcapWriter(args.pcap_file, GSMTAP_PORT, IP_OVER_UDP_PORT)
 
-    current_parser = parsers[args.type]()
+    current_parser = parser_dict[args.type]
     current_parser.set_io_device(io_device)
     current_parser.set_writer(writer)
 

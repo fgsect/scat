@@ -6,7 +6,7 @@ import util
 
 class SerialIO:
     def __init__(self, port_name):
-        self.port = serial.Serial(port_name, baudrate=115200, timeout=0.1, rtscts=True, dsrdtr=True)
+        self.port = serial.Serial(port_name, baudrate=921600, timeout=0.5)#, rtscts=True, dsrdtr=True)
         self.block_until_data = True
 
     def __enter__(self):
@@ -25,7 +25,7 @@ class SerialIO:
             write_buf = util.wrap(write_buf)
         self.port.write(write_buf)
 
-    def write_then_read_discard(self, write_buf, read_size, encode_hdlc = False):
+    def write_then_read_discard(self, write_buf, read_size = 0x1000, encode_hdlc = False):
         self.write(write_buf, encode_hdlc)
         self.read(read_size)
 

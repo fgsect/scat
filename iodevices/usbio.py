@@ -28,7 +28,7 @@ class USBIO:
             write_buf = util.wrap(write_buf)
         self.w_handle.write(write_buf)
 
-    def write_then_read_discard(self, write_buf, read_size, encode_hdlc = False):
+    def write_then_read_discard(self, write_buf, read_size = 0x1000, encode_hdlc = False):
         self.write(write_buf, encode_hdlc)
         self.read(read_size)
 

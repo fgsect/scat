@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python3
 # coding: utf8
 
 import util
@@ -135,7 +135,7 @@ class SamsungParser:
         try:
             while True:
                 buf = self.io_device.read(0x9000)
-                #util.xxd(buf)
+                #util.xxd(buf, True)
                 if len(buf) == 0:
                     continue
                 cur_pos = 0
