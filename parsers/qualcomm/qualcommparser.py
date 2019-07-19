@@ -12,6 +12,9 @@ from .diagumtslogparser import DiagUmtsLogParser
 from .diagltelogparser import DiagLteLogParser
 from .diag1xlogparser import Diag1xLogParser
 
+from .diagcommoneventparser import DiagCommonEventParser
+from .diaglteeventparser import DiagLteEventParser
+
 import util
 import usb
 import struct
@@ -57,6 +60,19 @@ class QualcommParser:
             self.process.update(p.process)
             try:
                 self.no_process.update(p.no_process)
+            except AttributeError:
+                pass
+
+        self.diag_event_parsers = [DiagCommonEventParser(self),
+            DiagLteEventParser(self)]
+
+        self.process_event = { }
+        self.no_process_event = { }
+
+        for p in self.diag_event_parsers:
+            self.process_event.update(p.process)
+            try:
+                self.no_process_event.update(p.no_process)
             except AttributeError:
                 pass
 
@@ -281,15 +297,11 @@ class QualcommParser:
             src_fname = b''
             log_content = pkt_body[0]
 
-        osmocore_log_hdr = struct.pack('!LL16sLB3x16s32sL',
-            int(pkt_ts.timestamp()), # uint32_t sec
-            pkt_ts.microsecond, # uint32_t usec
-            b'', # uint8_t proc_name[16]
-            0, # uint32_t pid
-            0, # uint8_t level
-            str(xdm_hdr[6]).encode('utf-8'), # uint8_t subsys[16]
-            src_fname, # uint8_t filename[32]
-            xdm_hdr[5] # uint32_t line_nr
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = pkt_ts,
+            subsys_name = str(xdm_hdr[6]).encode('utf-8'),
+            filename = src_fname,
+            line_number = xdm_hdr[5]
         )
 
         gsmtap_hdr = util.create_gsmtap_header(
@@ -326,26 +338,55 @@ class QualcommParser:
                 ts = util.parse_qxdm_ts(ts)
                 pos += 10
             else:
-                ts = struct.unpack('<H', pkt[pos+2:pos+4])[0]
+                #ts = struct.unpack('<H', pkt[pos+2:pos+4])[0]
+                # TODO: correctly parse ts
+                ts = datetime.datetime.now()
                 pos += 4
 
             assert (payload_len >= 0) and (payload_len <= 3)
             if payload_len == 0:
                 # No payload
-                print("Event: {} {}".format(event_id, ts))
+                if event_id in self.process_event.keys():
+                    self.process_event[event_id](radio_id, ts)
+                elif event_id in self.no_process_event.keys():
+                    pass
+                else:
+                    print("Event: {} {}".format(event_id, ts))
             elif payload_len == 1:
                 # 1x uint8
-                print("Event: {} {}: 0x{:02x}".format(event_id, ts, pkt[pos]))
+                arg1 = pkt[pos]
+
+                if event_id in self.process_event.keys():
+                    self.process_event[event_id](radio_id, ts, arg1)
+                elif event_id in self.no_process_event.keys():
+                    pass
+                else:
+                    print("Event: {} {}: 0x{:02x}".format(event_id, ts, arg1))
                 pos += 1
             elif payload_len == 2:
                 # 2x uint8
-                print("Event: {} {}: 0x{:02x} 0x{:02x}".format(event_id, ts, pkt[pos], pkt[pos+1]))
+                arg1 = pkt[pos]
+                arg2 = pkt[pos+1]
+
+                if event_id in self.process_event.keys():
+                    self.process_event[event_id](radio_id, ts, arg1, arg2)
+                elif event_id in self.no_process_event.keys():
+                    pass
+                else:
+                    print("Event: {} {}: 0x{:02x} 0x{:02x}".format(event_id, ts, arg1, arg2))
                 pos += 2
             elif payload_len == 3:
                 # Pascal string
                 bin_len = pkt[pos]
-                print("Event {}: {}: Binary(len=0x{:02x}) = {}"
-                    .format(event_id, ts, pkt[pos], ' '.join('{:02x}'.format(x) for x in pkt[pos+1:pos+1+bin_len])))
+                arg_bin = pkt[pos+1:pos+1+bin_len]
+
+                if event_id in self.process_event.keys():
+                    self.process_event[event_id](radio_id, ts, arg_bin)
+                elif event_id in self.no_process_event.keys():
+                    pass
+                else:
+                    print("Event {}: {}: Binary(len=0x{:02x}) = {}"
+                    .format(event_id, ts, bin_len, ' '.join('{:02x}'.format(x) for x in arg_bin)))
                 pos += (1 + pkt[pos])
 
 __entry__ = QualcommParser

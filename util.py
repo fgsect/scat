@@ -285,3 +285,27 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
         assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
 
     return gsmtap_hdr
+
+def create_osmocore_logging_header(timestamp = datetime.datetime.now(),
+        process_name = '', pid = 0, level = 0,
+        subsys_name = '', filename = '', line_number = 0):
+
+    if type(process_name) == str:
+        process_name = process_name.encode('utf-8')
+    if type(subsys_name) == str:
+        subsys_name = subsys_name.encode('utf-8')
+    if type(filename) == str:
+        filename = filename.encode('utf-8')
+
+    logging_hdr = struct.pack('!LL16sLB3x16s32sL',
+        int(timestamp.timestamp()), # uint32_t sec
+        timestamp.microsecond, # uint32_t usec
+        process_name, # uint8_t proc_name[16]
+        pid, # uint32_t pid
+        level, # uint8_t level
+        subsys_name, # uint8_t subsys[16]
+        filename, # uint8_t filename[32]
+        line_number # uint32_t line_nr
+    )
+
+    return logging_hdr
