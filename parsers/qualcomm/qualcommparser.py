@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
 # coding: utf8
+# SPDX-License-Identifier: GPL-2.0-or-later
+
+# Part of the source code:
+# (C) 2013-2016 by Harald Welte <laforge@gnumonks.org>
 
 from . import diagcmd
 from .diaggsmlogparser import DiagGsmLogParser
@@ -150,8 +154,7 @@ class QualcommParser:
         if pkt[0] == diagcmd.DIAG_LOG_F:
             self.parse_diag_log(pkt, radio_id)
         elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F:
-            # TODO: handle event packets
-            # self.parse_diag_event(pkt)
+            self.parse_diag_event(pkt, radio_id)
             pass
         elif pkt[0] == diagcmd.DIAG_EXT_MSG_F:
             self.parse_diag_ext_msg(pkt, radio_id)
@@ -307,6 +310,43 @@ class QualcommParser:
         pkt_body = pkt[8:]
 
         self.parse_diag(pkt_body, hdlc_encoded=False, check_crc=False, radio_id = (xdm_hdr[3]))
+
+    def parse_diag_event(self, pkt, radio_id):
+        cmd_code, len_msg = struct.unpack('<BH', pkt[0:3])
+
+        pos = 3
+        while pos < len(pkt):
+            # id 12b, _pad 1b, payload_len 2b, ts_trunc 1b
+            _eid = struct.unpack('<H', pkt[pos:pos+2])[0]
+            event_id = _eid & 0xfff
+            payload_len = (_eid & 0x6000) >> 13
+            ts_trunc = (_eid & 0x8000) >> 15 # 0: 64bit, 1: 16bit TS
+            if ts_trunc == 0:
+                ts = struct.unpack('<Q', pkt[pos+2:pos+10])[0]
+                ts = util.parse_qxdm_ts(ts)
+                pos += 10
+            else:
+                ts = struct.unpack('<H', pkt[pos+2:pos+4])[0]
+                pos += 4
+
+            assert (payload_len >= 0) and (payload_len <= 3)
+            if payload_len == 0:
+                # No payload
+                print("Event: {} {}".format(event_id, ts))
+            elif payload_len == 1:
+                # 1x uint8
+                print("Event: {} {}: 0x{:02x}".format(event_id, ts, pkt[pos]))
+                pos += 1
+            elif payload_len == 2:
+                # 2x uint8
+                print("Event: {} {}: 0x{:02x} 0x{:02x}".format(event_id, ts, pkt[pos], pkt[pos+1]))
+                pos += 2
+            elif payload_len == 3:
+                # Pascal string
+                bin_len = pkt[pos]
+                print("Event {}: {}: Binary(len=0x{:02x}) = {}"
+                    .format(event_id, ts, pkt[pos], ' '.join('{:02x}'.format(x) for x in pkt[pos+1:pos+1+bin_len])))
+                pos += (1 + pkt[pos])
 
 __entry__ = QualcommParser
 
