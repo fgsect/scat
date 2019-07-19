@@ -13,8 +13,12 @@ class DiagCommonEventParser:
         self.parent = parent
 
         # Event IDs are available at:
+        # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
         self.process = {
+            #621: self.parse_event_sd_event_action,
+            #1682: self.parse_event_ipv6_sm_event,
+            #1742: self.parse_event_cm_ds_call_event_orig_thr,
             2865: self.parse_event_diag_qshrink_id,
             2866: self.parse_event_diag_process_name_id,
         }

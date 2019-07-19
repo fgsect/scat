@@ -12,11 +12,75 @@ class DiagLteEventParser:
         self.parent = parent
 
         # Event IDs are available at:
+        # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
         self.process = {
+            1605: self.parse_event_lte_rrc_timer_status,
+            1606: self.parse_event_lte_rrc_state_change,
             1609: self.parse_event_lte_rrc_dl_msg,
             1610: self.parse_event_lte_rrc_ul_msg,
+            #1611: self.parse_evnet_lte_rrc_new_cell_ind,
+            1614: self.parse_event_lte_rrc_paging_drx_cycle,
+
+            #1627: self.parse_event_lte_cm_incoming_msg,
+            #1628: self.parse_event_lte_cm_outgoing_msg,
+            1629: self.parse_event_lte_emm_incoming_msg,
+            1630: self.parse_event_lte_emm_outgoing_msg,
+            1631: self.parse_event_lte_emm_timer_start,
+            1632: self.parse_event_lte_emm_timer_expiry,
+
+            #1633: self.parse_event_lte_reg_incoming_msg,
+            #1634: self.parse_event_lte_reg_outgoing_msg,
+            #1635: self.parse_event_lte_esm_incoming_msg,
+            #1636: self.parse_event_lte_esm_outgoing_msg,
+            #1637: self.parse_event_lte_esm_timer_start,
+            #1638: self.parse_event_lte_esm_timer_expiry,
+
+            1938: self.parse_event_lte_ml1_phr_report,
+            1994: self.parse_event_lte_rrc_state_change_trigger,
         }
+
+    def parse_event_lte_rrc_timer_status(self, radio_id, ts, arg_bin):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1605,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_TIMER_STATUS: {}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_rrc_state_change(self, radio_id, ts, arg1):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1606,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        rrc_state_map = {
+            1: "RRC_IDLE_NOT_CAMPED",
+            2: "RRC_IDLE_CAMPED",
+            3: "RRC_CONNECTING",
+            4: "RRC_CONNECTED",
+            7: "RRC_CLOSING",
+        }
+        if arg1 in rrc_state_map.keys():
+            rrc_state = rrc_state_map[arg1]
+        else:
+            rrc_state = "{:02x}".format(arg1)
+
+        log_content = "LTE_RRC_STATE_CHANGE: rrc_state={}".format(rrc_state).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
 
     def parse_event_lte_rrc_dl_msg(self, radio_id, ts, arg1, arg2):
         osmocore_log_hdr = util.create_osmocore_logging_header(
@@ -101,3 +165,108 @@ class DiagLteEventParser:
 
         self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
 
+
+    def parse_event_lte_rrc_paging_drx_cycle(self, radio_id, ts, arg1, arg2):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1614,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_PAGING_DRX_CYCLE: {:02x} {:02x}".format(arg1, arg2).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_emm_incoming_msg(self, radio_id, ts, arg1):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1629,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_EMM_INCOMING_MSG: {:02x}".format(arg1).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_emm_outgoing_msg(self, radio_id, ts, arg1):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1630,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_EMM_OUTGOING_MSG: {}".format(arg1).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_emm_timer_start(self, radio_id, ts, arg1):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1631,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_EMM_TIMER_START: {:02x}".format(arg1).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_emm_timer_expiry(self, radio_id, ts, arg1):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1632,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_EMM_TIMER_EXPIRY: {:02x}".format(arg1).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_ml1_phr_report(self, radio_id, ts, arg1, arg2):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1938,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_ML1_PHR_REPORT: {:02x} {:02x}".format(arg1, arg2).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
+
+    def parse_event_lte_rrc_state_change_trigger(self, radio_id, ts, arg1):
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = ts,
+            process_name = b'Event',
+            pid = 1994,
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        log_content = "LTE_RRC_STATE_CHANGE_TRIGGER: {:02x}".format(arg1).encode('utf-8')
+
+        self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
