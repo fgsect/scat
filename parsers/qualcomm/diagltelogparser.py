@@ -216,7 +216,7 @@ class DiagLteLogParser:
     def parse_lte_ml1_cell_info(self, pkt_ts, pkt, radio_id):
         mib_payload = bytes([0, 0, 0])
 
-        if pkt[0] == 1:
+        if pkt[0] == 1: # Version 1
             # Version, DL BW, SFN, EARFCN, (Cell ID, PBCH, PHICH Duration, PHICH Resource), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
             # 01 | 64 | A4 01 | 14 05 | 24 42 | 41 05 00 00 | D3 2D 00 00 | 80 53 3D 00 00 00 00 00 | 00 00 A4 A9 | 1D FF | 01 00 
             pkt_content = struct.unpack('<BHH', pkt[1:6])
@@ -226,8 +226,7 @@ class DiagLteLogParser:
             self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)] = pkt_content[2]
 
             mib_payload = bytes([pkt[27], pkt[26], pkt[25]])
-        elif pkt[16] == 2:
-            # XXX: not complete
+        elif pkt[0] == 2: # Version 2
             # Version, DL BW, SFN, EARFCN, (Cell ID 9, PBCH 1, PHICH Duration 3, PHICH Resource 3), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
             # 02 | 4B | F8 00 | 21 07 00 00 | 03 23 00 00 | 00 00 00 00 | 0F 05 00 00 | 2A BD 0B 17 00 00 00 00 | 00 00 F8 84 | 00 00 | 01 00 
             pkt_content = struct.unpack('<BHL', pkt[1:8])
@@ -895,12 +894,12 @@ class DiagLteLogParser:
             msg_hdr = struct.unpack('<BHHBHLHBLH', msg_hdr) # Version, RRC Release, NR RRC Release, RBID, Physical CID, EARFCN, SysFN/SubFN, PDUN, Len0, Len1
             p_cell_id = msg_hdr[4]
             earfcn = msg_hdr[5]
-            self.lte_last_earfcn_dl[radio_id] = earfcn
-            self.lte_last_cell_id[radio_id] = p_cell_id
+            self.parent.lte_last_earfcn_dl[radio_id] = earfcn
+            self.parent.lte_last_cell_id[radio_id] = p_cell_id
             if msg_hdr[7] == 7 or msg_hdr[7] == 8: # Invert EARFCN for UL-CCCH/UL-DCCH
                 earfcn = earfcn | 0x4000
             sfn = (msg_hdr[6] & 0xfff0) >> 4
-            self.lte_last_sfn[radio_id] = sfn
+            self.parent.lte_last_sfn[radio_id] = sfn
             subfn = msg_hdr[6] & 0xf
             subtype = msg_hdr[7]
             # XXX: needs proper field for physical cell id
