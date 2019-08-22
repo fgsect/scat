@@ -365,7 +365,7 @@ class QualcommParser:
             if payload_len == 0:
                 # No payload
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id](radio_id, ts)
+                    self.process_event[event_id][0](radio_id, ts, event_id)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -375,7 +375,7 @@ class QualcommParser:
                 arg1 = pkt[pos]
 
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id](radio_id, ts, arg1)
+                    self.process_event[event_id][0](radio_id, ts, event_id, arg1)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -387,7 +387,7 @@ class QualcommParser:
                 arg2 = pkt[pos+1]
 
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id](radio_id, ts, arg1, arg2)
+                    self.process_event[event_id][0](radio_id, ts, event_id, arg1, arg2)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -399,7 +399,7 @@ class QualcommParser:
                 arg_bin = pkt[pos+1:pos+1+bin_len]
 
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id](radio_id, ts, arg_bin)
+                    self.process_event[event_id][0](radio_id, ts, event_id, arg_bin)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
