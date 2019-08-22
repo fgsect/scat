@@ -11,6 +11,9 @@ DIAG_EVENT_REPORT_F = 0x60   # Static Event reporting
 DIAG_LOG_CONFIG_F = 0x73     # Logging configuration packet
 DIAG_EXT_MSG_F = 0x79        # Request for extended message report
 DIAG_EXT_MSG_CONFIG_F = 0x7d # Request for Extended message report
+DIAG_QSR_EXT_MSG_TERSE_F = 0x92  # QSR extended messages
+DIAG_QSR4_EXT_MSG_TERSE_F = 0x99 # QSR4 extended messages
+DIAG_MULTI_RADIO_CMD_F = 0x98    # Found on newer dual SIMs
 
 DIAG_SUBSYS_ID_1X = 0x01
 DIAG_SUBSYS_ID_WCDMA = 0x04

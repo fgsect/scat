@@ -43,6 +43,10 @@ class QualcommParser:
 
         self.io_device = None
         self.writer = None
+        self.parse_msgs = False
+        self.parse_events = False
+        self.qsr_hash_filename = ''
+        self.qsr4_hash_filename = ''
 
         self.name = 'qualcomm'
         self.shortname = 'qc'
@@ -86,6 +90,16 @@ class QualcommParser:
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
+            elif p == 'qsr-hash':
+                self.qsr_hash_filename = params[p]
+                self.parse_msgs = True
+            elif p == 'qsr4-hash':
+                self.qsr4_hash_filename = params[p]
+                self.parse_msgs = True
+            elif p == 'events':
+                self.parse_events = params[p]
+            elif p == 'msgs':
+                self.parse_msgs = params[p]
 
     def sanitize_radio_id(self, radio_id):
         if radio_id <= 0:
@@ -169,13 +183,17 @@ class QualcommParser:
 
         if pkt[0] == diagcmd.DIAG_LOG_F:
             self.parse_diag_log(pkt, radio_id)
-        elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F:
+        elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F and self.parse_events:
             self.parse_diag_event(pkt, radio_id)
-            pass
-        elif pkt[0] == diagcmd.DIAG_EXT_MSG_F:
+        elif pkt[0] == diagcmd.DIAG_EXT_MSG_F and self.parse_msgs:
             self.parse_diag_ext_msg(pkt, radio_id)
-        elif pkt[0] == 0x98:
-            # Found on some newer dual SIMs
+        elif pkt[0] == diagcmd.DIAG_QSR_EXT_MSG_TERSE_F and self.parse_msgs:
+            #self.parse_diag_qsr_ext_msg(pkt, radio_id)
+            pass
+        elif pkt[0] == diagcmd.DIAG_QSR4_EXT_MSG_TERSE_F and self.parse_msgs:
+            #self.parse_diag_qsr4_ext_msg(pkt, radio_id)
+            pass
+        elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
             self.parse_diag_multisim(pkt)
         else:
             #print("Not parsing non-Log packet %02x" % pkt[0])
@@ -388,6 +406,12 @@ class QualcommParser:
                     print("Event {}: {}: Binary(len=0x{:02x}) = {}"
                     .format(event_id, ts, bin_len, ' '.join('{:02x}'.format(x) for x in arg_bin)))
                 pos += (1 + pkt[pos])
+
+    def parse_diag_qsr_ext_msg(self, pkt, radio_id):
+        pass
+
+    def parse_diag_qsr4_ext_msg(self, pkt, radio_id):
+        pass
 
 __entry__ = QualcommParser
 

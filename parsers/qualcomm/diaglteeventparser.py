@@ -6,6 +6,7 @@ import util
 import struct
 import calendar, datetime
 import logging
+import binascii
 
 class DiagLteEventParser:
     def __init__(self, parent):
@@ -192,7 +193,10 @@ class DiagLteEventParser:
             version = 2,
             payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
-        log_content = "LTE_RRC_EMM_INCOMING_MSG: {:02x}".format(arg1).encode('utf-8')
+        if type(arg1) == bytes:
+            log_content = "LTE_RRC_EMM_INCOMING_MSG: {}".format(binascii.hexlify(arg1)).encode('utf-8')
+        else:
+            log_content = "LTE_RRC_EMM_INCOMING_MSG: {:02x}".format(arg1).encode('utf-8')
 
         self.parent.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, ts)
 

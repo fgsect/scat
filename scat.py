@@ -63,6 +63,10 @@ if __name__ == '__main__':
     if 'qc' in parser_dict.keys():
         qc_group = parser.add_argument_group('Qualcomm specific settings')
         qc_group.add_argument('--qmdl', help='Store log as QMDL file (Qualcomm only)')
+        qc_group.add_argument('--qsr-hash', help='Specify QSR message hash file (usually QSRMessageHash.db), implies --msgs', type=str)
+        qc_group.add_argument('--qsr4-hash', help='Specify QSR4 message hash file (need to obtain from the device firmware), implies --msgs', type=str)
+        qc_group.add_argument('--events', action='store_true', help='Decode Events as GSMTAP logging')
+        qc_group.add_argument('--msgs', action='store_true', help='Decode Extended Message Reports and QSR Message Reports as GSMTAP logging')
 
     if 'sec' in parser_dict.keys():
         sec_group = parser.add_argument_group('Samsung specific settings')
@@ -131,7 +135,13 @@ if __name__ == '__main__':
     ch.setFormatter(f)
     logger.addHandler(ch)
 
-    if args.type == 'sec':
+    if args.type == 'qc':
+        current_parser.set_parameter({
+            'qsr-hash': args.qsr_hash,
+            'qsr4-hash': args.qsr4_hash,
+            'events': args.events,
+            'msgs': args.msgs})
+    elif args.type == 'sec':
         current_parser.set_parameter({'model': args.model})
 
     # Run process
