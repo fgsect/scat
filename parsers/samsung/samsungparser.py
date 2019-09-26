@@ -144,7 +144,7 @@ class SamsungParser:
                     #print(buf)
                     #assert buf[cur_pos] == 0x7f
                     if buf[cur_pos] != 0x7f:
-                        self.logger.warning(logging.WARNING, 'Something wrong')
+                        self.logger.log(logging.WARNING, 'Unexpected end of the packet, dropping it')
                         self.logger.log(logging.DEBUG, util.xxd(buf))
                         break
                     len_1 = buf[cur_pos + 1] | (buf[cur_pos + 2] << 8)
