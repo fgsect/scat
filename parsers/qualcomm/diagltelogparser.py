@@ -258,7 +258,6 @@ class DiagLteLogParser:
         return
 
     def parse_lte_mac_rach_response(self, pkt_ts, pkt, radio_id):
-        # 01 01 | 30 C7 | 06 | 02 | 24 00 | 01 | 00 | 01 | 07 | 1B | FF | 98 FF | 00 00 | 01 | 23 1A | 04 00 | 18 | 1C 01 00 | 07 00 | 06 | 00 46 5C 80 BD 06 48 00 00 00                                      
         msg_content = pkt
         mac_header = b''
         mac_body = b''
@@ -276,7 +275,9 @@ class DiagLteLogParser:
             self.parent.logger.log(logging.WARNING, 'Expected MAC RACH attempt subpacket, got %02x' % msg_content[4])
             return 
 
-        if msg_content[5] == 0x02:
+        if msg_content[5] == 0x02:  # Version 2
+            # 01 01 | 30 C7 | 06 | 02 | 24 00 | 01 | 00 | 01 | 07 | 1B | FF | 98 FF | 00 00 | 01 | 23 1A | 04 00 | 18 | 1C 01 00 | 07 00 | 06 | 00 46 5C 80 BD 06 48 00 00 00
+
             if msg_content[9] == 0x01: # RACH Failure, 0x00 == Success
                 return 
             if msg_content[11] != 0x07: # not all message present
@@ -287,33 +288,7 @@ class DiagLteLogParser:
             tc_rnti = msg_content[19] | (msg_content[20] << 8)
             ta = msg_content[21] | (msg_content[22] << 8)
             grant = ((msg_content[24] & 0xf) << 16) | (msg_content[25] << 8) | msg_content[26]
-
-            #print('%04x %04x %06x %04x' % (rapid, ta, grant, tc_rnti))
-
-            # RAR header: RAPID present, RAPID
-            # RAR body: TA, Grant, TC-RNTI
-            # Byte 1: TA[11:4]
-            # Byte 2: TA[3:0] | GRANT[20:16]
-            # Byte 3, 4: GRANT[15:0]
-            # Byte 5, 6: TC-RNTI
-            mac_body = bytes([(1 << 6) | (rapid & 0x3f),
-                              (ta & 0x07f0) >> 4, 
-                              ((ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
-                              (grant & 0x00ff00) >> 8,
-                              (grant & 0x0000ff),
-                              (tc_rnti & 0xff00) >> 8,
-                              tc_rnti & 0x00ff])
-            # radioType 1b
-            # direction 1b
-            # rntiType 1b, rnti 2b
-            # UEID 2b
-            # SysFN 2b, SubFN 2b
-            # Reserved 1b
-            mac_header = bytes([0x01, 0x01, 0x02, 0x00, 0x02, 0x00, 0x02, 0x03,
-                                0xff, 0x00, 0x08, 0x01])
-
-            self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)] = tc_rnti
-        elif msg_content[5] == 0x04:
+        elif msg_content[5] == 0x04:  # TODO: RACH response v4
             if msg_content[9] == 0x01:
                 return
             if msg_content[11] != 0x07:
@@ -324,25 +299,48 @@ class DiagLteLogParser:
             tc_rnti = msg_content[19] | (msg_content[20] << 8)
             ta = msg_content[21] | (msg_content[22] << 8)
             grant = ((msg_content[24] & 0xf) << 16) | (msg_content[25] << 8) | msg_content[26]
+        elif msg_content[5] == 0x03:  # Version 3
+            # 01 01 | BD 0C | 06 | 03 | 28 00 | 01 | 00 | 01 | 00 | 01 | 07 | 18 | FF | 98 FF | 00 00 | 01 | B9 88 | 04 00 | 18 | 18 01 00 | 07 00 | 05 | 00 55 F1 60 A8 1E A6 00 00 00 00 00
 
-            mac_body = bytes([(1 << 6) | (rapid & 0x3f),
-                              (ta & 0x07f0) >> 4,
-                              ((ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
-                              (grant & 0x00ff00) >> 8,
-                              (grant & 0x0000ff),
-                              (tc_rnti & 0xff00) >> 8,
-                              tc_rnti & 0x00ff])
+            if msg_content[11] == 0x01:
+                return
+            if msg_content[13] != 0x07:
+                self.parent.logger.log(logging.WARNING, 'Not enough message to generate RAR')
+                return
 
-            mac_header = bytes([0x01, 0x01, 0x02, 0x00, 0x02, 0x00, 0x02, 0x03,
-                                0xff, 0x00, 0x08, 0x01])
-
-            self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)] = tc_rnti
+            rapid = msg_content[14]
+            tc_rnti = msg_content[21] | (msg_content[22] << 8)
+            ta = msg_content[23] | (msg_content[24] << 8)
+            grant = ((msg_content[26] & 0xf) << 16) | (msg_content[27] << 8) | msg_content[28]
 
         else:
-            # TODO: RACH response v3, v4
             self.parent.logger.log(logging.WARNING, 'Unsupported RACH response version %02x' % msg_content[5])
             self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
             return 
+
+        # RAR header: RAPID present, RAPID
+        # RAR body: TA, Grant, TC-RNTI
+        # Byte 1: TA[11:4]
+        # Byte 2: TA[3:0] | GRANT[20:16]
+        # Byte 3, 4: GRANT[15:0]
+        # Byte 5, 6: TC-RNTI
+        mac_body = bytes([(1 << 6) | (rapid & 0x3f),
+                          (ta & 0x07f0) >> 4,
+                          ((ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
+                          (grant & 0x00ff00) >> 8,
+                          (grant & 0x0000ff),
+                          (tc_rnti & 0xff00) >> 8,
+                          tc_rnti & 0x00ff])
+        # radioType 1b
+        # direction 1b
+        # rntiType 1b, rnti 2b
+        # UEID 2b
+        # SysFN 2b, SubFN 2b
+        # Reserved 1b
+        mac_header = bytes([0x01, 0x01, 0x02, 0x00, 0x02, 0x00, 0x02, 0x03,
+                            0xff, 0x00, 0x08, 0x01])
+
+        self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)] = tc_rnti
 
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
