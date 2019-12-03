@@ -75,12 +75,9 @@ def parse_qxdm_ts(ts):
     ts_lower = ts & 0xffff
 
     epoch = datetime.datetime(1980, 1, 6, 0, 0, 0)
-    ts_upper *= 1250
-    nano_secs = (ts_upper % 1000) * 1000
-    nano_secs += (ts_lower * 1250000 // 32)
-    ts_upper //= 1000
+    
     try:
-        ts_delta = datetime.timedelta(seconds=ts_upper // 1000, microseconds = (ts_upper % 1000) * 1000 + (nano_secs // 1000))
+        ts_delta = datetime.timedelta(0 ,0 , 0, ts_upper * 1.25 + ts_lower * (1 / 40960), 0, 0, 0)
     except OverflowError:
         ts_delta = datetime.timedelta(seconds=0)
     return epoch + ts_delta
