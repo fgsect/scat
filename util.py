@@ -247,6 +247,10 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
     gsmtap_v3_hdr_def = '!BBBBHBBLBBBBQL'
     gsmtap_hdr = b''
 
+    # Sanity check - Wireshark GSMTAP dissector accepts only 14 bits of ARFCN
+    if arfcn < 0 or arfcn > (2 ** 14 - 1):
+        arfcn = 0
+
     if version == 2:
         gsmtap_hdr = struct.pack(gsmtap_v2_hdr_def,
             2,                           # Version
