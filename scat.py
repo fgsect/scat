@@ -153,7 +153,7 @@ if __name__ == '__main__':
         signal.signal(signal.SIGINT, sigint_handler)
 
         if not (args.qmdl == None) and args.type == 'qc':
-            current_parser.run_diag(RawWriter(args.qmdl))
+            current_parser.run_diag(writers.RawWriter(args.qmdl))
         else:
             current_parser.run_diag()
 
