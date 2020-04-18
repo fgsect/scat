@@ -127,17 +127,31 @@ class SamsungParser:
         elif self.model == 'e303':
             self.parse_diag_log_e303(pkt, radio_id)
 
-    def run_diag(self):
+    def run_diag(self, writer_dump=None, read_dump=False):
         self.logger.log(logging.INFO, 'Starting diag')
 
         oldbuf = b''
         cur_pos = 0
         try:
             while True:
-                buf = self.io_device.read(0x9000)
+                if read_dump:
+                    # Read next buf size
+                    buf = self.io_device.read(0x2)
+                    if len(buf) < 2:
+                        break
+                    length = buf[0] | (buf[1] << 8)
+                else:
+                    length = 0x9000
+
+                buf = self.io_device.read(length)
                 #util.xxd(buf, True)
                 if len(buf) == 0:
                     continue
+
+                if writer_dump:
+                    # buf size is stored as little-endian uint16
+                    writer_dump.write_cp(len(buf).to_bytes(2, byteorder='little') + buf)
+
                 cur_pos = 0
                 while cur_pos < len(buf):
                     #print('---- subpacket ----')
@@ -165,7 +179,10 @@ class SamsungParser:
         self.io_device.write(b'\x7f\x0e\x00\x00\x0b\x00\x00\x00\xa0\x00\x02\x00\x00\x00\x00\x7e')
 
     def read_dump(self):
-        pass
+        while self.io_device.file_available:
+            self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
+            self.run_diag(None, True)
+            self.io_device.open_next_file()
 
     # Samsung TS format:
     # No Epoch

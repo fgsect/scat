@@ -51,7 +51,7 @@ if __name__ == '__main__':
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
     input_group.add_argument('-u', '--usb', action='store_true', help='Use USB diagnostics port')
-    input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL)', nargs='*')
+    input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL, DLF or SCAT dump)', nargs='*')
 
     usb_group = parser.add_argument_group('USB device settings')
     usb_group.add_argument('-v', '--vendor', help='Specify USB vendor ID', type=hexint)
@@ -71,6 +71,7 @@ if __name__ == '__main__':
     if 'sec' in parser_dict.keys():
         sec_group = parser.add_argument_group('Samsung specific settings')
         sec_group.add_argument('-m', '--model', help='Device model for analyzing diagnostic messages', type=str)
+        sec_group.add_argument('--scat-dump', help='Store log as SCAT dump (Samsung only)', type=str)
 
     ip_group = parser.add_argument_group('GSMTAP IP settings')
     ip_group.add_argument('-P', '--port', help='Change UDP port to emit GSMTAP packets', type=int, default=4729)
@@ -154,6 +155,8 @@ if __name__ == '__main__':
 
         if not (args.qmdl == None) and args.type == 'qc':
             current_parser.run_diag(RawWriter(args.qmdl))
+        elif not (args.scat_dump == None) and args.type == 'sec':
+            current_parser.run_diag(writers.RawWriter(args.scat_dump))
         else:
             current_parser.run_diag()
 
