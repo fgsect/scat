@@ -45,6 +45,15 @@ if __name__ == '__main__':
     parsers_desc = ', '.join(parser_dict.keys())
 
     parser = argparse.ArgumentParser(description='Reads diagnostic messages from smartphone baseband.')
+
+    parser.add_argument('-l', '--list-devices', help='List usb devices', action='store_true')
+    args = parser.parse_known_args()
+
+    # list usb devices and then exit
+    if args[0].list_devices:
+        iodevices.USBIO().list_usb_devices()
+        sys.exit(0)
+
     parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
     parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: %s' % parsers_desc, required=True)
 
