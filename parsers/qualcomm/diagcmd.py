@@ -148,6 +148,7 @@ class diag_log_code_lte(IntEnum):
     LOG_LTE_RRC_OTA_MESSAGE = 0xC0 # 0xB0C0 LTE RRC OTA Packet
     LOG_LTE_RRC_MIB_MESSAGE = 0xC1 # 0xB0C1 LTE RRC MIB Message Log Packet
     LOG_LTE_RRC_SERVING_CELL_INFO = 0xC2 # 0xB0C2 LTE RRC Serving Cell Info Log Pkt
+    LOG_LTE_RRC_SUPPORTED_CA_COMBOS = 0xCD # 0xB0CD LTE RRC Supported CA Combos
 
     # NAS
     LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE   = 0xE0 # 0xB0E0 LTE NAS EMM Security Protected Incoming Msg
@@ -290,6 +291,7 @@ def log_mask_scat_lte():
         diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE,
         diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE,
         diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO,
+        diag_log_code_lte.LOG_LTE_RRC_SUPPORTED_CA_COMBOS,
         diag_log_code_lte.LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_ESM_SEC_OTA_OUTGOING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_ESM_PLAIN_OTA_INCOMING_MESSAGE,
