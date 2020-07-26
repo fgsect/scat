@@ -1296,9 +1296,9 @@ class DiagLteLogParser:
             return 
 
         sub_type = rrc_subtype_map[subtype]
-        # Invert EARFCN for UL-CCCH/UL-DCCH
+        # UL-EARFCN for UL-CCCH/UL-DCCH
         if sub_type == util.gsmtap_lte_rrc_types.UL_CCCH or sub_type == util.gsmtap_lte_rrc_types.UL_DCCH:
-            earfcn = earfcn | 0x4000
+            earfcn = util.calculate_ul_earfcn(earfcn)
 
         gsmtap_hdr = util.create_gsmtap_header(
             version = 3,
