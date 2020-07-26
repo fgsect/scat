@@ -892,12 +892,12 @@ class DiagLteLogParser:
             msg_hdr = struct.unpack('<BHHBHLHBLH', msg_hdr) # Version, RRC Release, NR RRC Release, RBID, Physical CID, EARFCN, SysFN/SubFN, PDUN, Len0, Len1
             p_cell_id = msg_hdr[4]
             earfcn = msg_hdr[5]
-            self.parent.lte_last_earfcn_dl[radio_id] = earfcn
-            self.parent.lte_last_cell_id[radio_id] = p_cell_id
+            self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)] = earfcn
+            self.parent.lte_last_cell_id[self.parent.sanitize_radio_id(radio_id)] = p_cell_id
             if msg_hdr[7] == 7 or msg_hdr[7] == 8: # Invert EARFCN for UL-CCCH/UL-DCCH
                 earfcn = earfcn | 0x4000
             sfn = (msg_hdr[6] & 0xfff0) >> 4
-            self.parent.lte_last_sfn[radio_id] = sfn
+            self.parent.lte_last_sfn[self.parent.sanitize_radio_id(radio_id)] = sfn
             subfn = msg_hdr[6] & 0xf
             subtype = msg_hdr[7]
             # XXX: needs proper field for physical cell id
