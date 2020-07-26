@@ -903,7 +903,7 @@ class DiagLteLogParser:
             # XXX: needs proper field for physical cell id
             sfn = sfn | (p_cell_id << 16)
 
-        elif pkt[0] in (0x08, 0x09, 0x0c, 0x0d, 0x0f, 0x10, 0x13, 0x14, 0x16): # Version 8, 9, 12, 13, 15, 16, 19, 20, 22
+        elif pkt[0] in (0x08, 0x09, 0x0c, 0x0d, 0x0f, 0x10, 0x13, 0x14, 0x16, 0x18): # Version 8, 9, 12, 13, 15, 16, 19, 20, 22, 24
             # 08 | 0a 72 | 01 | 0e 00 | 9c 18 00 00 | a9 33 | 06 | 00 00 00 00 | 02 00 | 2e 02
             # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b 8e c1 dd 13 b0
             # 0d | 0c 74 | 01 | 32 00 | 38 18 00 00 | 00 00 | 08 | 00 00 00 00 | 02 00 | 2c 00
@@ -911,6 +911,7 @@ class DiagLteLogParser:
             # 0f | 0d 21 | 01 | 9e 00 | 14 05 00 00 | 00 00 | 09 | 00 00 00 00 | 1c 00 | 08 10 a5 34 61 41 a3 1c 31 68 04 40 1a 00 49 16 7c 23 15 9f 00 10 67 c1 06 d9 e0 00 fd 2d
             # 13 | 0e 22 | 00 | 0b 00 | fa 09 00 00 | 00 00 | 32 | 00 00 00 00 | 09 00 | 28 18 40 16 08 08 80 00 00
             # 14 | 0e 30 | 01 | 09 01 | 9c 18 00 00 | 00 00 | 09 | 00 00 00 00 | 18 00 | 08 10 a7 14 53 59 a6 05 43 68 c0 3b da 30 04 a6 88 02 8d a2 00 9a 68 40
+            # 18 | 0f 22 | 00 | 68 00 | e4 0c 00 00 | 09 dc | 05 | 00 00 00 00 | 0d 00 | 40 85 8e c4 e5 bf e0 50 dc 29 15 16 00
             msg_hdr = pkt[0:19] # 19 bytes
             msg_content = pkt[19:] # Rest of packet
             if len(msg_hdr) != 19:
@@ -1043,8 +1044,8 @@ class DiagLteLogParser:
                 50: util.gsmtap_lte_rrc_types.UL_CCCH_NB,
                 52: util.gsmtap_lte_rrc_types.UL_DCCH_NB
             }
-        elif pkt[0] in (0x14,):
-            # RRC Packet v20
+        elif pkt[0] in (0x14, 0x18):
+            # RRC Packet v20, v24
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
