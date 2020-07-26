@@ -78,9 +78,10 @@ def parse_qxdm_ts(ts):
     
     try:
         ts_delta = datetime.timedelta(0, 0, 0, ts_upper * 1.25 + ts_lower * (1 / 40960), 0, 0, 0)
+        date = epoch + ts_delta
     except OverflowError:
-        ts_delta = datetime.timedelta(seconds=0)
-    return epoch + ts_delta
+        date = epoch + datetime.timedelta(seconds=0)
+    return date
 
 def xxd(buf, stdout = False):
     xxd_str = ''
