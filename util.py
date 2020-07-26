@@ -311,3 +311,28 @@ def create_osmocore_logging_header(timestamp = datetime.datetime.now(),
     )
 
     return logging_hdr
+
+
+# Calculates the equivalent UL-EARFCN of a given DL-EARFCN,
+# if the input is an SDL or unknown EARFCN the output will be equal to the input
+# Based on 3GPP TS 36.101 V16.6.0 Table 5.7.3-1
+def calculate_ul_earfcn(dl_earfcn):
+    if 0 <= dl_earfcn < 9660:        # B1-B28
+        offset = 18000
+    elif 9769 < dl_earfcn < 9920:    # B30-31
+        offset = 17890
+    elif 65535 < dl_earfcn < 67136:  # B65-66
+        offset = 65536
+    elif 67535 < dl_earfcn < 67836:  # B68
+        offset = 65136
+    elif 68335 < dl_earfcn < 68486:  # B70
+        offset = 64636
+    elif 68585 < dl_earfcn < 69466:  # B71-74
+        offset = 64536
+    elif 70365 < dl_earfcn < 70596:  # B85-87
+        offset = 63636
+    elif 70595 < dl_earfcn < 70646:  # B88
+        offset = 63635
+    else:
+        offset = 0
+    return dl_earfcn + offset
