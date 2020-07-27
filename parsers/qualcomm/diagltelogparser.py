@@ -682,7 +682,7 @@ class DiagLteLogParser:
                     pos += subpkt_size
                     continue
 
-                if subpkt_ver == 0x01:
+                if subpkt_ver == 0x01 or subpkt_ver == 0x28:
                     pos += 4
                     pos += 32
                     ciphering_algo = pkt[pos]
@@ -735,7 +735,7 @@ class DiagLteLogParser:
                     pos += subpkt_size
                     continue
 
-                if subpkt_ver == 0x01:
+                if subpkt_ver == 0x01 or subpkt_ver == 0x28:
                     pos += 4
                     pos += 32
                     ciphering_algo = pkt[pos]
