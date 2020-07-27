@@ -744,7 +744,7 @@ class DiagLteLogParser:
                         # Has header on PDU, CP (0x01), no ROHC
                         # Direction: Downlink (0x01)
                         ws_hdr = bytes([0x00, 0x01, 0x00, 0x03, 0x01, 0x01])
-                        self.parent.writer.write_cp(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
+                        self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
                         pos_sample += (20 + pdu_hdr[2])
 
                 else:
@@ -797,7 +797,7 @@ class DiagLteLogParser:
                         # Has header on PDU, CP (0x01), no ROHC
                         # Direction: Uplink (0x00)
                         ws_hdr = bytes([0x00, 0x01, 0x00, 0x03, 0x00, 0x01])
-                        self.parent.writer.write_cp(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
+                        self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
                         pos_sample += (16 + pdu_hdr[2])
 
                 else:
