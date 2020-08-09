@@ -20,6 +20,7 @@ class DiagLteLogParser:
             # LTE ML1
             0xB17F: lambda x, y, z: self.parse_lte_ml1_scell_meas(x, y, z), # LTE ML1 Serving Cell Meas and Eval
             0xB180: lambda x, y, z: self.parse_lte_ml1_ncell_meas(x, y, z), # LTE ML1 Neighbor Measurements
+            0xB193: lambda x, y, z: self.parse_lte_ml1_scell_meas_response(x, y, z), # LTE ML1 Serving Cell Meas Response
             0xB197: lambda x, y, z: self.parse_lte_ml1_cell_info(x, y, z), # LTE ML1 Serving Cell Info
             # LTE MAC
             #0xB061: lambda x, y, z: parse_lte_mac_rach_trigger(x, y, z), # LTE MAC RACH Trigger
@@ -212,6 +213,48 @@ class DiagLteLogParser:
                 print('Radio {}: Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}'.format(self.parent.sanitize_radio_id(radio_id), i, n_pci, n_real_rsrp, n_real_rssi))
         else:
             self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Neighbor Meas packet version {}'.format(self.parent.sanitize_radio_id(radio_id), pkt[0]))
+
+    def parse_lte_ml1_scell_meas_response(self, pkt_ts, pkt, radio_id):
+        # First 4b: Version, Number of subpackets, reserved
+        # 01 | 01 | 35 0c 
+        if pkt[0] == 1: # Version 1
+            num_subpkts = pkt[1]
+            pos = 4
+
+            for x in range(num_subpkts):
+                # 4b: Subpacket ID, Subpacket version, Subpacket size
+                # 19 | 30 | 40 02
+                subpkt_id = pkt[pos]
+                if subpkt_id == 25:
+                    # Serving Cell Measurement Result
+                    # EARFCN, num of cell, valid RX data
+                    # 35 0c 01 00 | 01 00 | 03 00 | 00 01 ff ff ee 10 00 00 4c 15 00 00 40 79 02 00 a0 3c 61 0a 4c 21 0f 00 ca 93 44 00 4b 04 00 00 60 09 96 00 00 90 1c 00 49 b4 44 00 de 78 13 0e e1 00 00 00 e1 84 43 0f 96 99 10 00 00 00 00 00 13 02 00 00 0b 00 03 00 00 00 00 00 37 00 3a 00 00 00 00 00 00 00 08 cc 25 f2 00 00 92 0b 01 00 c6 94 01 00 00 00 00 00 d0 00 00 00 e4 00 00 00 bf 86 01 00 00 00 00 00 14 00 00 00 e1 00 00 00 1e ff ff ff 84 ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00                                    
+                    scell_measurement_version = pkt[pos + 1]
+                    scell_subpacket_size = struct.unpack('<H', pkt[pos + 2:pos + 4])[0]
+                    scell_subpkt = pkt[pos:pos+scell_subpacket_size]
+                    scell_subpkt = scell_subpkt[4:]
+
+                    if scell_measurement_version == 48:
+                        earfcn, num_cell, valid_rx = struct.unpack('<LHH', scell_subpkt[0:8])
+                        interim = struct.unpack('<L', scell_subpkt[9:13])[0]
+                        pci = interim & 0x1ff
+                        scell_idx = (interim >> 9) & 0x7
+                        is_scell = (interim >> 12) & 0x1
+
+                        interim = struct.unpack('<L', scell_subpkt[13:17])[0]
+                        sfn = interim & 0x2ff
+                        subfn = (interim >> 10) & 0xf
+
+                        print('Radio {}: LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}'.format(self.parent.sanitize_radio_id(radio_id), earfcn, num_cell, valid_rx))
+                        print('Radio {}: LTE ML1 SCell Meas Response (Cell 0): PCI {}, Serving cell index {}, is_serving_cell = {}'.format(self.parent.sanitize_radio_id(radio_id), pci, scell_idx, is_scell))
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(self.parent.sanitize_radio_id(radio_id), scell_measurement_version))
+
+                    pos += scell_subpacket_size
+                else:
+                    self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas subpacket ID {}'.format(self.parent.sanitize_radio_id(radio_id), subpkt_id))
+        else:
+            self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas Response packet version {}'.format(self.parent.sanitize_radio_id(radio_id), pkt[0]))
 
     def parse_lte_ml1_cell_info(self, pkt_ts, pkt, radio_id):
         mib_payload = bytes([0, 0, 0])
