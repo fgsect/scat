@@ -113,25 +113,7 @@ command's outputs.  Following example is for Samsung Galaxy S5 Mini:
 
 ### Tested Devices
 
-Following devices are tested by the authors and contributors:
-
-| Device Name/Model | Processor | Baseband | Required Arguments | Rooting Required? | Note |
-| --- | --- | --- | --- | --- | --- |
-| Nokia 8110 4G (TA-1048) | Snapdragon 205 MSM8905 | X5 | `-t qc` | Yes | |
-| Google Nexus 5 (LG-D821) | Snapdragon 800 MSM8974 | MDM9x25 | `-t qc` | Yes | |
-| Google Nexus 5X (LG-H791) | Snapdragon 808 MSM8992 | X10 | `-t qc` | Yes | |
-| Google Pixel 2 (G011A) | Snapdragon 835 MSM8998 | X16 | `-t qc` | Yes | Modification of system partition is also required|
-| LG G Flex 2 (LG-H955) | Snapdragon 810 MSM8994 | X10 | `-t qc` | No | |
-| Sierra Wireless EM7455 | - | X7 (MDM9635) | `-t qc` | - | |
-| Sony Xperia X (F5122) | Snapdragon 650 MSM8956 | X8 | `-t qc` | Yes | |
-| Samsung Galaxy S III LTE (SHW-M210K) | Exynos 4412 | CMC221S | `-t sec -m cmc221s` | No | |
-| Samsung Galaxy S4 LTE (GT-I9505) | Snapdragon APQ8064T | Qualcomm MDM9215 | `-t qc` | No
-| Samsung Galaxy S5 Mini (SM-G800F) | Exynos 3470 | Exynos Modem 303 | `-t sec -m e303` | No | |
-| Samsung Galaxy S6 (SM-G920F) | Exynos 7420 | Exynos Modem 333 | `-t sec -m e333` | No/Yes | |
-| Samsung Galaxy S6 Edge+ (SM-G928F) | Exynos 7420 | Exynos Modem 333 | `-t sec -m e333` | No/Yes | |
-| Samsung Galaxy S8 (SM-G950F) | Exynos 8895 | Exynos Modem 355 | `-t sec -m e333` | No/Yes | |
-
-Note that we did not listed every Qualcomm-based devices here.
+Please see the [wiki page](https://github.com/fgsect/scat/wiki/Devices).
 
 ## Known Bugs
 
