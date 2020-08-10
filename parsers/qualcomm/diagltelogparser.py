@@ -25,8 +25,8 @@ class DiagLteLogParser:
             # LTE MAC
             #0xB061: lambda x, y, z: parse_lte_mac_rach_trigger(x, y, z), # LTE MAC RACH Trigger
             0xB062: lambda x, y, z: self.parse_lte_mac_rach_response(x, y, z), # LTE MAC RACH Response
-            #0xB063: lambda x, y, z: self.parse_lte_mac_dl_block(x, y, z), # LTE MAC DL Transport Block
-            #0xB064: lambda x, y, z: self.parse_lte_mac_ul_block(x, y, z), # LTE MAC UL Transport Block
+            0xB063: lambda x, y, z: self.parse_lte_mac_dl_block(x, y, z), # LTE MAC DL Transport Block
+            0xB064: lambda x, y, z: self.parse_lte_mac_ul_block(x, y, z), # LTE MAC UL Transport Block
             # LTE RLC
             # LTE PDCP
             #0xB0A0: lambda x, y, z: self.parse_lte_pdcp_dl_cfg(x, y, z), # LTE PDCP DL Config
@@ -401,296 +401,166 @@ class DiagLteLogParser:
             else:
                 self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket ID %s' % subpkt_id)
 
-    def parse_lte_mac_dl_block(self, pkt_ts, pkt, radio_id):
+    def create_lte_mac_gsmtap_packet(self, pkt_ts, is_downlink, header, body, radio_id):
         earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)]
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
 
+        # RNTI Type: {0: C-RNTI, 2: P-RNTI, 3: RA-RNTI, 4: T-C-RNTI, 5: SI-RNTI}
+        rnti_type_map = {
+            0: util.mac_lte_rnti_types.C_RNTI,
+            2: util.mac_lte_rnti_types.P_RNTI,
+            3: util.mac_lte_rnti_types.RA_RNTI,
+            4: util.mac_lte_rnti_types.C_RNTI,
+            5: util.mac_lte_rnti_types.SI_RNTI}
+        ws_rnti_type = 0
+        if header['rnti_type'] in rnti_type_map:
+            ws_rnti_type = rnti_type_map[header['rnti_type']]
+
+        # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
+        # Additional headers required for each message types
+        mac_hdr = struct.pack('!BBBBHB', 
+            util.mac_lte_radio_types.FDD_RADIO,
+            util.mac_lte_direction_types.DIRECTION_DOWNLINK if is_downlink else util.mac_lte_direction_types.DIRECTION_UPLINK,
+            ws_rnti_type,
+            util.mac_lte_tags.MAC_LTE_FRAME_SUBFRAME_TAG,
+            (header['sfn'] << 4) | header['subfn'],
+            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_MAC,
+            arfcn = earfcn,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
+
+        self.parent.writer.write_cp(gsmtap_hdr + mac_hdr + body, self.parent.sanitize_radio_id(radio_id), pkt_ts)
+
+    def parse_lte_mac_dl_block(self, pkt_ts, pkt, radio_id):
         if pkt[0] == 1:
             # pkt[1]: Number of Subpackets
             # pkt[2:4]: Reserved
-
             n_subpackets = pkt[1]
             pos = 4
-            # RNTI Type: {0: C-RNTI, 2: P-RNTI, 3: RA-RNTI, 4: T-C-RNTI, 5: SI-RNTI}
-            rnti_type_map = {0: 3, 2: 1, 3: 2, 4: 3, 5: 4}
 
             for x in range(n_subpackets):
-                # pkt[4]: Subpacket ID
-                # pkt[5]: Subpacket Version
-                # pkt[6:8]: Subpacket Size
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                util.xxd(subpkt, True)
+                subpkt = subpkt[4:]
 
-                # pkt[8]: Number of DTB entries
-
-                subpkt_id = pkt[pos]
-                subpkt_ver = pkt[pos + 1]
-                subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
-                if subpkt_id != 0x07:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected DL MAC Subpacket ID %s' % subpkt_id)
-                    pos += subpkt_size
-                    continue
-
-                if subpkt_ver == 0x02:
-                    n_samples = pkt[pos + 4]
-                    #print("LTE MAC DL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_ver, subpkt_size, n_samples))
-
-                    pos_sample = pos + 5
-                    for y in range(n_samples):
-                        # for each entry
-                        # subp[0:2]: SFN + SubFN
-                        # subp[2]: RNTI Type
-                        # subp[3]: HARQ ID
-                        # subp[4:6]: PMCH ID
-                        # subp[6:8]: DL TBS
-                        # subp[8]: RLC PDUs
-                        # subp[9:11]: Padding
-                        # subp[11]: Header Len
-                        # subp[12:] Header + CE
-
-                        sfn_subfn = pkt[pos_sample] | (pkt[pos_sample + 1] << 8)
-                        sfn = (sfn_subfn & 0xfff0) >> 4
-                        subfn = sfn_subfn & 0xf
-                        rnti_type = pkt[pos_sample + 2]
-                        harq_id = pkt[pos_sample + 3]
-                        pmch_id = pkt[pos_sample + 4] | (pkt[pos_sample + 5] << 8)
-                        dl_tbs = pkt[pos_sample + 6] | (pkt[pos_sample + 7] << 8)
-                        rlc_pdus = pkt[pos_sample + 8]
-                        padding = pkt[pos_sample + 9] | (pkt[pos_sample + 10] << 8)
-                        header_len = pkt[pos_sample + 11]
-                        mac_hdr = pkt[pos_sample + 12:pos_sample + 12 + header_len]
-
-                        gsmtap_rnti_type = 0
-                        rnti = 0
-                        ueid = 0x3ff
-                        if rnti_type in rnti_type_map:
-                            gsmtap_rnti_type = rnti_type_map[rnti_type]
-
-                        if rnti_type == 5: # SI-RNTI
-                            rnti = 0xffff
-                        elif rnti_type == 2: # P-RNTI
-                            rnti = 0xfffe
-                        else:
-                            rnti = self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)]
-
-                        gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x01, gsmtap_rnti_type,
-                                rnti, ueid, sfn, subfn, 0x01)
-
-                        gsmtap_hdr = util.create_gsmtap_header(
-                            version = 3,
-                            payload_type = util.gsmtap_type.LTE_MAC,
-                            arfcn = earfcn,
-                            frame_number = sfn,
-                            sub_slot = subfn,
-                            device_sec = ts_sec,
-                            device_usec = ts_usec)
-
-                        #print("%d:%d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, pmch_id, dl_tbs, rlc_pdus, padding, header_len, mac_hdr))
-                        self.parent.writer.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, radio_id, pkt_ts)
-                        pos_sample += (12 + header_len)
-                elif subpkt_ver == 0x04:
-                    # 01 | 00 00 09 10 | 02 | 01 | 00 00 | 07 00 | 00 | 00 00 | 07 | 40 0C 0F 0F 8F 2D B0 | 00 00
-                    # 03 | 00 00 00 2D | 05 | 01 | 00 00 | 1C 00 | 00 | 00 00 | 1C | 00 01 03 27 63 8D DA A5 5C 26 D0 53 90 18 00 00 80 0A 17 55 A2 A8 2F 62 35 F5 06 0C 
-                    #    | 00 00 10 2D | 05 | 01 | 00 00 | 07 00 | 00 | 00 00 | 07 | 00 04 2B 8B 50 6D C4 |
-                    #    | 00 00 20 2D | 05 | 01 | 00 00 | 12 00 | 00 | 00 00 | 12 | 00 0C 56 05 E8 91 AA 61 23 90 58 0E 74 36 A9 84 8C 40
-                    n_samples = pkt[pos + 4]
-                    #print("LTE MAC DL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_ver, subpkt_size, n_samples))
-                    pos_sample = pos + 5
-                    for y in range(n_samples):
-                        # for each entry
-                        # subp[0:4]: SFN + SubFN
-                        # subp[4]: RNTI Type
-                        # subp[5]: HARQ ID
-                        # subp[6:8]: PMCH ID
-                        # subp[8:10]: DL TBS
-                        # subp[10]: RLC PDUs
-                        # subp[11:12]: Padding
-                        # subp[12]: Header Len
-                        # subp[13:] Header + CE
-
-                        sfn_subfn = pkt[pos_sample + 2] | (pkt[pos_sample + 3] << 8)
-                        sfn = (sfn_subfn & 0xfff0) >> 4
-                        subfn = sfn_subfn & 0xf
-                        rnti_type = pkt[pos_sample + 4]
-                        harq_id = pkt[pos_sample + 5]
-                        pmch_id = pkt[pos_sample + 6] | (pkt[pos_sample + 7] << 8)
-                        dl_tbs = pkt[pos_sample + 8] | (pkt[pos_sample + 9] << 8)
-                        rlc_pdus = pkt[pos_sample + 10]
-                        padding = pkt[pos_sample + 11] | (pkt[pos_sample + 12] << 8)
-                        header_len = pkt[pos_sample + 13]
-                        mac_hdr = pkt[pos_sample + 14:pos_sample + 14 + header_len]
-
-                        gsmtap_rnti_type = 0
-                        rnti = 0
-                        ueid = 0x3ff
-                        if rnti_type in rnti_type_map:
-                            gsmtap_rnti_type = rnti_type_map[rnti_type]
-
-                        if rnti_type == 5: # SI-RNTI
-                            rnti = 0xffff
-                        elif rnti_type == 2: # P-RNTI
-                            rnti = 0xfffe
-                        else:
-                            rnti = self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)]
-
-                        gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x01, gsmtap_rnti_type,
-                                rnti, ueid, sfn, subfn, 0x01)
-
-                        gsmtap_hdr = util.create_gsmtap_header(
-                            version = 3,
-                            payload_type = util.gsmtap_type.LTE_MAC,
-                            arfcn = earfcn,
-                            frame_number = sfn,
-                            sub_slot = subfn,
-                            device_sec = ts_sec,
-                            device_usec = ts_usec)
-
-                        #print("%d:%d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, pmch_id, dl_tbs, rlc_pdus, padding, header_len, mac_hdr))
-                        self.parent.writer.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, radio_id, pkt_ts)
-                        pos_sample += (14 + header_len)
-
-                else:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected DL MAC Subpacket version %s' % subpkt_ver)
                 pos += subpkt_size
+
+                if subpkt_id == 0x07:
+                    if subpkt_version == 0x02:
+                        n_samples = subpkt[0]
+                        #print("LTE MAC DL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_ver, subpkt_size, n_samples))
+
+                        pos_sample = 1
+                        for y in range(n_samples):
+                            header = struct.unpack('<HBBHHBHB', subpkt[pos_sample:pos_sample+12])
+                            sfn_subfn, rnti_type, harq_id, pmch_id, dl_tbs, rlc_pdus, padding, header_len = header
+
+                            sfn = (sfn_subfn & 0xfff0) >> 4
+                            subfn = sfn_subfn & 0xf
+                            mac_hdr = subpkt[pos_sample + 12:pos_sample + 12 + header_len]
+
+                            self.create_lte_mac_gsmtap_packet(pkt_ts, True, {'sfn': sfn, 'subfn': subfn,
+                                'rnti_type': rnti_type, 'harq_id': harq_id, 'pmch_id': pmch_id,
+                                'dl_tbs': dl_tbs, 'rlc_pdus': rlc_pdus, 'padding': padding},
+                                mac_hdr,
+                                radio_id)
+                            pos_sample += (12 + header_len)
+                    elif subpkt_version == 0x04:
+                        # 01 | 00 | 00 | 09 10 | 02 | 01 | 00 00 | 07 00 | 00 | 00 00 | 07 | 40 0C 0F 0F 8F 2D B0 | 00 00
+                        # 01 | 01 | 00 | b9 21 | 02 | 01 | 00 00 | 07 00 | 00 | 00 00 | 07 | 40 06 0f 3d bb 60 b0 | 00 00
+                        # 03 | 00 | 00 | 00 2D | 05 | 01 | 00 00 | 1C 00 | 00 | 00 00 | 1C | 00 01 03 27 63 8D DA A5 5C 26 D0 53 90 18 00 00 80 0A 17 55 A2 A8 2F 62 35 F5 06 0C 
+                        #    | 00 | 00 | 10 2D | 05 | 01 | 00 00 | 07 00 | 00 | 00 00 | 07 | 00 04 2B 8B 50 6D C4 |
+                        #    | 00 | 00 | 20 2D | 05 | 01 | 00 00 | 12 00 | 00 | 00 00 | 12 | 00 0C 56 05 E8 91 AA 61 23 90 58 0E 74 36 A9 84 8C 40
+                        n_samples = subpkt[0]
+                        #print("LTE MAC DL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_ver, subpkt_size, n_samples))
+                        pos_sample = 1
+                        for y in range(n_samples):
+                            header = struct.unpack('<BBHBBHHBHB', subpkt[pos_sample:pos_sample+14])
+                            subid, cid, sfn_subfn, rnti_type, harq_id, pmch_id, dl_tbs, rlc_pdus, padding, header_len = header
+
+                            sfn = (sfn_subfn & 0xfff0) >> 4
+                            subfn = sfn_subfn & 0xf
+                            mac_hdr = subpkt[pos_sample + 14:pos_sample + 14 + header_len]
+
+                            self.create_lte_mac_gsmtap_packet(pkt_ts, True, {'sfn': sfn, 'subfn': subfn,
+                                'rnti_type': rnti_type, 'harq_id': harq_id, 'pmch_id': pmch_id,
+                                'dl_tbs': dl_tbs, 'rlc_pdus': rlc_pdus, 'padding': padding},
+                                mac_hdr,
+                                radio_id)
+                            pos_sample += (14 + header_len)
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected DL MAC Subpacket version {}'.format(subpkt_version))
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL packet version %s' % pkt[0])
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL packet version {}'.format(pkt[0]))
 
     def parse_lte_mac_ul_block(self, pkt_ts, pkt, radio_id):
-        earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)] | (1 << 14)
-        ts_sec = calendar.timegm(pkt_ts.timetuple())
-        ts_usec = pkt_ts.microsecond
-
         if pkt[0] == 1:
             # pkt[1]: Number of Subpackets
             # pkt[2:4]: Reserved
-
-            # pkt[4]: Subpacket ID
-            # pkt[5]: Subpacket Version
-            # pkt[6:8]: Subpacket Size
-
-            # pkt[8]: Number of DTB entries
-
-            # for each entry
-            # subp[0:2]: SFN + SubFN
-            # subp[2]: RNTI Type
-            # subp[3]: HARQ ID
-            # subp[4:6]: PMCH ID
-            # subp[6:8]: DL TBS
-            # subp[8]: RLC PDUs
-            # subp[9:11]: Padding
-            # subp[11]: Header Len
-            # subp[12:] Header + CE
-
             n_subpackets = pkt[1]
             pos = 4
-            # RNTI Type: {0: C-RNTI, 2: P-RNTI, 3: RA-RNTI, 4: T-C-RNTI, 5: SI-RNTI}
-            rnti_type_map = {0: 3, 2: 1, 3: 2, 4: 3, 5: 4}
 
             for x in range(n_subpackets):
-                subpkt_id = pkt[pos]
-                subpkt_ver = pkt[pos + 1]
-                subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
-                if subpkt_id != 0x08:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected LTE MAC UL Subpacket ID %s' % subpkt_id)
-                    pos += subpkt_size
-                    continue
-
-                if subpkt_ver == 0x01:
-                    n_samples = pkt[pos + 4]
-                    #print("LTE MAC UL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_ver, subpkt_size, n_samples))
-
-                    pos_sample = pos + 5
-                    for y in range(n_samples):
-                        # RNTI Type: {0: C-RNTI}
-                        # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
-                        # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
-                        harq_id = pkt[pos_sample]
-                        rnti_type = pkt[pos_sample + 1]
-                        sfn_subfn = pkt[pos_sample + 2] | (pkt[pos_sample + 3] << 8)
-                        sfn = (sfn_subfn & 0xfff0) >> 4
-                        subfn = sfn_subfn & 0xf
-                        grant = pkt[pos_sample + 4] | (pkt[pos_sample + 5] << 8)
-                        rlc_pdus = pkt[pos_sample + 6]
-                        padding = pkt[pos_sample + 7] | (pkt[pos_sample + 8] << 8)
-                        bsr_event = pkt[pos_sample + 9]
-                        bsr_trig = pkt[pos_sample + 10]
-                        header_len = pkt[pos_sample + 11]
-                        mac_hdr = pkt[pos_sample + 12:pos_sample + 12 + header_len]
-
-                        gsmtap_rnti_type = 0
-                        rnti = 0
-                        ueid = 0x3ff
-                        if rnti_type in rnti_type_map:
-                            gsmtap_rnti_type = rnti_type_map[rnti_type]
-
-                        if rnti_type == 0: # C-RNTI
-                            rnti = self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)]
-
-                        gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x00, gsmtap_rnti_type,
-                                rnti, ueid, sfn, subfn, 0x01)
-
-                        gsmtap_hdr = util.create_gsmtap_header(
-                            version = 3,
-                            payload_type = util.gsmtap_type.LTE_MAC,
-                            arfcn = earfcn,
-                            frame_number = sfn,
-                            sub_slot = subfn,
-                            device_sec = ts_sec,
-                            device_usec = ts_usec)
-
-                        #print("%d:%d %d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len, mac_hdr))
-                        self.parent.writer.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, radio_id, pkt_ts)
-                        pos_sample += (12 + header_len)
-                elif subpkt_ver == 0x02:
-                    n_samples = pkt[pos + 4]
-                    #print("LTE MAC UL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_ver, subpkt_size, n_samples))
-
-                    pos_sample = pos + 5
-                    for y in range(n_samples):
-                        # XXX: SFN/SubFN
-                        # 03 | 00 | 00 | 02 00 06 2E | A1 00 | 02 | 00 00 | 02 | 03 | 05 | 3D 21 02 01 02 
-                        #    | 00 | 00 | 01 00 13 2E | 33 00 | 01 | 1E 00 | 00 | 04 | 07 | 3E 21 0E 1F 00 00 00 
-                        #    | 00 | 00 | 02 00 46 2E | E9 00 | 02 | D5 00 | 02 | 03 | 09 | 3D 3A 21 02 21 09 1F 00 13 
-                        harq_id = pkt[pos_sample]
-                        rnti_type = pkt[pos_sample + 1]
-                        sfn_subfn = pkt[pos_sample + 4] | (pkt[pos_sample + 5] << 8)
-                        sfn = (sfn_subfn & 0xfff0) >> 4
-                        subfn = sfn_subfn & 0xf
-                        grant = pkt[pos_sample + 6] | (pkt[pos_sample + 7] << 8)
-                        rlc_pdus = pkt[pos_sample + 8]
-                        padding = pkt[pos_sample + 9] | (pkt[pos_sample + 10] << 8)
-                        bsr_event = pkt[pos_sample + 11]
-                        bsr_trig = pkt[pos_sample + 12]
-                        header_len = pkt[pos_sample + 13]
-                        mac_hdr = pkt[pos_sample + 14:pos_sample + 14 + header_len]
-
-                        gsmtap_rnti_type = 0
-                        rnti = 0
-                        ueid = 0x3ff
-                        if rnti_type in rnti_type_map:
-                            gsmtap_rnti_type = rnti_type_map[rnti_type]
-
-                        if rnti_type == 0: # C-RNTI
-                            rnti = self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)]
-
-                        gsmtap_mac_hdr = struct.pack('>BBBHHHHB', 0x01, 0x00, gsmtap_rnti_type,
-                                rnti, ueid, sfn, subfn, 0x01)
-
-                        gsmtap_hdr = util.create_gsmtap_header(
-                            version = 3,
-                            payload_type = util.gsmtap_type.LTE_MAC,
-                            arfcn = earfcn,
-                            frame_number = sfn,
-                            sub_slot = subfn,
-                            device_sec = ts_sec,
-                            device_usec = ts_usec)
-
-                        #print("%d:%d %d %d %d %d %d %d %d %d[%s]" % (sfn, subfn, rnti_type, harq_id, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len, mac_hdr))
-                        self.parent.writer.write_cp(gsmtap_hdr + gsmtap_mac_hdr + mac_hdr, radio_id, pkt_ts)
-                        pos_sample += (14 + header_len)
-                else:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected LTE MAC UL Subpacket version %s' % subpkt_ver)
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                util.xxd(subpkt, True)
+                subpkt = subpkt[4:]
 
                 pos += subpkt_size
+
+                if subpkt_id == 0x08:
+                    if subpkt_version == 0x01:
+                        n_samples = subpkt[0]
+                        #print("LTE MAC UL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_version, subpkt_size, n_samples))
+
+                        pos_sample = 1
+                        for y in range(n_samples):
+                            header = struct.unpack('<BBHHBHBBB', subpkt[pos_sample:pls_sample+12])
+                            harq_id, rnti_type, sfn_subfn, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len = header
+
+                            # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
+                            # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
+                            sfn = (sfn_subfn & 0xfff0) >> 4
+                            subfn = sfn_subfn & 0xf
+                            mac_hdr = subpkt[pos_sample + 12:pos_sample + 12 + header_len]
+
+                            self.create_lte_mac_gsmtap_packet(pkt_ts, False, {'sfn': sfn, 'subfn': subfn,
+                                'rnti_type': rnti_type, 'harq_id': harq_id, 'grant': grant,
+                                'rlc_pdus': rlc_pdus, 'padding': padding, 'bsr_event': bsr_event,
+                                'bsr_trig': bsr_trig},
+                                mac_hdr,
+                                radio_id)
+                            pos_sample += (12 + header_len)
+                    elif subpkt_version == 0x02:
+                        n_samples = subpkt[0]
+                        #print("LTE MAC UL: ID %d Version %d Size %d N_Samples %d" % (subpkt_id, subpkt_version, subpkt_size, n_samples))
+
+                        pos_sample = 1
+                        for y in range(n_samples):
+                            header = struct.unpack('<BBBBHHBHBBB', subpkt[pos_sample:pos_sample+14])
+                            subid, cid, harq_id, rnti_type, sfn_subfn, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len = header
+
+                            # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
+                            # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
+                            sfn = (sfn_subfn & 0xfff0) >> 4
+                            subfn = sfn_subfn & 0xf
+                            mac_hdr = subpkt[pos_sample + 14:pos_sample + 14 + header_len]
+
+                            self.create_lte_mac_gsmtap_packet(pkt_ts, False, {'sfn': sfn, 'subfn': subfn,
+                                'rnti_type': rnti_type, 'harq_id': harq_id, 'grant': grant,
+                                'rlc_pdus': rlc_pdus, 'padding': padding, 'bsr_event': bsr_event,
+                                'bsr_trig': bsr_trig},
+                                mac_hdr,
+                                radio_id)
+                            pos_sample += (14 + header_len)
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected LTE MAC UL Subpacket version %s' % subpkt_version)
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL packet version %s' % pkt[0])
 
