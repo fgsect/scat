@@ -446,7 +446,6 @@ class DiagLteLogParser:
             for x in range(n_subpackets):
                 subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
                 subpkt = pkt[pos:pos+subpkt_size]
-                util.xxd(subpkt, True)
                 subpkt = subpkt[4:]
 
                 pos += subpkt_size
@@ -496,6 +495,7 @@ class DiagLteLogParser:
                             pos_sample += (14 + header_len)
                     else:
                         self.parent.logger.log(logging.WARNING, 'Unexpected DL MAC Subpacket version {}'.format(subpkt_version))
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL packet version {}'.format(pkt[0]))
 
@@ -509,7 +509,6 @@ class DiagLteLogParser:
             for x in range(n_subpackets):
                 subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
                 subpkt = pkt[pos:pos+subpkt_size]
-                util.xxd(subpkt, True)
                 subpkt = subpkt[4:]
 
                 pos += subpkt_size
@@ -561,6 +560,7 @@ class DiagLteLogParser:
                             pos_sample += (14 + header_len)
                     else:
                         self.parent.logger.log(logging.WARNING, 'Unexpected LTE MAC UL Subpacket version %s' % subpkt_version)
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL packet version %s' % pkt[0])
 
