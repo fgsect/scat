@@ -310,92 +310,96 @@ class DiagLteLogParser:
             self.parent.logger.log(logging.WARNING, 'Unsupported LTE MAC RACH response packet version %02x' % msg_content[0])
             return
 
-        if msg_content[1] != 0x01:
-            self.parent.logger.log(logging.WARNING, 'More than 1 subpacket not supported: %02x' % msg_content[1])
-            return 
-        
-        if msg_content[4] != 0x06:
-            self.parent.logger.log(logging.WARNING, 'Expected MAC RACH attempt subpacket, got %02x' % msg_content[4])
-            return 
+        n_subpackets = pkt[1]
+        pos = 4
 
-        if msg_content[5] == 0x02:  # Version 2
-            # 01 01 | 30 C7 | 06 | 02 | 24 00 | 01 | 00 | 01 | 07 | 1B | FF | 98 FF | 00 00 | 01 | 23 1A | 04 00 | 18 | 1C 01 00 | 07 00 | 06 | 00 46 5C 80 BD 06 48 00 00 00
+        for x in range(n_subpackets):
+            subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+            subpkt = pkt[pos:pos+subpkt_size]
+            subpkt = subpkt[4:]
 
-            if msg_content[9] == 0x01: # RACH Failure, 0x00 == Success
-                return 
-            if msg_content[11] != 0x07: # not all message present
-                self.parent.logger.log(logging.WARNING, 'Not enough message to generate RAR')
-                return
+            pos += subpkt_size
 
-            rapid = msg_content[12]
-            tc_rnti = msg_content[19] | (msg_content[20] << 8)
-            ta = msg_content[21] | (msg_content[22] << 8)
-            grant = ((msg_content[24] & 0xf) << 16) | (msg_content[25] << 8) | msg_content[26]
-        elif msg_content[5] == 0x04:  # TODO: RACH response v4
-            if msg_content[9] == 0x01:
-                return
-            if msg_content[11] != 0x07:
-                self.parent.logger.log(logging.WARNING, 'Not enough message to generate RAR')
-                return
-            
-            rapid = msg_content[12]
-            tc_rnti = msg_content[19] | (msg_content[20] << 8)
-            ta = msg_content[21] | (msg_content[22] << 8)
-            grant = ((msg_content[24] & 0xf) << 16) | (msg_content[25] << 8) | msg_content[26]
-        elif msg_content[5] == 0x03:  # Version 3
-            # 01 01 | BD 0C | 06 | 03 | 28 00 | 01 | 00 | 01 | 00 | 01 | 07 | 18 | FF | 98 FF | 00 00 | 01 | B9 88 | 04 00 | 18 | 18 01 00 | 07 00 | 05 | 00 55 F1 60 A8 1E A6 00 00 00 00 00
+            if subpkt_id == 0x06:
+                if subpkt_version == 0x02:
+                    # [06 | 02 | 24 00] | 01 | 00 | 01 | 07 | [1B | FF | 98 FF] | [00 00 | 01 | 23 1A 04 00] | [18 1C 01 00 | 07 00 | 06 | 00 46 5C 80 BD 06 48 00 00 00]
+                    rach_attempt = subpkt[0]
+                    rach_result = subpkt[1]
+                    rach_msg_bitmask = subpkt[3]
+                    rach_msg1 = subpkt[4:8]
+                    rach_msg2 = subpkt[8:15]
+                    rach_msg3 = subpkt[15:32]
+                elif msg_content[5] == 0x03:  # Version 3
+                    # [06 | 03 | 28 00] | 01 | 00 | 01 | 00 | 01 | 07 | [18 | FF | 98 FF] | [00 00 | 01 | B9 88 04 00] | [18 18 01 00 | 07 00 | 05 | 00 55 F1 60 A8 1E A6 00 00 00 ] | 00 00
+                    # [06 | 03 | 28 00] | 01 | 00 | 01 | 00 | 01 | 07 | [11 | ff | 9c ff] | [00 00 | 01 | f2 cb 05 00] | [b4 de 00 00 | 12 00 | 02 | 20 06 1f 46 8e 47 58 9a a8 00 ] | 11 00
+                    rach_attempt = subpkt[2]
+                    rach_result = subpkt[3]
+                    rach_msg_bitmask = subpkt[5]
+                    rach_msg1 = subpkt[6:10]
+                    rach_msg2 = subpkt[10:17]
+                    rach_msg3 = subpkt[17:34]
+                else:
+                    self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version %s' % subpkt_version)
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
+                    continue
 
-            if msg_content[11] == 0x01:
-                return
-            if msg_content[13] != 0x07:
-                self.parent.logger.log(logging.WARNING, 'Not enough message to generate RAR')
-                return
+                if rach_result != 0x00: # RACH Failure, 0x00 == Success
+                    self.parent.logger.log(logging.WARNING, 'RACH result is not success: {}'.format(rach_result))
+                    continue
+                if rach_msg_bitmask != 0x07: # not all message present
+                    self.parent.logger.log(logging.WARNING, 'Not enough message to generate RAR')
+                    continue
 
-            rapid = msg_content[14]
-            tc_rnti = msg_content[21] | (msg_content[22] << 8)
-            ta = msg_content[23] | (msg_content[24] << 8)
-            grant = ((msg_content[26] & 0xf) << 16) | (msg_content[27] << 8) | msg_content[28]
+                rapid = rach_msg1[0]
+                backoff, rach_result, tc_rnti, ta = struct.unpack('<HBHH', rach_msg2)
+                grant, grant_val, harq_id = struct.unpack('<LHB', rach_msg3[0:7])
+                grant = (grant & 0xfffff)
+                mac_pdu = rach_msg3[7:] # Contains initial RRC message
 
-        else:
-            self.parent.logger.log(logging.WARNING, 'Unsupported RACH response version %02x' % msg_content[5])
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
-            return 
+                # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
+                # Additional headers required for each message types
+                mac_header_rar = struct.pack('!BBBBBBB',
+                    util.mac_lte_radio_types.FDD_RADIO,
+                    util.mac_lte_direction_types.DIRECTION_DOWNLINK,
+                    util.mac_lte_rnti_types.RA_RNTI,
+                    util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
+                    rapid,
+                    rach_attempt,
+                    util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
-        # RAR header: RAPID present, RAPID
-        # RAR body: TA, Grant, TC-RNTI
-        # Byte 1: TA[11:4]
-        # Byte 2: TA[3:0] | GRANT[20:16]
-        # Byte 3, 4: GRANT[15:0]
-        # Byte 5, 6: TC-RNTI
-        mac_body = bytes([(1 << 6) | (rapid & 0x3f),
-                          (ta & 0x07f0) >> 4,
-                          ((ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
-                          (grant & 0x00ff00) >> 8,
-                          (grant & 0x0000ff),
-                          (tc_rnti & 0xff00) >> 8,
-                          tc_rnti & 0x00ff])
-        # radioType 1b
-        # direction 1b
-        # rntiType 1b, rnti 2b
-        # UEID 2b
-        # SysFN 2b, SubFN 2b
-        # Reserved 1b
-        mac_header = bytes([0x01, 0x01, 0x02, 0x00, 0x02, 0x00, 0x02, 0x03,
-                            0xff, 0x00, 0x08, 0x01])
+                # RAR payload
+                # E = 0, T = 1, RAPID (7b), TA (12b), UL Grant (20b), TC-RNTI (16b)
 
-        self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)] = tc_rnti
+                rar_body = struct.pack('!BBBHH',
+                    (1 << 6) | (rapid & 0x3f),
+                    (ta & 0x0ff0) >> 4,
+                    ((ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
+                    grant & 0x00ffff,
+                    tc_rnti)
 
-        ts_sec = calendar.timegm(pkt_ts.timetuple())
-        ts_usec = pkt_ts.microsecond
-        
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
-            payload_type = util.gsmtap_type.LTE_MAC,
-            arfcn = earfcn,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+                mac_header_msg = struct.pack('!BBBBHB',
+                    util.mac_lte_radio_types.FDD_RADIO,
+                    util.mac_lte_direction_types.DIRECTION_UPLINK,
+                    util.mac_lte_rnti_types.C_RNTI,
+                    util.mac_lte_tags.MAC_LTE_RNTI_TAG,
+                    tc_rnti,
+                    util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
-        self.parent.writer.write_cp(gsmtap_hdr + mac_header + mac_body, radio_id, pkt_ts)
+                self.parent.lte_last_tcrnti[self.parent.sanitize_radio_id(radio_id)] = tc_rnti
+                ts_sec = calendar.timegm(pkt_ts.timetuple())
+                ts_usec = pkt_ts.microsecond
+
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtap_type.LTE_MAC,
+                    arfcn = earfcn,
+                    device_sec = ts_sec,
+                    device_usec = ts_usec)
+
+                self.parent.writer.write_cp(gsmtap_hdr + mac_header_rar + rar_body, self.parent.sanitize_radio_id(radio_id), pkt_ts)
+                self.parent.writer.write_cp(gsmtap_hdr + mac_header_msg + mac_pdu, self.parent.sanitize_radio_id(radio_id), pkt_ts)
+            else:
+                self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket ID %s' % subpkt_id)
 
     def parse_lte_mac_dl_block(self, pkt_ts, pkt, radio_id):
         earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)]
