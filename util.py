@@ -311,3 +311,52 @@ def create_osmocore_logging_header(timestamp = datetime.datetime.now(),
     )
 
     return logging_hdr
+
+@unique
+class mac_lte_rnti_types(IntEnum):
+    NO_RNTI = 0
+    P_RNTI = 1
+    RA_RNTI = 2
+    C_RNTI = 3
+    SI_RNTI = 4
+    SPS_RNTI = 5
+    M_RNTI = 6
+    SL_BCH_RNTI = 7
+    SL_RNTI = 8
+    SC_RNTI = 9
+    G_RNTI = 10
+
+@unique
+class mac_lte_radio_types(IntEnum):
+    FDD_RADIO = 1
+    TDD_RADIO = 2
+
+@unique
+class mac_lte_direction_types(IntEnum):
+    DIRECTION_UPLINK = 0
+    DIRECTION_DOWNLINK = 1
+
+@unique
+class mac_lte_tags(IntEnum):
+    MAC_LTE_PAYLOAD_TAG  = 0x01
+    MAC_LTE_RNTI_TAG = 0x02 # 2 bytes, network order
+    MAC_LTE_UEID_TAG = 0x03 # 2 bytes, network order
+    MAC_LTE_FRAME_SUBFRAME_TAG = 0x04 # 2 bytes, network order, SFN is stored in 12 MSB and SF in 4 LSB
+    MAC_LTE_PREDEFINED_DATA_TAG = 0x05 # 1 byte
+    MAC_LTE_RETX_TAG = 0x06 # 1 byte
+    MAC_LTE_CRC_STATUS_TAG = 0x07 # 1 byte
+    MAC_LTE_EXT_BSR_SIZES_TAG = 0x08 # 0 byte
+    MAC_LTE_SEND_PREAMBLE_TAG = 0x09 # 2 bytes, RAPID value (1 byte) followed by RACH attempt number (1 byte)
+    MAC_LTE_CARRIER_ID_TAG = 0x0A # 1 byte
+    MAC_LTE_PHY_TAG = 0x0B # variable length, length (1 byte) then depending on direction
+    # in UL: modulation type (1 byte), TBS index (1 byte), RB length (1 byte),
+    #        RB start (1 byte), HARQ id (1 byte), NDI (1 byte)
+    # in DL: DCI format (1 byte), resource allocation type (1 byte), aggregation level (1 byte),
+    #        MCS index (1 byte), redundancy version (1 byte), resource block length (1 byte),
+    #        HARQ id (1 byte), NDI (1 byte), TB (1 byte), DL reTx (1 byte)
+    MAC_LTE_SIMULT_PUCCH_PUSCH_PCELL_TAG = 0x0C # 0 byte
+    MAC_LTE_SIMULT_PUCCH_PUSCH_PSCELL_TAG = 0x0D # 0 byte
+    MAC_LTE_CE_MODE_TAG = 0x0E # 1 byte containing mac_lte_ce_mode enum value
+    MAC_LTE_NB_MODE_TAG = 0x0F # 1 byte containing mac_lte_nb_mode enum value
+    MAC_LTE_N_UL_RB_TAG = 0x10 # 1 byte containing the number of UL resource blocks: 6, 15, 25, 50, 75 or 100
+    MAC_LTE_SR_TAG = 0x11 # 2 bytes for the number of items, followed by that number of ueid, rnti (2 bytes each)

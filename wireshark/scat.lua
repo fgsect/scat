@@ -10,7 +10,6 @@ gsmtap_wrapper_proto.fields = {F_gsmtap_subtype, F_gsmtap_device_time}
 
 -- Dissectors
 local ip_dissector = Dissector.get("ip")
-local lte_mac_dissector = Dissector.get("mac-lte")
 local udp_port_table = DissectorTable.get("udp.port")
 
 -- Fields
@@ -65,6 +64,10 @@ local lte_nas_subtypes = {
     [ 1] = { check_and_get_dissector("nas-eps"), "NAS/EPS with security" }
 }
 
+local lte_mac_subtypes = {
+    [ 0] = { check_and_get_dissector("mac-lte-framed"), "LTE MAC framed" }
+}
+
 local original_gsmtap_dissector
 
 function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
@@ -107,6 +110,8 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             if lte_rrc_subtypes[subtype] then
                 lte_rrc_subtypes[subtype][1]:call(tvbuffer:range(f_header_len().value):tvb(), pinfo, treeitem)
             end
+        elseif f_gsmtap_type().value == 0x0e then
+            lte_mac_subtypes[0][1]:call(tvbuffer:range(f_header_len().value):tvb(), pinfo, treeitem)
         elseif f_gsmtap_type().value == 0x12 then
             if lte_nas_subtypes[subtype] then
                 lte_nas_subtypes[subtype][1]:call(tvbuffer:range(f_header_len().value):tvb(), pinfo, treeitem)
@@ -119,10 +124,16 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             if subtype > 7 and lte_rrc_subtypes[subtype] then
                 lte_rrc_subtypes[subtype][1]:call(tvbuffer:range(f_header_len().value):tvb(), pinfo, treeitem)
             end
+        elseif f_gsmtap_type().value == 0x0e then
+            lte_mac_subtypes[0][1]:call(tvbuffer:range(f_header_len().value):tvb(), pinfo, treeitem)
+        end
+    else
+        -- Wireshark do not support LTE MAC yet
+        if f_gsmtap_type().value == 0x0e then
+            lte_mac_subtypes[0][1]:call(tvbuffer:range(f_header_len().value):tvb(), pinfo, treeitem)
         end
     end
 
-    -- TODO: LTE MAC information used by SCAT
 end
 
 original_gsmtap_dissector = udp_port_table:get_dissector(4729)
