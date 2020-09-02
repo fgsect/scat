@@ -247,6 +247,8 @@ class DiagLteLogParser:
                 pos += subpkt_size
 
                 if subpkt_id == 0x19:
+                    # Serving Cell Measurement Result
+                    # EARFCN, num of cell, valid RX data
                     if subpkt_version == 36:
                         # 16 0d 00 00 | 01 00 | 03 00 | d4 10 00 00 9b 24 00 00 fe f0 03 00 7f f8 d9 04 9b 90 0f 00 e4 b3 44 00 4b 04 00 00 00 b0 1c 00 4b 64 46 00 2d b5 94 13 39 01 00 00 39 e5 64 12 77 91 0e 00 00 00 00 00 d2 01 00 00 0d 00 08 00 32 00 31 00 00 00 10 49 a9 3c 04 00 43 85 0d 00 07 75 02 00 00 00 00 00 7d 04 00 00 9b 0c 00 00 0a 6f 02 00 00 00 00 00 a6 00 00 00 39 01 00 00 87 06 00 00 11 0b 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00            
                         earfcn, n_cells, valid_rx = struct.unpack('<LHH', subpkt[0:8])
@@ -256,25 +258,74 @@ class DiagLteLogParser:
                             pass
                     elif subpkt_version == 48:
                         # EARFCN, num of cell, valid RX data
+                        # 35 0c 01 00 | 01 00 | 03 00 | 00 01 ff ff ee 10 00 00 4c 15 00 00 40 79 02 00 a0 3c 61 0a 4c 21 0f 00 ca 93 44 00 4b 04 00 00 60 09 96 00 00 90 1c 00 49 b4 44 00 de 78 13 0e e1 00 00 00 e1 84 43 0f 96 99 10 00 00 00 00 00 13 02 00 00 0b 00 03 00 00 00 00 00 37 00 3a 00 00 00 00 00 00 00 08 cc 25 f2 00 00 92 0b 01 00 c6 94 01 00 00 00 00 00 d0 00 00 00 e4 00 00 00 bf 86 01 00 00 00 00 00 14 00 00 00 e1 00 00 00 1e ff ff ff 84 ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
                         # 35 0c 01 00 | 01 00 | 03 00 | 00 01 ff ff ee 10 00 00 4c 15 00 00 40 79 02 00 a0 3c 61 0a 4c 21 0f 00 ca 93 44 00 4b 04 00 00 60 09 96 00 00 90 1c 00 49 b4 44 00 de 78 13 0e e1 00 00 00 e1 84 43 0f 96 99 10 00 00 00 00 00 13 02 00 00 0b 00 03 00 00 00 00 00 37 00 3a 00 00 00 00 00 00 00 08 cc 25 f2 00 00 92 0b 01 00 c6 94 01 00 00 00 00 00 d0 00 00 00 e4 00 00 00 bf 86 01 00 00 00 00 00 14 00 00 00 e1 00 00 00 1e ff ff ff 84 ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00                                    
-                        earfcn, n_cells, valid_rx = struct.unpack('<LHH', subpkt[0:8])
+                        earfcn, num_cell, valid_rx, rx_map = struct.unpack('<LHHL', subpkt[0:12])
+                        interim = struct.unpack('<HHH', subpkt[12:18])
+                        pci = interim[0] & 511
+                        scell_idx = (interim[0] >> 9) & 7
+                        is_scell = (interim[0] >> 12) & 1
 
-                        pos_cell = 8
-                        for y in range(n_cells):
-                            pass
-                        #interim = struct.unpack('<L', subpkt[9:13])[0]
-                        #pci = interim & 0x1ff
-                        #scell_idx = (interim >> 9) & 0x7
-                        #is_scell = (interim >> 12) & 0x1
+                        sfn = interim[2] & 1023
+                        subfn = (interim[2] >> 10) & 15
 
-                        #interim = struct.unpack('<L', subpkt[13:17])[0]
-                        #sfn = interim & 0x2ff
-                        #subfn = (interim >> 10) & 0xf
+                        interim = struct.unpack('<LLLLLLLLLLLL', subpkt[28:76])
+                        rsrp0 = (float((interim[0] >> 10) & 4095)) * 0.0625 - 180.0
+                        rsrp1 = (float((interim[1] >> 12) & 4095)) * 0.0625 - 180.0
+                        rsrp2 = (float((interim[2] >> 12) & 4095)) * 0.0625 - 180.0
+                        rsrp3 = (float((interim[4]) & 4095)) * 0.0625 - 180.0
+                        rsrp = (float((interim[4] >> 12) & 4095) + 640) * 0.0625 - 180.0
+                        frsrp = (float((interim[5] >> 12) & 4095)) * 0.0625 - 180.0
 
-                        #print('Radio {}: LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}'.format(self.parent.sanitize_radio_id(radio_id), earfcn, num_cell, valid_rx))
-                        #print('Radio {}: LTE ML1 SCell Meas Response (Cell 0): PCI {}, Serving cell index {}, is_serving_cell = {}'.format(self.parent.sanitize_radio_id(radio_id), pci, scell_idx, is_scell))
+                        rsrq0 = (float((interim[6]) & 1023)) * 0.0625 - 30.0
+                        rsrq1 = (float((interim[6] >> 20) & 1023)) * 0.0625 - 30.0
+                        rsrq2 = (float((interim[7] >> 10) & 1023)) * 0.0625 - 30.0
+                        rsrq3 = (float((interim[7] >> 20) & 1023)) * 0.0625 - 30.0
+                        rsrq = (float((interim[8]) & 1023)) * 0.0625 - 30.0
+                        frsrq = (float((interim[8] >> 20) & 1023)) * 0.0625 - 30.0
+
+                        rssi0 = (float((interim[9]) & 2047)) * 0.0625 - 110.0
+                        rssi1 = (float((interim[9] >> 11) & 2047)) * 0.0625 - 110.0
+                        rssi2 = (float((interim[10]) & 2047)) * 0.0625 - 110.0
+                        rssi3 = (float((interim[10] >> 11) & 2047)) * 0.0625 - 110.0
+                        rssi = (float((interim[11]) & 1023)) * 0.0625 - 110.0
+                        resid_freq_error = struct.unpack('<H', subpkt[96:98])[0]
+
+                        interim = struct.unpack('<LL', subpkt[104:112])
+                        snr0 = (float((interim[0]) & 511)) * 0.1 - 20.0
+                        snr1 = (float((interim[0] >> 9) & 511)) * 0.1 - 20.0
+                        snr2 = (float((interim[1]) & 511)) * 0.1 - 20.0
+                        snr3 = (float((interim[1] >> 9) & 511)) * 0.1 - 20.0
+
+                        interim = struct.unpack('<LLLLLL', subpkt[128:152])
+                        prj_sir = interim[0]
+                        if prj_sir & (1 << 31):
+                            prj_sir = prj_sir - 4294967296
+                        prj_sir = prj_sir / 16
+
+                        posticrsrq = (float((interim[1]))) * 0.0625 - 30.0
+
+                        cinr0 = interim[2]
+                        if cinr0 & (1 << 31):
+                            cinr0 = cinr0 - 4294967296
+
+                        cinr1 = interim[3]
+                        if cinr1 & (1 << 31):
+                            cinr1 = cinr1 - 4294967296
+
+                        cinr2 = interim[4]
+                        if cinr2 & (1 << 31):
+                            cinr2 = cinr2 - 4294967296
+
+                        cinr3 = interim[5]
+                        if cinr3 & (1 << 31):
+                            cinr3 = cinr3 - 4294967296
+
+                        print('Radio {}: LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}'.format(self.parent.sanitize_radio_id(radio_id), earfcn, num_cell, valid_rx))
+                        print('Radio {}: LTE ML1 SCell Meas Response (Cell 0): PCI {}, Serving cell index {}, is_serving_cell = {}'.format(self.parent.sanitize_radio_id(radio_id), pci, scell_idx, is_scell))
+
                     else:
-                        self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(self.parent.sanitize_radio_id(radio_id), scell_measurement_version))
+                        self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(self.parent.sanitize_radio_id(radio_id), subpkt_version))
                 else:
                     self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas subpacket ID {}'.format(self.parent.sanitize_radio_id(radio_id), subpkt_id))
         else:
