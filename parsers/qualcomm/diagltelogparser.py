@@ -235,15 +235,66 @@ class DiagLteLogParser:
                     scell_subpkt = scell_subpkt[4:]
 
                     if scell_measurement_version == 48:
-                        earfcn, num_cell, valid_rx = struct.unpack('<LHH', scell_subpkt[0:8])
-                        interim = struct.unpack('<L', scell_subpkt[9:13])[0]
-                        pci = interim & 0x1ff
-                        scell_idx = (interim >> 9) & 0x7
-                        is_scell = (interim >> 12) & 0x1
+                        earfcn, num_cell, valid_rx, rx_map = struct.unpack('<LHH', scell_subpkt[0:12])
+                        interim = struct.unpack('<HHH', scell_subpkt[12:18])
+                        pci = interim[0] & 511
+                        scell_idx = (interim[0] >> 9) & 7
+                        is_scell = (interim[0] >> 12) & 1
 
-                        interim = struct.unpack('<L', scell_subpkt[13:17])[0]
-                        sfn = interim & 0x2ff
-                        subfn = (interim >> 10) & 0xf
+                        sfn = interim[2] & 1023
+                        subfn = (interim[2] >> 10) & 15
+
+                        interim = struct.unpack('<LLLLLLLLLLLL', scell_subpkt[28:76])
+                        rsrp0 = (float((interim[0] >> 10) & 4095)) * 0.0625 - 180.0
+                        rsrp1 = (float((interim[1] >> 12) & 4095)) * 0.0625 - 180.0
+                        rsrp2 = (float((interim[2] >> 12) & 4095)) * 0.0625 - 180.0
+                        rsrp3 = (float((interim[4]) & 4095)) * 0.0625 - 180.0
+                        rsrp = (float((interim[4] >> 12) & 4095) + 640) * 0.0625 - 180.0
+                        frsrp = (float((interim[5] >> 12) & 4095)) * 0.0625 - 180.0
+
+                        rsrq0 = (float((interim[6]) & 1023)) * 0.0625 - 30.0
+                        rsrq1 = (float((interim[6] >> 20) & 1023)) * 0.0625 - 30.0
+                        rsrq2 = (float((interim[7] >> 10) & 1023)) * 0.0625 - 30.0
+                        rsrq3 = (float((interim[7] >> 20) & 1023)) * 0.0625 - 30.0
+                        rsrq = (float((interim[8]) & 1023)) * 0.0625 - 30.0
+                        frsrq = (float((interim[8] >> 20) & 1023)) * 0.0625 - 30.0
+
+                        rssi0 = (float((interim[9]) & 2047)) * 0.0625 - 110.0
+                        rssi1 = (float((interim[9] >> 11) & 2047)) * 0.0625 - 110.0
+                        rssi2 = (float((interim[10]) & 2047)) * 0.0625 - 110.0
+                        rssi3 = (float((interim[10] >> 11) & 2047)) * 0.0625 - 110.0
+                        rssi = (float((interim[11]) & 1023)) * 0.0625 - 110.0
+                        resid_freq_error = struct.unpack('<H', scell_subpkt[96:98])[0]
+
+                        interim = struct.unpack('<LL', scell_subpkt[104:112])
+                        snr0 = (float((interim[0]) & 511)) * 0.1 - 20.0
+                        snr1 = (float((interim[0] >> 9) & 511)) * 0.1 - 20.0
+                        snr2 = (float((interim[1]) & 511)) * 0.1 - 20.0
+                        snr3 = (float((interim[1] >> 9) & 511)) * 0.1 - 20.0
+
+                        interim = struct.unpack('<LLLLLL', scell_subpkt[128:152])
+                        prj_sir = interim[0]
+                        if prj_sir & (1 << 31):
+                            prj_sir = prj_sir - 4294967296
+                        prj_sir = prj_sir / 16
+
+                        posticrsrq = (float((interim[1]))) * 0.0625 - 30.0
+
+                        cinr0 = interim[2]
+                        if cinr0 & (1 << 31):
+                            cinr0 = cinr0 - 4294967296
+
+                        cinr1 = interim[3]
+                        if cinr1 & (1 << 31):
+                            cinr1 = cinr1 - 4294967296
+
+                        cinr2 = interim[4]
+                        if cinr2 & (1 << 31):
+                            cinr2 = cinr2 - 4294967296
+
+                        cinr3 = interim[5]
+                        if cinr3 & (1 << 31):
+                            cinr3 = cinr3 - 4294967296
 
                         print('Radio {}: LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}'.format(self.parent.sanitize_radio_id(radio_id), earfcn, num_cell, valid_rx))
                         print('Radio {}: LTE ML1 SCell Meas Response (Cell 0): PCI {}, Serving cell index {}, is_serving_cell = {}'.format(self.parent.sanitize_radio_id(radio_id), pci, scell_idx, is_scell))
