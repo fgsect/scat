@@ -235,7 +235,7 @@ class DiagLteLogParser:
                     scell_subpkt = scell_subpkt[4:]
 
                     if scell_measurement_version == 48:
-                        earfcn, num_cell, valid_rx, rx_map = struct.unpack('<LHH', scell_subpkt[0:12])
+                        earfcn, num_cell, valid_rx, rx_map = struct.unpack('<LHHL', scell_subpkt[0:12])
                         interim = struct.unpack('<HHH', scell_subpkt[12:18])
                         pci = interim[0] & 511
                         scell_idx = (interim[0] >> 9) & 7
