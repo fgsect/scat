@@ -11,6 +11,7 @@ from .diagwcdmalogparser import DiagWcdmaLogParser
 from .diagumtslogparser import DiagUmtsLogParser
 from .diagltelogparser import DiagLteLogParser
 from .diag1xlogparser import Diag1xLogParser
+from .diagnrlogparser import DiagNrLogParser
 
 from .diagcommoneventparser import DiagCommonEventParser
 from .diaglteeventparser import DiagLteEventParser
@@ -55,8 +56,7 @@ class QualcommParser:
 
         self.diag_log_parsers = [DiagGsmLogParser(self),
             DiagWcdmaLogParser(self), DiagUmtsLogParser(self),
-            DiagLteLogParser(self), Diag1xLogParser(self)]
-
+            DiagLteLogParser(self), Diag1xLogParser(self), DiagNrLogParser(self)]
         self.process = { }
         self.no_process = { }
 

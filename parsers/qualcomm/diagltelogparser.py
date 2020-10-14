@@ -59,6 +59,8 @@ class DiagLteLogParser:
             0xB0C1: lambda x, y, z: self.parse_lte_mib(x, y, z), # LTE RRC MIB Message
             0xB0C2: lambda x, y, z: self.parse_lte_rrc_cell_info(x, y, z), # LTE RRC Serving Cell Info
             0xB0C0: lambda x, y, z: self.parse_lte_rrc(x, y, z), # LTE RRC OTA Message
+            #LTE CA COMBOS
+            0xB0CD: lambda x, y, z: self.parse_cacombos(x, y, z),
             # LTE NAS
             0xB0E0: lambda x, y, z: self.parse_lte_nas(x, y, z, False), # NAS ESM RX Enc
             0xB0E1: lambda x, y, z: self.parse_lte_nas(x, y, z, False), # NAS ESM TX Enc
@@ -1329,3 +1331,5 @@ class DiagLteLogParser:
 
         self.parent.writer.write_cp(gsmtap_hdr + msg_content, radio_id, pkt_ts)
 
+    def parse_cacombos(self, pkt_ts, pkt, radio_id):
+        self.parent.logger.log(logging.WARNING, "0xB0CD " + util.xxd_oneline(pkt))

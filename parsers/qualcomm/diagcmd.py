@@ -283,7 +283,7 @@ def log_mask_empty_lte():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0209)
 
 def log_mask_scat_lte():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0209,
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0826,
         diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
         diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS,
@@ -299,7 +299,8 @@ def log_mask_scat_lte():
         diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_INCOMING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE
+        diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        0x826
     )
 
 def log_mask_empty_tdscdma():
