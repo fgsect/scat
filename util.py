@@ -361,6 +361,94 @@ class mac_lte_tags(IntEnum):
     MAC_LTE_N_UL_RB_TAG = 0x10 # 1 byte containing the number of UL resource blocks: 6, 15, 25, 50, 75 or 100
     MAC_LTE_SR_TAG = 0x11 # 2 bytes for the number of items, followed by that number of ueid, rnti (2 bytes each)
 
+@unique
+class pdcp_lte_direction_types(IntEnum):
+    DIRECTION_UPLINK = 0
+    DIRECTION_DOWNLINK = 1
+
+@unique
+class pdcp_plane_types(IntEnum):
+    SIGNALING_PLANE = 1
+    USER_PLANE = 2
+
+@unique
+class pdcp_logical_channel_types(IntEnum):
+    Channel_DCCH=1,
+    Channel_BCCH=2,
+    Channel_CCCH=3,
+    Channel_PCCH=4,
+    Channel_DCCH_NB=5,
+    Channel_BCCH_NB=6,
+    Channel_CCCH_NB=7,
+    Channel_PCCH_NB=8
+
+@unique
+class pdcp_bcch_transport_types(IntEnum):
+    BCH_TRANSPORT=1,
+    DLSCH_TRANSPORT=2
+
+@unique
+class pdcp_sn_length_types(IntEnum):
+    PDCP_SN_LENGTH_5_BITS = 5
+    PDCP_SN_LENGTH_7_BITS = 7
+    PDCP_SN_LENGTH_12_BITS = 12
+    PDCP_SN_LENGTH_15_BITS = 15
+    PDCP_SN_LENGTH_18_BITS = 18
+
+@unique
+class pdcp_lte_tags(IntEnum):
+    PDCP_LTE_PAYLOAD_TAG = 0x01
+    PDCP_LTE_SEQNUM_LENGTH_TAG = 0x02 # 1 byte
+    PDCP_LTE_DIRECTION_TAG = 0x03 # 1 byte
+    PDCP_LTE_LOG_CHAN_TYPE_TAG = 0x04 # 1 byte
+    PDCP_LTE_BCCH_TRANSPORT_TYPE_TAG = 0x05 # 1 byte
+    PDCP_LTE_ROHC_IP_VERSION_TAG = 0x06 # 2 bytes
+    PDCP_LTE_ROHC_CID_INC_INFO_TAG = 0x07 # 1 byte
+    PDCP_LTE_ROHC_LARGE_CID_PRES_TAG = 0x08 # 1 byte
+    PDCP_LTE_ROHC_MODE_TAG = 0x09 # 1 byte
+    PDCP_LTE_ROHC_RND_TAG = 0x0A # 1 byte
+    PDCP_LTE_ROHC_UDP_CHECKSUM_PRES_TAG = 0x0B # 1 byte
+    PDCP_LTE_ROHC_PROFILE_TAG = 0x0C # 2 bytes, network order
+    PDCP_LTE_CHANNEL_ID_TAG = 0x0D # 2 bytes, network order
+    PDCP_LTE_UEID_TAG = 0x0E # 2 bytes, network order
+
+@unique
+class wcdma_rlc_channel_types(IntEnum):
+    UMTS_CHANNEL_TYPE_UNSPECIFIED = 0
+    UMTS_CHANNEL_TYPE_PCCH = 1
+    UMTS_CHANNEL_TYPE_CCCH = 2
+    UMTS_CHANNEL_TYPE_DCCH = 3
+    UMTS_CHANNEL_TYPE_PS_DTCH = 4
+    UMTS_CHANNEL_TYPE_CTCH = 5
+    UMTS_CHANNEL_TYPE_BCCH = 6
+
+@unique
+class wcdma_rlc_mode_types(IntEnum):
+    RLC_TM = 0
+    RLC_UM = 1
+    RLC_AM = 2
+
+@unique
+class wcdma_li_size_types(IntEnum):
+    RLC_LI_VARIABLE = 0
+    RLC_LI_7BITS = 1
+    RLC_LI_15BITS = 2
+
+@unique
+class wcdma_rlc_direction_types(IntEnum):
+    DIRECTION_UPLINK = 0
+    DIRECTION_DOWNLINK = 1
+
+@unique
+class wcdma_rlc_tags(IntEnum):
+    RLC_PAYLOAD_TAG = 0x01
+    RLC_CHANNEL_TYPE_TAG = 0x02 # 1 byte
+    RLC_MODE_TAG = 0x03 # 1 byte, enum rlc_mode value
+    RLC_DIRECTION_TAG = 0x04 # 1 byte
+    RLC_URNTI_TAG = 0x05 # 4 bytes, network order
+    RLC_RADIO_BEARER_ID_TAG = 0x06 # 1 byte
+    RLC_LI_SIZE_TAG = 0x07 # 1 byte, enum rlc_li_size value
+
 # Calculates the equivalent UL-EARFCN of a given DL-EARFCN,
 # if the input is an SDL or unknown EARFCN the output will be equal to the input
 # Based on 3GPP TS 36.101 V16.6.0 Table 5.7.3-1

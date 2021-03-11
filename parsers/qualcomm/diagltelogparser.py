@@ -18,16 +18,32 @@ class DiagLteLogParser:
         self.process = {
             # LTE
             # LTE ML1
+            #0xB179: lambda x, y, z: self.parse_lte_ml1_connected_intra_freq_meas(x, y, z), # LTE ML1 Connected Mode LTE Intra-Freq Measurements
             0xB17F: lambda x, y, z: self.parse_lte_ml1_scell_meas(x, y, z), # LTE ML1 Serving Cell Meas and Eval
             0xB180: lambda x, y, z: self.parse_lte_ml1_ncell_meas(x, y, z), # LTE ML1 Neighbor Measurements
+            #0xB181 LTE ML1 Intra Frequency Cell Reselection
+            # 01 02 F8 14 0A 02 0C 00 16 0D 00 00 61 03 00 00 0B 20 84 00 00 00 00 00 02 00 00 00 40 06 00 00 79 25 12 12 A0 4B F8 02 7F F9 CB 38 E3 DE CB 0F 30 48 F8 02 62 11 CB 31 C7 9E CB 0F 5A 45 08 03 4E 71 CA 2E BB 1E CB 0F 15 43 EF 02 39 C9 C9 29 A7 DE CA 0F 16 0D 00 00 79 0F 00 0A 61 4D 5B 03 85 31 8B 4C 34 DF CE 0F 38 18 00 00 79 1C 12 0E 67 62 8E 03 36 B2 11 41 04 DF 0E 00 66 56 8D 03 D2 91 0E 33 CC 5E CD 0F EB 4F 88 03 9E F1 0C 20 80 5E CC 0F
+            # 01 03 FC 14 0A 02 0C 00 9C 18 00 00 D6 02 00 00 05 19 10 00 01 00 00 00 85 40 00 00 04 00 00 00 0B 20 38 00 01 00 00 00 03 00 00 00 9C 18 00 00 79 0D 00 04 D6 56 A0 03 B6 69 CD 3F 0A 9F CE 0F 22 0B 00 00 79 07 0C 0C 09 07 00 00 79 06 0C 0C 7D 00 00 00 79 04 16 0A
+            #0xB192: lambda x, y, z: self.parse_lte_ml1_ncell_meas_rr(x, y, z), # LTE ML1 Neighbor Cell Meas Request/Response
+            # 01 02 02 00 1A 02 1C 00 16 0D 00 00 21 00 00 00 60 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1B 04 40 00 16 0D 00 00 01 00 00 00 60 01 00 00 81 13 38 00 82 23 38 00 82 23 38 00 DD 74 03 0C C0 74 D3 0D B5 00 00 00 D2 90 06 00 00 00 00 00 32 00 31 00 FE 06 03 00 FE 06 03 00 00 00 00 00
+            # 01 02 02 00 1A 02 3C 00 38 18 00 00 23 00 00 00 67 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 66 10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 EB 11 00 00 00 00 00 00 00 00 00 00 00 00 00 00 1B 04 A8 00 38 18 00 00 03 00 00 00 67 00 00 00 B6 64 4B 00 49 94 44 00 B6 64 4B 00 06 19 F4 10 0F 3D F4 10 C1 01 00 00 4A 09 0E 00 00 00 00 00 35 00 37 00 A2 58 00 00 A2 58 00 00 00 00 00 00 66 00 00 00 71 14 47 00 D3 33 3D 00 71 14 47 00 C0 00 93 09 99 00 03 0C C2 01 00 00 4B 11 0E 00 00 00 00 00 35 00 37 00 82 58 00 00 82 58 00 00 00 00 00 00 EB 01 00 00 35 54 43 00 AD D3 3A 00 35 54 43 00 83 0C 62 08 86 18 62 08 C3 01 00 00 38 19 0E 00 00 00 00 00 35 00 37 00 52 69 00 00 52 69 00 00 00 00 00 00
             0xB193: lambda x, y, z: self.parse_lte_ml1_scell_meas_response(x, y, z), # LTE ML1 Serving Cell Meas Response
+            #0xB194: lambda x, y, z: self.parse_lte_ml1_search_rr(x, y, z), # LTE ML1 Search Request/Response
+            #0xB195: lambda x, y, z: self.parse_lte_ml1_connected_ncell_meas_rr(x, y, z), # LTE ML1 Connected Neighbor Meas Request/Response
             0xB197: lambda x, y, z: self.parse_lte_ml1_cell_info(x, y, z), # LTE ML1 Serving Cell Info
+
             # LTE MAC
+            #0xB167: lambda x, y, z: parse_lte_msg1_report(x, y, z), # LTE RAR (Msg1) Report
+            #0xB168: lambda x, y, z: parse_lte_msg2_report(x, y, z), # LTE RAR (Msg2) Report
+            #0xB169: lambda x, y, z: parse_lte_msg3_report(x, y, z), # LTE UE Identification Message (Msg3) Report
+            #0xB16A: lambda x, y, z: parse_lte_msg3_report(x, y, z), # LTE Contention Resolution Message (Msg4) Report
             #0xB061: lambda x, y, z: parse_lte_mac_rach_trigger(x, y, z), # LTE MAC RACH Trigger
             0xB062: lambda x, y, z: self.parse_lte_mac_rach_response(x, y, z), # LTE MAC RACH Response
             0xB063: lambda x, y, z: self.parse_lte_mac_dl_block(x, y, z), # LTE MAC DL Transport Block
             0xB064: lambda x, y, z: self.parse_lte_mac_ul_block(x, y, z), # LTE MAC UL Transport Block
+
             # LTE RLC
+
             # LTE PDCP
             #0xB0A0: lambda x, y, z: self.parse_lte_pdcp_dl_cfg(x, y, z), # LTE PDCP DL Config
             #0xB0B0: lambda x, y, z: self.parse_lte_pdcp_ul_cfg(x, y, z), # LTE PDCP UL Config
@@ -35,8 +51,8 @@ class DiagLteLogParser:
             #0xB0B1: lambda x, y, z: self.parse_lte_pdcp_ul_data(x, y, z), # LTE PDCP UL Data PDU
             #0xB0A2: lambda x, y, z: self.parse_lte_pdcp_dl_ctrl(x, y, z), # LTE PDCP DL Ctrl PDU
             #0xB0B2: lambda x, y, z: self.parse_lte_pdcp_ul_ctrl(x, y, z), # LTE PDCP UL Ctrl PDU
-            #0xB0A3: lambda x, y, z: self.parse_lte_pdcp_dl_cip(x, y, z), # LTE PDCP DL Cipher Data PDU
-            #0xB0B3: lambda x, y, z: self.parse_lte_pdcp_ul_cip(x, y, z), # LTE PDCP UL Cipher Data PDU
+            0xB0A3: lambda x, y, z: self.parse_lte_pdcp_dl_cip(x, y, z), # LTE PDCP DL Cipher Data PDU
+            0xB0B3: lambda x, y, z: self.parse_lte_pdcp_ul_cip(x, y, z), # LTE PDCP UL Cipher Data PDU
             0xB0A5: lambda x, y, z: self.parse_lte_pdcp_dl_srb_int(x, y, z), # LTE PDCP DL SRB Integrity Data PDU
             0xB0B5: lambda x, y, z: self.parse_lte_pdcp_ul_srb_int(x, y, z), # LTE PDCP UL SRB Integrity Data PDU
             # LTE RRC
@@ -224,33 +240,41 @@ class DiagLteLogParser:
             for x in range(num_subpkts):
                 # 4b: Subpacket ID, Subpacket version, Subpacket size
                 # 19 | 30 | 40 02
-                subpkt_id = pkt[pos]
-                if subpkt_id == 25:
-                    # Serving Cell Measurement Result
-                    # EARFCN, num of cell, valid RX data
-                    # 35 0c 01 00 | 01 00 | 03 00 | 00 01 ff ff ee 10 00 00 4c 15 00 00 40 79 02 00 a0 3c 61 0a 4c 21 0f 00 ca 93 44 00 4b 04 00 00 60 09 96 00 00 90 1c 00 49 b4 44 00 de 78 13 0e e1 00 00 00 e1 84 43 0f 96 99 10 00 00 00 00 00 13 02 00 00 0b 00 03 00 00 00 00 00 37 00 3a 00 00 00 00 00 00 00 08 cc 25 f2 00 00 92 0b 01 00 c6 94 01 00 00 00 00 00 d0 00 00 00 e4 00 00 00 bf 86 01 00 00 00 00 00 14 00 00 00 e1 00 00 00 1e ff ff ff 84 ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00                                    
-                    scell_measurement_version = pkt[pos + 1]
-                    scell_subpacket_size = struct.unpack('<H', pkt[pos + 2:pos + 4])[0]
-                    scell_subpkt = pkt[pos:pos+scell_subpacket_size]
-                    scell_subpkt = scell_subpkt[4:]
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                subpkt = subpkt[4:]
 
-                    if scell_measurement_version == 48:
-                        earfcn, num_cell, valid_rx = struct.unpack('<LHH', scell_subpkt[0:8])
-                        interim = struct.unpack('<L', scell_subpkt[9:13])[0]
-                        pci = interim & 0x1ff
-                        scell_idx = (interim >> 9) & 0x7
-                        is_scell = (interim >> 12) & 0x1
+                pos += subpkt_size
 
-                        interim = struct.unpack('<L', scell_subpkt[13:17])[0]
-                        sfn = interim & 0x2ff
-                        subfn = (interim >> 10) & 0xf
+                if subpkt_id == 0x19:
+                    if subpkt_version == 36:
+                        # 16 0d 00 00 | 01 00 | 03 00 | d4 10 00 00 9b 24 00 00 fe f0 03 00 7f f8 d9 04 9b 90 0f 00 e4 b3 44 00 4b 04 00 00 00 b0 1c 00 4b 64 46 00 2d b5 94 13 39 01 00 00 39 e5 64 12 77 91 0e 00 00 00 00 00 d2 01 00 00 0d 00 08 00 32 00 31 00 00 00 10 49 a9 3c 04 00 43 85 0d 00 07 75 02 00 00 00 00 00 7d 04 00 00 9b 0c 00 00 0a 6f 02 00 00 00 00 00 a6 00 00 00 39 01 00 00 87 06 00 00 11 0b 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00            
+                        earfcn, n_cells, valid_rx = struct.unpack('<LHH', subpkt[0:8])
 
-                        print('Radio {}: LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}'.format(self.parent.sanitize_radio_id(radio_id), earfcn, num_cell, valid_rx))
-                        print('Radio {}: LTE ML1 SCell Meas Response (Cell 0): PCI {}, Serving cell index {}, is_serving_cell = {}'.format(self.parent.sanitize_radio_id(radio_id), pci, scell_idx, is_scell))
+                        pos_cell = 8
+                        for y in range(n_cells):
+                            pass
+                    elif subpkt_version == 48:
+                        # EARFCN, num of cell, valid RX data
+                        # 35 0c 01 00 | 01 00 | 03 00 | 00 01 ff ff ee 10 00 00 4c 15 00 00 40 79 02 00 a0 3c 61 0a 4c 21 0f 00 ca 93 44 00 4b 04 00 00 60 09 96 00 00 90 1c 00 49 b4 44 00 de 78 13 0e e1 00 00 00 e1 84 43 0f 96 99 10 00 00 00 00 00 13 02 00 00 0b 00 03 00 00 00 00 00 37 00 3a 00 00 00 00 00 00 00 08 cc 25 f2 00 00 92 0b 01 00 c6 94 01 00 00 00 00 00 d0 00 00 00 e4 00 00 00 bf 86 01 00 00 00 00 00 14 00 00 00 e1 00 00 00 1e ff ff ff 84 ff ff ff 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00                                    
+                        earfcn, n_cells, valid_rx = struct.unpack('<LHH', subpkt[0:8])
+
+                        pos_cell = 8
+                        for y in range(n_cells):
+                            pass
+                        #interim = struct.unpack('<L', subpkt[9:13])[0]
+                        #pci = interim & 0x1ff
+                        #scell_idx = (interim >> 9) & 0x7
+                        #is_scell = (interim >> 12) & 0x1
+
+                        #interim = struct.unpack('<L', subpkt[13:17])[0]
+                        #sfn = interim & 0x2ff
+                        #subfn = (interim >> 10) & 0xf
+
+                        #print('Radio {}: LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}'.format(self.parent.sanitize_radio_id(radio_id), earfcn, num_cell, valid_rx))
+                        #print('Radio {}: LTE ML1 SCell Meas Response (Cell 0): PCI {}, Serving cell index {}, is_serving_cell = {}'.format(self.parent.sanitize_radio_id(radio_id), pci, scell_idx, is_scell))
                     else:
                         self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(self.parent.sanitize_radio_id(radio_id), scell_measurement_version))
-
-                    pos += scell_subpacket_size
                 else:
                     self.parent.logger.log(logging.WARNING, 'Radio {}: Unknown LTE ML1 Serving Cell Meas subpacket ID {}'.format(self.parent.sanitize_radio_id(radio_id), subpkt_id))
         else:
@@ -564,6 +588,168 @@ class DiagLteLogParser:
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL packet version %s' % pkt[0])
 
+    def parse_lte_pdcp_dl_cip(self, pkt_ts, pkt, radio_id):
+        earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)]
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        if pkt[0] == 1:
+            # pkt[1]: Number of Subpackets
+            # pkt[2:4]: Reserved
+            n_subpackets = pkt[1]
+            pos = 4
+
+            for x in range(n_subpackets):
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                subpkt = subpkt[4:]
+
+                pos += subpkt_size
+
+                if subpkt_id == 0xC3:
+                    if subpkt_version == 0x18:
+                        # 01 | 01 | 22 00 | C3 | 18 | 48 00 | 8E 57 8A BF BE 9D B2 38 13 BE 85 12 95 18 9A 29 | 55 4C 9B 9C 2D 35 A9 F8 D9 28 4D CF 08 EB 09 40 | 03 | 03 | 02 00 | [21 40 | 08 00 | 03 00 | 17 22 | 02 00 00 00 | 00 | 02 F4 CE] | [22 42 | 07 00 | 03 00 | 17 22 | 00 00 00 00 | 00 | 00 28 E0]
+                        ck_srb = subpkt[0:16]
+                        ck_drb = subpkt[16:32]
+                        ciphering_algo_srb, ciphering_algo_drb, num_pdus = struct.unpack('<BBH', subpkt[32:36])
+
+                        pos_sample = 36
+                        for y in range(num_pdus):
+                            # cfg, pdu_size, log_size, sfn_subfn, count, is_compressed
+                            # Ciphering: NONE: 0x07, AES: 0x03
+                            pdu_hdr = struct.unpack('<HHHHLB', subpkt[pos_sample:pos_sample + 13])
+                            pdcp_pdu = subpkt[pos_sample + 13: pos_sample + 13 + pdu_hdr[2]]
+
+                            # V24: config index 6b, rb mode 1b, sn length 2b (5, 7, 12, 15), rbid-1 5b, valid 1b
+                            config_index = pdu_hdr[0] & 0x003f
+                            rb_mode = (pdu_hdr[0] & 0x0040) >> 6
+                            sn_length = (pdu_hdr[0] & 0x0180) >> 7
+                            rbid = (pdu_hdr[0] & 0x3e00) >> 9
+                            valid = (pdu_hdr[0] & 0x4000) >> 14
+
+                            sn_length_map = {
+                                0: util.pdcp_sn_length_types.PDCP_SN_LENGTH_5_BITS,
+                                1: util.pdcp_sn_length_types.PDCP_SN_LENGTH_7_BITS,
+                                2: util.pdcp_sn_length_types.PDCP_SN_LENGTH_12_BITS,
+                                3: util.pdcp_sn_length_types.PDCP_SN_LENGTH_15_BITS,
+                                4: util.pdcp_sn_length_types.PDCP_SN_LENGTH_18_BITS,
+                            }
+
+                            if sn_length in sn_length_map:
+                                sn_length = sn_length_map[sn_length]
+
+                            # Directly pack PDCP PDU on UDP packet, see epan/packet-pdcp-lte.h of Wireshark
+                            # Has header on PDU, CP (0x01), no ROHC
+                            # Direction: Downlink (0x01)
+                            ws_hdr = struct.pack('!BBBBBBB',
+                                0x00,
+                                util.pdcp_plane_types.SIGNALING_PLANE if rbid == 0 or rbid == 1 else util.pdcp_plane_types.USER_PLANE,
+                                0x00,
+                                util.pdcp_lte_tags.PDCP_LTE_SEQNUM_LENGTH_TAG,
+                                sn_length,
+                                util.pdcp_lte_tags.PDCP_LTE_DIRECTION_TAG,
+                                util.pdcp_lte_direction_types.DIRECTION_DOWNLINK)
+
+                            if rbid == 0 or rbid == 1:
+                                # SRB1, always DCCH
+                                # SRB2, always DCCH
+                                ws_hdr += struct.pack('!BB',
+                                    util.pdcp_lte_tags.PDCP_LTE_LOG_CHAN_TYPE_TAG,
+                                    util.pdcp_logical_channel_types.Channel_DCCH)
+
+                            ws_hdr += struct.pack('!B', 
+                                util.pdcp_lte_tags.PDCP_LTE_PAYLOAD_TAG)
+                            self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
+                            pos_sample += (13 + pdu_hdr[2])
+
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL Cipher Data Subpacket version %s' % subpkt_version)
+                        pos += subpkt_size
+                        continue
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL Cipher Data packet version %s' % pkt[16])
+
+    def parse_lte_pdcp_ul_cip(self, pkt_ts, pkt, radio_id):
+        earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)]
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        if pkt[0] == 1:
+            # pkt[1]: Number of Subpackets
+            # pkt[2:4]: Reserved
+            n_subpackets = pkt[1]
+            pos = 4
+
+            for x in range(n_subpackets):
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                subpkt = subpkt[4:]
+
+                pos += subpkt_size
+
+                if subpkt_id == 0xC3:
+                    if subpkt_version == 0x1A:
+                        # 01 | 01 | 00 00 | C3 | 1A | 4C 00 | 8E 57 8A BF BE 9D B2 38 13 BE 85 12 95 18 9A 29 | 55 4C 9B 9C 2D 35 A9 F8 D9 28 4D CF 08 EB 09 40 | 03 | 03 | 02 00 | [04 47 | 2E 04 | 04 00 | 10 22 | 00 00 00 00 | 00 | 80 00 60 00] | [04 47 | 2E 04 | 04 00 | 18 22 | 01 00 00 00 | 00 | 80 01 60 00 ] | 80 00
+                        ck_srb = subpkt[0:16]
+                        ck_drb = subpkt[16:32]
+                        ciphering_algo_srb, ciphering_algo_drb, num_pdus = struct.unpack('<BBH', subpkt[32:36])
+
+                        pos_sample = 36
+                        for y in range(num_pdus):
+                            # cfg, pdu_size, log_size, sfn_subfn, count, is_compressed
+                            # Ciphering: NONE: 0x07, AES: 0x03
+                            pdu_hdr = struct.unpack('<HHHHLB', subpkt[pos_sample:pos_sample + 13])
+                            pdcp_pdu = subpkt[pos_sample + 13: pos_sample + 13 + pdu_hdr[2]]
+
+                            # V26: config index 6b, rb mode 1b, sn length 2b (5, 7, 12, 15), rbid-1 5b, valid 1b
+                            config_index = pdu_hdr[0] & 0x003f
+                            rb_mode = (pdu_hdr[0] & 0x0040) >> 6
+                            sn_length = (pdu_hdr[0] & 0x0180) >> 7
+                            rbid = (pdu_hdr[0] & 0x3e00) >> 9
+                            valid = (pdu_hdr[0] & 0x4000) >> 14
+
+                            sn_length_map = {
+                                0: util.pdcp_sn_length_types.PDCP_SN_LENGTH_5_BITS,
+                                1: util.pdcp_sn_length_types.PDCP_SN_LENGTH_7_BITS,
+                                2: util.pdcp_sn_length_types.PDCP_SN_LENGTH_12_BITS,
+                                3: util.pdcp_sn_length_types.PDCP_SN_LENGTH_15_BITS,
+                                4: util.pdcp_sn_length_types.PDCP_SN_LENGTH_18_BITS,
+                            }
+
+                            if sn_length in sn_length_map:
+                                sn_length = sn_length_map[sn_length]
+
+                            # Directly pack PDCP PDU on UDP packet, see epan/packet-pdcp-lte.h of Wireshark
+                            # Has header on PDU, CP (0x01), no ROHC
+                            # Direction: Downlink (0x01)
+                            ws_hdr = struct.pack('!BBBBBBB',
+                                0x00,
+                                util.pdcp_plane_types.SIGNALING_PLANE if rbid == 0 or rbid == 1 else util.pdcp_plane_types.USER_PLANE,
+                                0x00,
+                                util.pdcp_lte_tags.PDCP_LTE_SEQNUM_LENGTH_TAG,
+                                sn_length,
+                                util.pdcp_lte_tags.PDCP_LTE_DIRECTION_TAG,
+                                util.pdcp_lte_direction_types.DIRECTION_UPLINK)
+
+                            if rbid == 0 or rbid == 1:
+                                # SRB1, always DCCH
+                                # SRB2, always DCCH
+                                ws_hdr += struct.pack('!BB',
+                                    util.pdcp_lte_tags.PDCP_LTE_LOG_CHAN_TYPE_TAG,
+                                    util.pdcp_logical_channel_types.Channel_DCCH)
+
+                            ws_hdr += struct.pack('!B',
+                                util.pdcp_lte_tags.PDCP_LTE_PAYLOAD_TAG)
+                            self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
+                            pos_sample += (13 + pdu_hdr[2])
+
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL Cipher Data Subpacket version %s' % subpkt_version)
+                        pos += subpkt_size
+                        continue
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL Cipher Data packet version %s' % pkt[16])
+
     # 0x4021: 01|00 000|0 00|10 0001 (valid, bearer id=0, mode=AM, sn=5b, cidx = 33)
     # 0x4222: 01|00 001|0 00|10 0010 (valid, bearer id=1, mode=AM, sn=5b, cidx = 34)
     # 0x4101: 01|00 000|1 00|00 0001 (valid, bearer id=0, mode=AM, sn=12b, cidx = 1)
@@ -587,44 +773,82 @@ class DiagLteLogParser:
             pos = 4
 
             for x in range(n_subpackets):
-                # pkt[4]: Subpacket ID
-                # pkt[5]: Subpacket Version
-                # pkt[6:8]: Subpacket Size
-                subpkt_id = pkt[pos]
-                subpkt_ver = pkt[pos + 1]
-                subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                subpkt = subpkt[4:]
 
-                if subpkt_id != 0xC6:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket ID %s' % subpkt_id)
-                    pos += subpkt_size
-                    continue
+                pos += subpkt_size
 
-                if subpkt_ver == 0x01 or subpkt_ver == 0x28:
-                    pos += 4
-                    pos += 32
-                    ciphering_algo = pkt[pos]
-                    integrity_algo = pkt[pos + 1]
-                    num_pdus = pkt[pos + 2] | (pkt[pos + 3] << 8)
+                if subpkt_id == 0xC6:
+                    if subpkt_version == 0x01 or subpkt_version == 0x28:
+                        ck_srb = subpkt[0:16]
+                        ik_srb = subpkt[16:32]
+                        ciphering_algo, integrity_algo, num_pdus = struct.unpack('<BBH', subpkt[32:36])
 
-                    pos_sample = pos + 4
-                    for y in range(num_pdus):
-                        # cfg, pdu_size, log_size, sfn_subfn, count, MAC-I, XMAC-I
-                        # Ciphering: NONE: 0x07, AES: 0x03
-                        # Integrity: NONE: 0x07, AES: 0x02
-                        pdu_hdr = struct.unpack('<HHHHLLL', pkt[pos_sample:pos_sample + 20])
-                        pdcp_pdu = pkt[pos_sample + 20: pos_sample + 20 + pdu_hdr[2]]
+                        pos_sample = 36
+                        for y in range(num_pdus):
+                            # cfg, pdu_size, log_size, sfn_subfn, count, MAC-I, XMAC-I
+                            # Ciphering: NONE: 0x07, AES: 0x03
+                            # Integrity: NONE: 0x07, AES: 0x02
+                            pdu_hdr = struct.unpack('<HHHHLLL', subpkt[pos_sample:pos_sample + 20])
+                            pdcp_pdu = subpkt[pos_sample + 20: pos_sample + 20 + pdu_hdr[2]]
 
-                        # Directly pack PDCP PDU on UDP packet, see epan/packet-pdcp-lte.h of Wireshark
-                        # Has header on PDU, CP (0x01), no ROHC
-                        # Direction: Downlink (0x01)
-                        ws_hdr = bytes([0x00, 0x01, 0x00, 0x03, 0x01, 0x01])
-                        self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
-                        pos_sample += (20 + pdu_hdr[2])
+                            # V1: config index 6b, rb mode 1b (AM=0, UM=1), sn length 2b (5, 7, 12), rbid-1 5b, valid 1b, reserved 1b
+                            # V40: config index 6b, rb mode 1b, sn length 3b (5, 7, 12, 15, 18), rbid-1 5b, valid 1b
+                            if subpkt_version == 0x01:
+                                config_index = pdu_hdr[0] & 0x003f
+                                rb_mode = (pdu_hdr[0] & 0x0040) >> 6
+                                sn_length = (pdu_hdr[0] & 0x0180) >> 7
+                                rbid = (pdu_hdr[0] & 0x3e00) >> 9
+                                valid = (pdu_hdr[0] & 0x4000) >> 14
+                            elif subpkt_version == 0x40:
+                                config_index = pdu_hdr[0] & 0x003f
+                                rb_mode = (pdu_hdr[0] & 0x0040) >> 6
+                                sn_length = (pdu_hdr[0] & 0x0380) >> 7
+                                rbid = (pdu_hdr[0] & 0x7c00) >> 10
+                                valid = (pdu_hdr[0] & 0x8000) >> 15
+                            else:
+                                sn_length = 0
 
-                else:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket version %s' % subpkt_ver)
-                    pos += subpkt_size
-                    continue
+                            sn_length_map = {
+                                0: util.pdcp_sn_length_types.PDCP_SN_LENGTH_5_BITS,
+                                1: util.pdcp_sn_length_types.PDCP_SN_LENGTH_7_BITS,
+                                2: util.pdcp_sn_length_types.PDCP_SN_LENGTH_12_BITS,
+                                3: util.pdcp_sn_length_types.PDCP_SN_LENGTH_15_BITS,
+                                4: util.pdcp_sn_length_types.PDCP_SN_LENGTH_18_BITS,
+                            }
+
+                            if sn_length in sn_length_map:
+                                sn_length = sn_length_map[sn_length]
+
+                            # Directly pack PDCP PDU on UDP packet, see epan/packet-pdcp-lte.h of Wireshark
+                            # Has header on PDU, CP (0x01), no ROHC
+                            # Direction: Downlink (0x01)
+                            ws_hdr = struct.pack('!BBBBBBB',
+                                0x00,
+                                util.pdcp_plane_types.SIGNALING_PLANE,
+                                0x00,
+                                util.pdcp_lte_tags.PDCP_LTE_SEQNUM_LENGTH_TAG,
+                                sn_length,
+                                util.pdcp_lte_tags.PDCP_LTE_DIRECTION_TAG,
+                                util.pdcp_lte_direction_types.DIRECTION_DOWNLINK)
+
+                            if rbid == 0 or rbid == 1:
+                                # SRB1, always DCCH
+                                # SRB2, always DCCH
+                                ws_hdr += struct.pack('!BB',
+                                    util.pdcp_lte_tags.PDCP_LTE_LOG_CHAN_TYPE_TAG,
+                                    util.pdcp_logical_channel_types.Channel_DCCH)
+
+                            ws_hdr += struct.pack('!B',
+                                util.pdcp_lte_tags.PDCP_LTE_PAYLOAD_TAG)
+                            self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
+                            pos_sample += (20 + pdu_hdr[2])
+
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket version %s' % subpkt_ver)
+                        pos += subpkt_size
+                        continue
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL SRB packet version %s' % pkt[16])
 
@@ -640,44 +864,83 @@ class DiagLteLogParser:
             pos = 4
 
             for x in range(n_subpackets):
-                # pkt[4]: Subpacket ID
-                # pkt[5]: Subpacket Version
-                # pkt[6:8]: Subpacket Size
-                subpkt_id = pkt[pos]
-                subpkt_ver = pkt[pos + 1]
-                subpkt_size = pkt[pos + 2] | (pkt[pos + 3] << 8)
+                subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
+                subpkt = pkt[pos:pos+subpkt_size]
+                subpkt = subpkt[4:]
 
-                if subpkt_id != 0xC7:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket ID %s' % subpkt_id)
-                    pos += subpkt_size
-                    continue
+                pos += subpkt_size
 
-                if subpkt_ver == 0x01 or subpkt_ver == 0x28:
-                    pos += 4
-                    pos += 32
-                    ciphering_algo = pkt[pos]
-                    integrity_algo = pkt[pos + 1]
-                    num_pdus = pkt[pos + 2] | (pkt[pos + 3] << 8)
+                if subpkt_id == 0xC7:
+                    if subpkt_version == 0x01 or subpkt_version == 0x28:
+                        # 01 | 01 | 18 61 | C7 | 01 | 58 00 | A3 97 33 2D 66 B7 10 76 E3 F0 B9 85 EF 0A 61 31 | 38 63 BC 49 5C 42 45 ED 7B 5F C4 FE 2A 64 62 E7 | 03 | 02 | 01 00 | [22 42 | 1D 00 | 1D 00 | 00 40 | 00 00 00 00 | BB 53 CC DA | 00 48 02 A4 E9 88 34 BD A0 FD C4 5C D1 28 87 E7 11 BC 73 DE A9 BC 87 FC 20 DA CC 53 BB B0 07 00
+                        ck_srb = subpkt[0:16]
+                        ik_srb = subpkt[16:32]
+                        ciphering_algo, integrity_algo, num_pdus = struct.unpack('<BBH', subpkt[32:36])
 
-                    pos_sample = pos + 4
-                    for y in range(num_pdus):
-                        # cfg, pdu_size, log_size, sfn_subfn, count, MAC-I
-                        # Ciphering: NONE: 0x07, AES: 0x03
-                        # Integrity: NONE: 0x07, AES: 0x02
-                        pdu_hdr = struct.unpack('<HHHHLL', pkt[pos_sample:pos_sample + 16])
-                        pdcp_pdu = pkt[pos_sample + 16: pos_sample + 16 + pdu_hdr[2]]
+                        pos_sample = 36
+                        for y in range(num_pdus):
+                            # cfg, pdu_size, log_size, sfn_subfn, count, MAC-I
+                            # Ciphering: NONE: 0x07, AES: 0x03
+                            # Integrity: NONE: 0x07, AES: 0x02
+                            pdu_hdr = struct.unpack('<HHHHLL', subpkt[pos_sample:pos_sample + 16])
+                            pdcp_pdu = subpkt[pos_sample + 16: pos_sample + 16 + pdu_hdr[2]]
 
-                        # Directly pack PDCP PDU on UDP packet, see epan/packet-pdcp-lte.h of Wireshark
-                        # Has header on PDU, CP (0x01), no ROHC
-                        # Direction: Uplink (0x00)
-                        ws_hdr = bytes([0x00, 0x01, 0x00, 0x03, 0x00, 0x01])
-                        self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
-                        pos_sample += (16 + pdu_hdr[2])
+                            # V1: config index 6b, rb mode 1b (AM=0, UM=1), sn length 2b (5, 7, 12), rbid-1 5b, valid 1b, reserved 1b
+                            # V40: config index 6b, rb mode 1b, sn length 3b (5, 7, 12, 15, 18), rbid-1 5b, valid 1b
+                            if subpkt_version == 0x01:
+                                config_index = pdu_hdr[0] & 0x003f
+                                rb_mode = (pdu_hdr[0] & 0x0040) >> 6
+                                sn_length = (pdu_hdr[0] & 0x0180) >> 7
+                                rbid = (pdu_hdr[0] & 0x3e00) >> 9
+                                valid = (pdu_hdr[0] & 0x4000) >> 14
+                            elif subpkt_version == 0x40:
+                                config_index = pdu_hdr[0] & 0x003f
+                                rb_mode = (pdu_hdr[0] & 0x0040) >> 6
+                                sn_length = (pdu_hdr[0] & 0x0380) >> 7
+                                rbid = (pdu_hdr[0] & 0x7c00) >> 10
+                                valid = (pdu_hdr[0] & 0x8000) >> 15
+                            else:
+                                sn_length = 0
 
-                else:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected PDCP UL SRB Subpacket version %s' % subpkt_ver)
-                    pos += subpkt_size
-                    continue
+                            sn_length_map = {
+                                0: util.pdcp_sn_length_types.PDCP_SN_LENGTH_5_BITS,
+                                1: util.pdcp_sn_length_types.PDCP_SN_LENGTH_7_BITS,
+                                2: util.pdcp_sn_length_types.PDCP_SN_LENGTH_12_BITS,
+                                3: util.pdcp_sn_length_types.PDCP_SN_LENGTH_15_BITS,
+                                4: util.pdcp_sn_length_types.PDCP_SN_LENGTH_18_BITS,
+                            }
+
+                            if sn_length in sn_length_map:
+                                sn_length = sn_length_map[sn_length]
+
+                            # Directly pack PDCP PDU on UDP packet, see epan/packet-pdcp-lte.h of Wireshark
+                            # Has header on PDU, CP (0x01), no ROHC
+                            # Direction: Uplink (0x00)
+                            ws_hdr = struct.pack('!BBBBBBB',
+                                0x00,
+                                util.pdcp_plane_types.SIGNALING_PLANE,
+                                0x00,
+                                util.pdcp_lte_tags.PDCP_LTE_SEQNUM_LENGTH_TAG,
+                                sn_length,
+                                util.pdcp_lte_tags.PDCP_LTE_DIRECTION_TAG,
+                                util.pdcp_lte_direction_types.DIRECTION_UPLINK)
+
+                            if rbid == 0 or rbid == 1:
+                                # SRB1, always DCCH
+                                # SRB2, always DCCH
+                                ws_hdr += struct.pack('!BB',
+                                    util.pdcp_lte_tags.PDCP_LTE_LOG_CHAN_TYPE_TAG,
+                                    util.pdcp_logical_channel_types.Channel_DCCH)
+
+                            ws_hdr += struct.pack('!B',
+                                util.pdcp_lte_tags.PDCP_LTE_PAYLOAD_TAG)
+                            self.parent.writer.write_up(b'pdcp-lte' + ws_hdr + pdcp_pdu, radio_id, pkt_ts)
+                            pos_sample += (16 + pdu_hdr[2])
+
+                    else:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected PDCP UL SRB Subpacket version %s' % subpkt_version)
+                        pos += subpkt_size
+                        continue
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown PDCP UL SRB packet version %s' % pkt[16])
 

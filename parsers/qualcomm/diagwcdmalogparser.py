@@ -7,13 +7,29 @@ import struct
 from collections import namedtuple
 import calendar, datetime
 import logging
+import math
 
 class DiagWcdmaLogParser:
     def __init__(self, parent):
         self.parent = parent
         self.process = {
-            # WCDMA (3G RRC)
+            # WCDMA Layer 1
             0x4005: lambda x, y, z: self.parse_wcdma_search_cell_reselection(x, y, z), # WCDMA Search Cell Reselection Rank
+            #0x4179 WCDMA PN Search Edition 2
+            # 05 00 01 94 FE 00 02 00 02 00 02 00 FE 00 FE 00 A7 29 FF FF FF FF FF FF 00 00 01 04 01 23 00 00 CB 69 D0 18 C0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5C 51 03 00 AC 4F 03 00 F8 52 03 00 24 51 03 00 18 54 03 00 04 54 03 00 08 02 00 00 78 00 00 00 78 00 00 00 74 00 00 00 71 00 00 00 70 00 00 00
+            # 05 00 01 74 FE 00 02 00 02 00 02 00 FE 00 FE 00 A7 29 FF FF FF FF FF FF 00 00 02 04 01 23 00 00 CB 69 D0 18 C0 00 04 01 23 00 00 56 5C 50 12 C0 00 04 00 00 00 00 00 00 00 00 00 00 00 00 5C 51 03 00 48 4F 03 00 88 4E 03 00 4C 51 03 00 2C 52 03 00 6C 52 03 00 BE 03 00 00 86 00 00 00 7E 00 00 00 75 00 00 00 6F 00 00 00 6F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 B8 E5 02 00 3C E6 02 00 24 E8 02 00 08 E3 02 00 9C E3 02 00 80 E5 02 00 98 02 00 00 7F 00 00 00 78 00 00 00 77 00 00 00 77 00 00 00 76 00 00 00
+            #0x41B0 WCDMA Freq Scan
+            # 01 03 1E FE 01 A3 FF A7 29
+
+            # WCDMA Layer 2
+            0x4135: lambda x, y, z: self.parse_wcdma_rlc_dl_am_signaling_pdu(x, y, z), # WCDMA RLC DL AM Signaling PDU
+            0x413C: lambda x, y, z: self.parse_wcdma_rlc_ul_am_signaling_pdu(x, y, z), # WCDMA RLC UL AM Signaling PDU
+            0x4145: lambda x, y, z: self.parse_wcdma_rlc_ul_am_control_pdu_log(x, y, z), # WCDMA RLC UL AM Control PDU Log
+            0x4146: lambda x, y, z: self.parse_wcdma_rlc_dl_am_control_pdu_log(x, y, z), # WCDMA RLC DL AM Control PDU Log
+            0x4168: lambda x, y, z: self.parse_wcdma_rlc_dl_pdu_cipher_packet(x, y, z), # WCDMA RLC DL PDU Cipher Packet
+            0x4169: lambda x, y, z: self.parse_wcdma_rlc_ul_pdu_cipher_packet(x, y, z), # WCDMA RLC UL PDU Cipher Packet
+
+            # WCDMA RRC
             0x4127: lambda x, y, z: self.parse_wcdma_cell_id(x, y, z), # WCDMA Cell ID
             0x412F: lambda x, y, z: self.parse_wcdma_rrc(x, y, z), # WCDMA Signaling Messages
         }
@@ -38,7 +54,7 @@ class DiagWcdmaLogParser:
     def get_real_ecio(self, ecio):
         return ecio / 2
 
-    # 3G
+    # WCDMA Layer 1
     def parse_wcdma_search_cell_reselection_v0(self, pkt_ts, pkt, radio_id):
         num_wcdma_cells = pkt[0] & 0x3f # lower 6b
         num_gsm_cells = pkt[1] & 0x3f # lower 6b
@@ -136,6 +152,96 @@ class DiagWcdmaLogParser:
             self.parent.logger.log(logging.WARNING, 'Unsupported WCDMA search cell reselection version {}'.format(pkt_version))
             self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
 
+    # WCDMA Layer 2
+    def parse_wcdma_rlc_dl_am_signaling_pdu(self, pkt_ts, pkt, radio_id):
+        # 01 | 11 | 01 00 | 90 00 | 02 00 20 14 00
+        num_packets = pkt[0]
+
+        pos = 1
+        for x in range(num_packets):
+            lcid, pdu_count, pdu_size = struct.unpack('<BHH', pkt[pos:pos+5])
+            pos += 5
+            actual_pdu_size = min(math.ceil(pdu_size / 8), len(pkt) - pos)
+            rlc_pdu = pkt[pos:pos+actual_pdu_size]
+            pos += actual_pdu_size
+
+            # Directly pack RLC PDU on UDP packet, see epan/packet-umts_rlc-lte.h of Wireshark
+            # Has header on PDU, CP (0x01), no ROHC
+            # Direction: Downlink (0x01)
+            ws_hdr = struct.pack('!BBBBB',
+                util.wcdma_rlc_tags.RLC_MODE_TAG,
+                util.wcdma_rlc_mode_types.RLC_AM,
+                util.wcdma_rlc_tags.RLC_DIRECTION_TAG,
+                util.wcdma_rlc_direction_types.DIRECTION_DOWNLINK,
+                util.wcdma_rlc_tags.RLC_PAYLOAD_TAG)
+
+            self.parent.writer.write_up(b'umts-rlc' + ws_hdr + rlc_pdu, radio_id, pkt_ts)
+
+    def parse_wcdma_rlc_ul_am_signaling_pdu(self, pkt_ts, pkt, radio_id):
+        print("0x413C")
+        util.xxd(pkt, True)
+
+    def parse_wcdma_rlc_dl_am_control_pdu_log(self, pkt_ts, pkt, radio_id):
+        # 11 | 12 00 | 02 00 20 14 dd 2b 8d 7b fd 55 02 50 20 0d 65 ff 86 02 | 00 | a8 00 | 70 80 00 00 30 00 00 00 00 00 00 00 00 00 00 00 90 1f 00 00 20 0b ee 09 80 03 68 01 80 83 00 00 10 b5 33 94 a0 8f 2b 34 80 16 9f bf f0 dc 19 6e 20 0c ef 01 80 02 a8 00 90 80 d1 00 00 00 00 00 d0 1d 00 00 00 00 01 00 00 00 55 0f 00 03 ef 09 80 03 68 01 80 83 d1 00 a0 8f 2b 34 80 16 9f bf f0 dc 19 6e d0 7a 66 c7 20 03 ef 07 80 00 f6 00 e0 80 d1 00 00 00 00 00 60 1f 00 00 00 00 01 00 00 00 7f 1e 00 01 f0 01 80 02 a8 00 30 81 00 00 00 00 00 00 40 1e 00 00 00 00 00 00 00 00 65 17 00 03 f0 09 80 03 68 01 | 80 | 83 00 | 00 80 16 9f bf f0 dc 19 6e d0 7a 66 c7 80 46 d6 55 20 0e f1 01 80 02 a8 00 80 81 00 00 00 00 00 00 e0 23 00 00 00 00 00 00 00 00 78 18 00 03 f1 09 80 03 68 01 90 83 00 00 f0 dc 19 6e d0 7a 66
+        lcid, pdu_size = struct.unpack('<BH', pkt[0:3])
+        rlc_pdu = pkt[3:3+pdu_size]
+
+        # Directly pack RLC PDU on UDP packet, see epan/packet-umts_rlc-lte.h of Wireshark
+        # Has header on PDU, CP (0x01), no ROHC
+        # Direction: Downlink (0x01)
+        ws_hdr = struct.pack('!BBBBB',
+            util.wcdma_rlc_tags.RLC_MODE_TAG,
+            util.wcdma_rlc_mode_types.RLC_AM,
+            util.wcdma_rlc_tags.RLC_DIRECTION_TAG,
+            util.wcdma_rlc_direction_types.DIRECTION_DOWNLINK,
+            util.wcdma_rlc_tags.RLC_PAYLOAD_TAG)
+
+        self.parent.writer.write_up(b'umts-rlc' + ws_hdr + rlc_pdu, radio_id, pkt_ts)
+
+    def parse_wcdma_rlc_ul_am_control_pdu_log(self, pkt_ts, pkt, radio_id):
+        print("0x4145")
+        util.xxd(pkt, True)
+
+        lcid, pdu_size = struct.unpack('<BH', pkt[0:3])
+        rlc_pdu = pkt[3:3+pdu_size]
+
+        # Directly pack RLC PDU on UDP packet, see epan/packet-umts_rlc-lte.h of Wireshark
+        # Has header on PDU, CP (0x01), no ROHC
+        # Direction: Downlink (0x01)
+        ws_hdr = struct.pack('!BBBBB',
+            util.wcdma_rlc_tags.RLC_MODE_TAG,
+            util.wcdma_rlc_mode_types.RLC_AM,
+            util.wcdma_rlc_tags.RLC_DIRECTION_TAG,
+            util.wcdma_rlc_direction_types.DIRECTION_UPLINK,
+            util.wcdma_rlc_tags.RLC_PAYLOAD_TAG)
+
+        self.parent.writer.write_up(b'umts-rlc' + ws_hdr + rlc_pdu, radio_id, pkt_ts)
+
+    def parse_wcdma_rlc_dl_pdu_cipher_packet(self, pkt_ts, pkt, radio_id):
+        # 01 00 | 10 | 01 00 00 00 | 01 | f9 fa 5d 80 | 0b 40 00 00
+        num_packets = struct.unpack('<H', pkt[0:2])[0]
+        pos = 2
+
+        for x in range(num_packets):
+            rlc_lcid, ck, calgo, cm, cc = struct.unpack('<BLBLL', pkt[pos:pos+14])
+            if calgo == 0xff:
+                continue
+            print("WCDMA RLC Cipher DL PDU: LCID: {}, CK = {:#x}, Algorithm = UEA{}, Message = {:#x}, Count C = {}".format(rlc_lcid, ck, calgo, cm, cc))
+            pos += 14
+
+    def parse_wcdma_rlc_ul_pdu_cipher_packet(self, pkt_ts, pkt, radio_id):
+        # 01 00 | 10 | 01 00 00 00 | 01 | 0c 40 00 00
+        num_packets = struct.unpack('<H', pkt[0:2])[0]
+        pos = 2
+
+        for x in range(num_packets):
+            rlc_lcid, ck, calgo, cc = struct.unpack('<BLBL', pkt[pos:pos+10])
+            if calgo == 0xff:
+                continue
+            print("WCDMA RLC Cipher UL PDU: LCID: {}, CK = {:#x}, Algorithm = UEA{}, Count C = {}".format(rlc_lcid, ck, calgo, cc))
+            pos += 10
+
+    # WCDMA RRC
     def parse_wcdma_cell_id(self, pkt_ts, pkt, radio_id):
         result = struct.unpack('<LLLHHHBBBBBBLL', pkt[0:32])
         # UARFCN UL, UARFCN DL, CID, URA_ID, FLAGS, PSC, PLMN_ID, LAC, RAC
