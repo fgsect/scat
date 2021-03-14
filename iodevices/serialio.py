@@ -6,7 +6,7 @@ import util
 
 class SerialIO:
     def __init__(self, port_name):
-        self.port = serial.Serial(port_name, baudrate=921600, timeout=0.5)#, rtscts=True, dsrdtr=True)
+        self.port = serial.Serial(port_name, baudrate=115200, timeout=0.5, rtscts=True, dsrdtr=True)
         self.block_until_data = True
 
     def __enter__(self):
