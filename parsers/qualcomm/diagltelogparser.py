@@ -383,22 +383,23 @@ class DiagLteLogParser:
         mac_body = b''
         earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)] | (1 << 14)
 
-        if msg_content[0] != 0x01:
-            self.parent.logger.log(logging.WARNING, 'Unsupported LTE MAC RACH response packet version %02x' % msg_content[0])
+        pkt_version, num_subpacket, reserved = struct.unpack('<BBH', msg_content[0:4])
+        pkt_pos = 4
+
+        if pkt_version != 0x01:
+            self.parent.logger.log(logging.WARNING, 'Unsupported LTE MAC RACH response packet version 0x%02x' % msg_content[0])
             return
 
-        n_subpackets = pkt[1]
-        pos = 4
+        for i in range(num_subpacket):
+            # subpkt_size includes the header size
+            if (len(pkt) - pkt_pos) < 4:
+                break
+            subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', msg_content[pkt_pos:pkt_pos+4])
+            subpkt = pkt[pkt_pos+4:pkt_pos+4+subpkt_size]
+            pkt_pos += subpkt_size
 
-        for x in range(n_subpackets):
-            subpkt_id, subpkt_version, subpkt_size = struct.unpack('<BBH', pkt[pos:pos+4])
-            subpkt = pkt[pos:pos+subpkt_size]
-            subpkt = subpkt[4:]
-
-            pos += subpkt_size
-
-            if subpkt_id == 0x06:
-                if subpkt_version == 0x02:
+            if subpkt_id == 0x06: # RACH Attempt
+                if subpkt_version == 0x02: # Version 2
                     # [06 | 02 | 24 00] | 01 | 00 | 01 | 07 | [1B | FF | 98 FF] | [00 00 | 01 | 23 1A 04 00] | [18 1C 01 00 | 07 00 | 06 | 00 46 5C 80 BD 06 48 00 00 00]
                     rach_attempt = subpkt[0]
                     rach_result = subpkt[1]

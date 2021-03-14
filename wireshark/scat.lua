@@ -65,7 +65,7 @@ local lte_nas_subtypes = {
 }
 
 local lte_mac_subtypes = {
-    [ 0] = { check_and_get_dissector("mac-lte-framed"), "LTE MAC framed" }
+    [ 0] = { check_and_get_dissector("mac-lte-framed"), "LTE MAC" },
 }
 
 local original_gsmtap_dissector
@@ -88,6 +88,9 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
         if lte_nas_subtypes[subtype] then
             itemtext = lte_nas_subtypes[subtype][2]
         end
+    elseif f_gsmtap_type().value == 0x0e then
+        -- LTE MAC
+        itemtext = lte_mac_subtypes[0][2]
     end
     subtreeitem:add(F_gsmtap_subtype, tvbuffer(12, 1), subtype)
                :set_text(string.format("Subtype: %d (%s)", subtype, itemtext))
