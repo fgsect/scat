@@ -1117,8 +1117,9 @@ class DiagLteLogParser:
         msg_hdr = b''
         msg_content = b''
 
-        if pkt[0] in (0x1a,): # Version 26
+        if pkt[0] in (0x1a, 0x1b): # Version 26, 27
             # 1a | 0f 40 | 0f 40 | 01 | 0e 01 | 13 07 00 00 | 00 00 | 0b | 00 00 00 00 | 02 00 | 10 15	
+            # 1b | 10 10 | 0f 90 | 00 | b1 01 | 86 a0 00 00 | d5 07 | 00 | 00 00 00 07 | 00 05
             msg_hdr = pkt[0:21] # 21 bytes
             msg_content = pkt[21:] # Rest of packet
             if len(msg_hdr) != 21:
@@ -1251,7 +1252,7 @@ class DiagLteLogParser:
                 8: util.gsmtap_lte_rrc_types.UL_CCCH,
                 9: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt[0] in (0x13, 0x1a):
+        elif pkt[0] in (0x13, 0x1a, 0x1b):
             # RRC Packet v19, v26
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
