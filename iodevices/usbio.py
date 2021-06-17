@@ -83,11 +83,11 @@ class USBIO:
         # find all USB devices
         if usb.core.find() is not None:
             devs = usb.core.find(find_all=True)
-            print('List of usb devices:')
+            print('List of USB devices:')
             # loop through devices
             for dev in devs:
                 print('Bus {:03d} Device {:03d}: ID {:04X}:{:04X}'.format(dev.bus, dev.address, dev.idVendor,
                                                                           dev.idProduct),
                       usb.util.get_string(dev, dev.iManufacturer), usb.util.get_string(dev, dev.iProduct))
         else:
-            print('No usb device found')
+            print('No USB device found')

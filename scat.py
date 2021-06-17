@@ -32,6 +32,12 @@ def hexint(string):
     else:
         return int(string)
 
+class ListUSBAction(argparse.Action):
+    # List USB devices and then exit
+    def __call__(self, parser, namespace, values, option_string=None):
+        iodevices.USBIO().list_usb_devices()
+        parser.exit()
+
 if __name__ == '__main__':
     # Load parser modules
     parser_dict = {}
@@ -45,17 +51,11 @@ if __name__ == '__main__':
     parsers_desc = ', '.join(parser_dict.keys())
 
     parser = argparse.ArgumentParser(description='Reads diagnostic messages from smartphone baseband.')
-
-    parser.add_argument('-l', '--list-devices', help='List usb devices', action='store_true')
-    args = parser.parse_known_args()
-
-    # list usb devices and then exit
-    if args[0].list_devices:
-        iodevices.USBIO().list_usb_devices()
-        sys.exit(0)
+    parser.register('action', 'listusb', ListUSBAction)
 
     parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
     parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: %s' % parsers_desc, required=True)
+    parser.add_argument('-l', '--list-devices', help='List USB devices and exit', nargs=0, action='listusb')
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
