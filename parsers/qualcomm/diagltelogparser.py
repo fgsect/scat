@@ -37,7 +37,7 @@ class DiagLteLogParser:
             #0xB168: lambda x, y, z: parse_lte_msg2_report(x, y, z), # LTE RAR (Msg2) Report
             #0xB169: lambda x, y, z: parse_lte_msg3_report(x, y, z), # LTE UE Identification Message (Msg3) Report
             #0xB16A: lambda x, y, z: parse_lte_msg3_report(x, y, z), # LTE Contention Resolution Message (Msg4) Report
-            #0xB061: lambda x, y, z: parse_lte_mac_rach_trigger(x, y, z), # LTE MAC RACH Trigger
+            #0xB061: lambda x, y, z: self.parse_lte_mac_rach_trigger(x, y, z), # LTE MAC RACH Trigger
             0xB062: lambda x, y, z: self.parse_lte_mac_rach_response(x, y, z), # LTE MAC RACH Response
             0xB063: lambda x, y, z: self.parse_lte_mac_dl_block(x, y, z), # LTE MAC DL Transport Block
             0xB064: lambda x, y, z: self.parse_lte_mac_ul_block(x, y, z), # LTE MAC UL Transport Block
@@ -598,7 +598,7 @@ class DiagLteLogParser:
 
                         pos_sample = 1
                         for y in range(n_samples):
-                            header = struct.unpack('<BBHHBHBBB', subpkt[pos_sample:pls_sample+12])
+                            header = struct.unpack('<BBHHBHBBB', subpkt[pos_sample:pos_sample+12])
                             harq_id, rnti_type, sfn_subfn, grant, rlc_pdus, padding, bsr_event, bsr_trig, header_len = header
 
                             # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
@@ -1117,7 +1117,8 @@ class DiagLteLogParser:
         msg_hdr = b''
         msg_content = b''
 
-        if pkt[0] in (0x1a, 0x1b): # Version 26, 27
+        if pkt[0] in (0x19, 0x1a, 0x1b): # Version 25, 26, 27
+            # 19 | 0f 30 | 00 00 | 00 | 09 01 | 9c 18 00 00 | 45 51 | 02 | 00 00 00 00 | 33 00 | ...
             # 1a | 0f 40 | 0f 40 | 01 | 0e 01 | 13 07 00 00 | 00 00 | 0b | 00 00 00 00 | 02 00 | 10 15	
             # 1b | 10 10 | 0f 90 | 00 | b1 01 | 86 a0 00 00 | d5 07 | 00 | 00 00 00 07 | 00 05
             msg_hdr = pkt[0:21] # 21 bytes
@@ -1138,13 +1139,13 @@ class DiagLteLogParser:
 
         elif pkt[0] in (0x08, 0x09, 0x0c, 0x0d, 0x0f, 0x10, 0x13, 0x14, 0x16, 0x18): # Version 8, 9, 12, 13, 15, 16, 19, 20, 22, 24
             # 08 | 0a 72 | 01 | 0e 00 | 9c 18 00 00 | a9 33 | 06 | 00 00 00 00 | 02 00 | 2e 02
-            # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b 8e c1 dd 13 b0
+            # 09 | 0b 70 | 00 | 00 01 | 14 05 00 00 | 09 91 | 0b | 00 00 00 00 | 07 00 | 40 0b ...
             # 0d | 0c 74 | 01 | 32 00 | 38 18 00 00 | 00 00 | 08 | 00 00 00 00 | 02 00 | 2c 00
-            # 0f | 0d 21 | 00 | 9e 00 | 14 05 00 00 | 49 8c | 05 | 00 00 00 00 | 07 00 | 40 0c 8e c9 42 89 e0
-            # 0f | 0d 21 | 01 | 9e 00 | 14 05 00 00 | 00 00 | 09 | 00 00 00 00 | 1c 00 | 08 10 a5 34 61 41 a3 1c 31 68 04 40 1a 00 49 16 7c 23 15 9f 00 10 67 c1 06 d9 e0 00 fd 2d
-            # 13 | 0e 22 | 00 | 0b 00 | fa 09 00 00 | 00 00 | 32 | 00 00 00 00 | 09 00 | 28 18 40 16 08 08 80 00 00
-            # 14 | 0e 30 | 01 | 09 01 | 9c 18 00 00 | 00 00 | 09 | 00 00 00 00 | 18 00 | 08 10 a7 14 53 59 a6 05 43 68 c0 3b da 30 04 a6 88 02 8d a2 00 9a 68 40
-            # 18 | 0f 22 | 00 | 68 00 | e4 0c 00 00 | 09 dc | 05 | 00 00 00 00 | 0d 00 | 40 85 8e c4 e5 bf e0 50 dc 29 15 16 00
+            # 0f | 0d 21 | 00 | 9e 00 | 14 05 00 00 | 49 8c | 05 | 00 00 00 00 | 07 00 | 40 0c ...
+            # 0f | 0d 21 | 01 | 9e 00 | 14 05 00 00 | 00 00 | 09 | 00 00 00 00 | 1c 00 | 08 10 ...
+            # 13 | 0e 22 | 00 | 0b 00 | fa 09 00 00 | 00 00 | 32 | 00 00 00 00 | 09 00 | 28 18 ...
+            # 14 | 0e 30 | 01 | 09 01 | 9c 18 00 00 | 00 00 | 09 | 00 00 00 00 | 18 00 | 08 10 ...
+            # 18 | 0f 22 | 00 | 68 00 | e4 0c 00 00 | 09 dc | 05 | 00 00 00 00 | 0d 00 | 40 85 ...
             msg_hdr = pkt[0:19] # 19 bytes
             msg_content = pkt[19:] # Rest of packet
             if len(msg_hdr) != 19:
@@ -1253,7 +1254,7 @@ class DiagLteLogParser:
                 9: util.gsmtap_lte_rrc_types.UL_DCCH
             }
         elif pkt[0] in (0x13, 0x1a, 0x1b):
-            # RRC Packet v19, v26
+            # RRC Packet v19, v26, v27
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 3: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
@@ -1271,8 +1272,8 @@ class DiagLteLogParser:
                 50: util.gsmtap_lte_rrc_types.UL_CCCH_NB,
                 52: util.gsmtap_lte_rrc_types.UL_DCCH_NB
             }
-        elif pkt[0] in (0x14, 0x18):
-            # RRC Packet v20, v24
+        elif pkt[0] in (0x14, 0x18, 0x19):
+            # RRC Packet v20, v24, v25
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 2: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
