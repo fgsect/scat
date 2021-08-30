@@ -862,7 +862,8 @@ class DiagLteLogParser:
                                 rbid = (pdu_hdr[0] & 0x7c00) >> 10
                                 valid = (pdu_hdr[0] & 0x8000) >> 15
                             else:
-                                sn_length = 0
+                                self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL PDU Subpacket version %s' % subpkt_version)
+                                break
 
                             sn_length_map = {
                                 0: util.pdcp_sn_length_types.PDCP_SN_LENGTH_5_BITS,
@@ -954,7 +955,8 @@ class DiagLteLogParser:
                                 rbid = (pdu_hdr[0] & 0x7c00) >> 10
                                 valid = (pdu_hdr[0] & 0x8000) >> 15
                             else:
-                                sn_length = 0
+                                self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL PDU Subpacket version %s' % subpkt_version)
+                                break
 
                             sn_length_map = {
                                 0: util.pdcp_sn_length_types.PDCP_SN_LENGTH_5_BITS,
