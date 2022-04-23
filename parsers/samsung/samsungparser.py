@@ -8,7 +8,14 @@ import calendar, datetime
 import binascii
 import logging
 
+
+def content(pkt):
+    return pkt[11:-1]
+
+
 class SamsungParser:
+    pkg_header_len = 10
+
     def __init__(self):
         self.gsm_last_cell_id = [0, 0]
         self.gsm_last_arfcn = [0, 0]
@@ -52,6 +59,8 @@ class SamsungParser:
         for p in params:
             if p == 'model':
                 self.model = params[p]
+                if self.model == 'e5123':
+                    SamsungParser.pkg_header_len = 11
             elif p == 'log_level':
                 self.logger.setLevel(params[p])
 
@@ -108,7 +117,7 @@ class SamsungParser:
 
     def init_diag(self):
         self.logger.log(logging.INFO, 'Initialize diag')
-        if self.model == 'e333':
+        if self.model == 'e333' or self.model == 'e5123':
             self.init_diag_e333()
         elif self.model == 'e303':
             self.init_diag_e303()
@@ -122,7 +131,9 @@ class SamsungParser:
 
     def parse_diag(self, pkt, hdlc_encoded = True, parse_ts = False, radio_id = 0):
         sock_content = b''
-        if self.model == 'e333':
+        if self.model == 'e5123':
+            self.parse_diag_log_e5123(pkt, radio_id)
+        elif self.model == 'e333':
             self.parse_diag_log_e333(pkt, radio_id)
         elif self.model == 'e303':
             self.parse_diag_log_e303(pkt, radio_id)
@@ -164,8 +175,49 @@ class SamsungParser:
         # DIAG Disable
         self.io_device.write(b'\x7f\x0e\x00\x00\x0b\x00\x00\x00\xa0\x00\x02\x00\x00\x00\x00\x7e')
 
+    def run_dump(self):
+        self.logger.log(logging.INFO, 'Starting diag from dump')
+
+        oldbuf = b''
+        cur_pos = 0
+        try:
+            while True:
+                buf = self.io_device.read(0x90000)
+                #util.xxd(buf, True)
+                if len(buf) == 0:
+                    continue
+                cur_pos = 0
+                first = False
+                while cur_pos < len(buf):
+                    #print('---- subpacket ----')
+                    #print(buf)
+                    #assert buf[cur_pos] == 0x7f
+                    if buf[cur_pos] != 0x7f:
+                        # if first:
+                        #     self.logger.log(logging.WARNING, 'Unexpected end of the packet, dropping it')
+                        #     self.logger.log(logging.DEBUG, util.xxd(buf))
+                        #     break
+                        cur_pos += 1
+                        continue
+                    first = True
+                    if cur_pos+SamsungParser.pkg_header_len < len(buf):
+                        len_1 = buf[cur_pos + 1] | (buf[cur_pos + 2] << 8)
+                        len_2 = buf[cur_pos + 3] | (buf[cur_pos + 4] << 8)
+                        #util.xxd(buf[cur_pos:cur_pos+len_1 + 2])
+                        #util.xxd(buf[cur_pos: cur_pos + len_1 + 2], True)
+                        self.parse_diag(buf[cur_pos:cur_pos + len_1 + 2])
+                    # cur_pos += (len_1 + 2)
+                    cur_pos += 1
+                    #print('%s/%s' % (cur_pos, len(buf)))
+                #print('---- end ----')
+
+        except KeyboardInterrupt:
+            return
+
     def read_dump(self):
-        pass
+        if self.io_device.file_available:
+            self.logger.log(logging.INFO, 'Unknown baseband dump type, assuming default')
+            self.run_dump()
 
     # Samsung TS format:
     # No Epoch
@@ -173,7 +225,7 @@ class SamsungParser:
     # Rolled over when TS becomes bigger than 2^32 - 1
 
     def process_ip_data(self, pkt):
-        pkt = pkt[10:-1]
+        pkt = content(pkt)
         ip_hdr = struct.unpack('<BLHHHH', pkt[0:13])
         # 00 ts(uint32) stamp(uint16) dir(uint16) ?(uint16) len(uint16)
         # 0: Data type (0x00: IP, 0x10: Unknown)
@@ -193,7 +245,7 @@ class SamsungParser:
         pass
 
     def process_common_data(self, pkt):
-        pkt = pkt[10:-1]
+        pkt = content(pkt)
         arfcn = 0
 
         if pkt[0] == 0x03: # Common Signalling Info
@@ -290,14 +342,14 @@ class SamsungParser:
             return
 
     def process_common_basic(self, pkt):
-        pkt = pkt[10:-1]
+        pkt = content(pkt)
         #if not (pkt[0] == 0x00 or pkt[0] == 0x02):
         #if pkt[0] == 0x00:
         #    util.xxd(pkt)
         return
 
     def process_lte_basic_e333(self, pkt):
-        pkt = pkt[10:-1]
+        pkt = content(pkt)
 
         if pkt[0] == 0x02:
             # 5-7: Current PLMN (BCD or decimal)
@@ -378,9 +430,40 @@ class SamsungParser:
 
         # 0x60: LTE Data Throughput Info
         # 0x61: LTE Data Timing Info
-        pkt = pkt[10:-1]
+        pkt = content(pkt)
         arfcn = 0
 
+        if len(pkt) == 0:
+            return
+
+        '''
+        0x50: 'LteRrcServ?', len:24
+            "cid", '<L',  4 bytes, pos:4
+            "plmn" '<HB', 3 bytes, pos:16
+            "tac", '>H',  2 bytes, pos:20
+        if pkt[0] == 0x50:
+        '''
+
+        '''
+        0x51: 'LteRrcState' len:5
+            "rrc_state", '<B', 1 byte, pos:4  # (00 - IDLE, 01 - CONNECTING, 02 - CONNECTED)
+        if pkt[0] == 0x51:
+        '''
+
+        '''
+        0x57: '?' len:13
+            "earfcn", '<L', 4 bytes, pos:7
+            "pci",    '<H', 2 bytes, pos:11
+        if pkt[0] == 0x57:
+        '''
+
+        '''
+        0x58: 'Sim(?)', len:13
+            "mcc",  '<2s', 2 bytes, pos:4,   # bcd encoded
+            "mnc",  '<1s', 1 bytes, pos:6,   # bcd encoded
+            "IMSI", '<9s', 9 bytes, pos:15,  # bcd encoded
+        if pkt[0] == 0x58:
+        '''
         if pkt[0] == 0x52:
             # 0x52: LTE RRC OTA Packet
 
@@ -446,7 +529,7 @@ class SamsungParser:
             # pkt[1] - pkt[4]: TS?
             direction = pkt[5] # 0 - DL, 1 - UL
             nas_len = pkt[6] | (pkt[7] << 8)
-            # pkt[8] - duplicate?
+            # pkt[8] - duplicate? - spare!
             nas_msg = pkt[9:]
 
             if direction == 0:
@@ -465,8 +548,20 @@ class SamsungParser:
             return
 
     def process_edge_data(self, pkt):
-        self.logger.log(logging.WARNING, 'TODO: command 0x23')
-        pkt = pkt[10:-1]
+        self.logger.log(logging.WARNING, 'TODO: command 0x23 edge data')
+        pkt = content(pkt)
+
+        '''
+        0x07: 'GsmServ',
+            "bsic",  '>B',  1 bytes, pos:20, # 7bit
+            "arfcn", '>H',  2 bytes, pos:26, # 10bit
+            "mcc",   '<2s', 2 bytes, pos:39, # bcd encoded
+            "mnc",   '<1s', 1 bytes, pos:41, # bcd encoded
+            "lac",   '>H',  2 bytes, pos:42, 
+            "cid",   '>H',  2 bytes, pos:45, 
+        ], []),
+        if pkt[0] == 0x07:
+        '''
         if pkt[0] == 0x10:
             # DL?
             pass
@@ -478,7 +573,7 @@ class SamsungParser:
         return
 
     def process_hspa_basic(self, pkt):
-        pkt = pkt[10:-1]
+        pkt = content(pkt)
 
         if pkt[0] == 0x22:
             self.umts_last_uarfcn_dl[0] = pkt[5] | (pkt[6] << 8)
@@ -498,6 +593,75 @@ class SamsungParser:
     def process_trace_data(self, pkt):
         return
 
+    def parse_diag_log_e5123(self, pkt, radio_id = 0):
+        process = {
+            # 0x00 - only used during diag setup
+            0x01: lambda x: self.process_common_basic(x),
+            0x02: lambda x: self.process_lte_basic_e333(x),
+            # 0x03
+            0x04: lambda x: self.process_hspa_basic(x),
+            0x07: lambda x: self.process_ip_data(x),
+            #0x20: lambda x: process_control_message(x),
+            0x21: lambda x: self.process_common_data(x),
+            0x22: lambda x: self.process_lte_data(x),
+            0x23: lambda x: self.process_edge_data(x),
+            #0x24: lambda x: process_hspa_data(x),
+            #0x25: lambda x: process_trace_data(x),
+            # 0x44
+        }
+
+        if not (pkt[0] == 0x7f):  # and pkt[-1] == 0x7e):
+            self.logger.log(logging.WARNING, 'Invalid packet structure')
+            #util.xxd(pkt, True)
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
+            return
+
+        len_1 = 0x0
+        if len(pkt) > 2:
+            len_1 = pkt[1] | (pkt[2] << 8)
+        if len(pkt) > 5:
+            len_2 = pkt[4] | (pkt[5] << 8)
+        if len(pkt) > 7:
+            stamp = pkt[6] | (pkt[7] << 8)
+
+        main_cmd = 0x0
+        sub_cmd = 0x0
+        if len(pkt) > 10:
+            main_cmd = pkt[9]
+            sub_cmd = pkt[10]
+        #print('Length %s/%s, Main command %02x, Stamp %04x' % (len_1, len_2, main_cmd, stamp))
+        #util.xxd(pkt[0:10])
+
+        if main_cmd == 0xa0 or main_cmd == 0xa1:  # IpcDmCmd
+            if sub_cmd in process.keys():
+                return process[sub_cmd](pkt)
+            else:
+                #print('TODO: subcommand %02x' % sub_cmd)
+                pass
+        elif main_cmd == 0xa1: # IpcCtCmd
+            if sub_cmd in process.keys():
+                return process[sub_cmd](pkt)
+            else:
+                #print('TODO: subcommand %02x' % sub_cmd)
+                pass
+            self.logger.log(logging.WARNING, 'TODO: IpcCtCmd')
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
+        elif main_cmd == 0xa2: # IpcHimCmd
+            self.logger.log(logging.WARNING, 'TODO: IpcHimCmd')
+        else:
+            self.logger.log(logging.WARNING, 'Invalid main command ID %02x' % main_cmd)
+
+        #print("%s %s %s %s %s %s %s %s" % (binascii.hexlify(pkt[0:1]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[1:4]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[4:6]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[6:8]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[8:9]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[9:10]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[10:-1]).decode('ascii'),
+        #                                   binascii.hexlify(pkt[-1:]).decode('ascii')))
+
+        return
+
     def parse_diag_log_e333(self, pkt, radio_id = 0):
         process = {
             # 0x00 - only used during diag setup
@@ -515,18 +679,25 @@ class SamsungParser:
             # 0x44
         }
 
-        if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
+        if not (pkt[0] == 0x7f):  # and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
             #util.xxd(pkt, True)
             self.logger.log(logging.DEBUG, util.xxd(pkt))
             return
 
-        len_1 = pkt[1] | (pkt[2] << 8)
-        len_2 = pkt[4] | (pkt[5] << 8)
-        stamp = pkt[6] | (pkt[7] << 8)
+        len_1 = 0x0
+        if len(pkt) > 2:
+            len_1 = pkt[1] | (pkt[2] << 8)
+        if len(pkt) > 5:
+            len_2 = pkt[4] | (pkt[5] << 8)
+        if len(pkt) > 7:
+            stamp = pkt[6] | (pkt[7] << 8)
 
-        main_cmd = pkt[8]
-        sub_cmd = pkt[9]
+        main_cmd = 0x0
+        sub_cmd = 0x0
+        if len(pkt) > 10:
+            main_cmd = pkt[9]
+            sub_cmd = pkt[10]
         #print('Length %s/%s, Main command %02x, Stamp %04x' % (len_1, len_2, main_cmd, stamp))
         #util.xxd(pkt[0:10])
 
