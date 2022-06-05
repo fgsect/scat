@@ -141,3 +141,5 @@ software to cite one of these references listed below:
   Cellular Walled Gardens - A Method for Closed Network Diagnosis -**. IEEE
   Transactions on Mobile Computing, February 2018.
 
+## For Apple silicon
+[doc](Apple-silicon.md).
