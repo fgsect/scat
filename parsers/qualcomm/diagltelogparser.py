@@ -646,6 +646,7 @@ class DiagLteLogParser:
         earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)]
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
+        rbid = -1
 
         if pkt[0] == 1:
             # pkt[1]: Number of Subpackets
@@ -819,6 +820,7 @@ class DiagLteLogParser:
         earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)]
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
+        rbid = -1
 
         if pkt[0] == 1:
             # pkt[1]: Number of Subpackets
@@ -911,6 +913,7 @@ class DiagLteLogParser:
         earfcn = self.parent.lte_last_earfcn_dl[self.parent.sanitize_radio_id(radio_id)] | (1 << 14)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
+        rbid = -1
 
         if pkt[0] == 1:
             # pkt[1]: Number of Subpackets
