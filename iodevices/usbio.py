@@ -41,8 +41,8 @@ class USBIO:
             raise ValueError('Device not found')
 
     def probe_device_by_bus_dev(self, bus, dev):
-        print('Trying USB device at address {:03d}:{:03d}'.format(bus, dev))
-        self.dev = usb.core.find(bus=bus, address=dev)
+        print('Trying USB device at address {:03x}:{:03x}'.format(bus, dev))
+        self.dev = usb.core.find(idVendor=bus, idProduct=dev)
         if self.dev is None:
             raise ValueError('Device not found')
 
