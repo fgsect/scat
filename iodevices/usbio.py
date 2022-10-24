@@ -3,6 +3,7 @@
 
 import usb
 import util
+import logging
 
 class USBIO:
     def __init__(self):
@@ -91,8 +92,17 @@ class USBIO:
             print('List of USB devices:')
             # loop through devices
             for dev in devs:
+                manufacturer = ""
+                product = ""
+                try:
+                    manufacturer = usb.util.get_string(dev, dev.iManufacturer)
+                    product = usb.util.get_string(dev, dev.iProduct)
+                except ValueError:
+                    logger = logging.getLogger('scat.usbio')
+                    logger.log(logging.WARNING, "Warning: Unable to get product name or manufacturer. "
+                                                "Missing permissions? Try with sudo")
+
                 print('Bus {:03d} Device {:03d}: ID {:04X}:{:04X}'.format(dev.bus, dev.address, dev.idVendor,
-                                                                          dev.idProduct),
-                      usb.util.get_string(dev, dev.iManufacturer), usb.util.get_string(dev, dev.iProduct))
+                                                                          dev.idProduct), manufacturer, product)
         else:
             print('No USB device found')
