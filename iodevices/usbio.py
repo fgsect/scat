@@ -20,7 +20,7 @@ class USBIO:
         except usb.core.USBError:
             return b''
         if decode_hdlc:
-            buf = util.unwrap(write_buf)
+            buf = util.unwrap(buf)
         return buf
 
     def write(self, write_buf, encode_hdlc = False):
