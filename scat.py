@@ -115,7 +115,7 @@ if __name__ == '__main__':
             io_device.probe_device_by_vid_pid(args.vendor, args.product)
 
         if args.config > 0:
-            io_device.set_configuration(config)
+            io_device.set_configuration(args.config)
         io_device.claim_interface(args.interface)
     elif args.dump:
         io_device = iodevices.FileIO(args.dump)
