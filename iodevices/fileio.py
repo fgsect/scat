@@ -34,7 +34,7 @@ class FileIO:
         except:
             return b''
         if decode_hdlc:
-            buf = util.unwrap(write_buf)
+            buf = util.unwrap(buf)
         return buf
 
     def open_next_file(self):

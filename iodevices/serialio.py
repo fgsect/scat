@@ -17,7 +17,7 @@ class SerialIO:
         buf = self.port.read(read_size)
         buf = bytes(buf)
         if decode_hdlc:
-            buf = util.unwrap(write_buf)
+            buf = util.unwrap(buf)
         return buf
 
     def write(self, write_buf, encode_hdlc = False):
