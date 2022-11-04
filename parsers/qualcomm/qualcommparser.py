@@ -326,6 +326,41 @@ class QualcommParser:
 
             oldbuf = buf
 
+    # Experimental HDF parser.
+    # It scans the file for packets in the format "0x10 0x00 packet_length body"
+    # Ignoring any additional fields that the file might contain
+    def parse_hdf(self):
+        while True:
+            header = self.io_device.read(1)
+
+            # EOF check
+            if len(header) == 0:
+                break
+
+            # First byte must be 0x10
+            if header != b'\x10':
+                continue
+
+            # Second byte must be 0x00
+            header += self.io_device.read(1)
+            if header != b'\x10\x00':
+                continue
+
+            # pkt length from header and pkt length from body must be equal
+            header += self.io_device.read(2)
+            body = self.io_device.read(2)
+            if header[2:4] != body[0:2]:
+                continue
+
+            # Convert pkt length to int
+            pkt_len = struct.unpack('<H', header[2:4])[0]
+
+            # Read full body
+            body += self.io_device.read(pkt_len - 2)
+            pkt = header + body
+
+            self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
+
     def read_dump(self):
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
@@ -333,6 +368,8 @@ class QualcommParser:
                 self.run_diag()
             elif self.io_device.fname.find('.dlf') > 0:
                 self.parse_dlf()
+            elif self.io_device.fname.find('.hdf') > 0:
+                self.parse_hdf()
             else:
                 self.logger.log(logging.INFO, 'Unknown baseband dump type, assuming QMDL')
                 self.run_diag()
