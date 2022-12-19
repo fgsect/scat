@@ -95,7 +95,7 @@ if __name__ == '__main__':
     IP_OVER_UDP_PORT = args.port_up
 
     if not args.type in parser_dict.keys():
-        print('Error: invalid baseband type specified. Available modules: %s' % parsers_desc)
+        print('Error: invalid baseband type specified. Available modules: {}'.format(parsers_desc))
         sys.exit(0)
 
     # Device preparation

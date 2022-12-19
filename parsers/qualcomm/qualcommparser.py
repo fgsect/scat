@@ -182,19 +182,19 @@ class QualcommParser:
             pkt = pkt[:-2]
 
         if pkt[0] == diagcmd.DIAG_LOG_F:
-            self.parse_diag_log(pkt, radio_id)
+            return self.parse_diag_log(pkt, radio_id)
         elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F and self.parse_events:
-            self.parse_diag_event(pkt, radio_id)
+            return self.parse_diag_event(pkt, radio_id)
         elif pkt[0] == diagcmd.DIAG_EXT_MSG_F and self.parse_msgs:
-            self.parse_diag_ext_msg(pkt, radio_id)
+            return self.parse_diag_ext_msg(pkt, radio_id)
         elif pkt[0] == diagcmd.DIAG_QSR_EXT_MSG_TERSE_F and self.parse_msgs:
-            #self.parse_diag_qsr_ext_msg(pkt, radio_id)
+            #return self.parse_diag_qsr_ext_msg(pkt, radio_id)
             pass
         elif pkt[0] == diagcmd.DIAG_QSR4_EXT_MSG_TERSE_F and self.parse_msgs:
-            #self.parse_diag_qsr4_ext_msg(pkt, radio_id)
+            #return self.parse_diag_qsr4_ext_msg(pkt, radio_id)
             pass
         elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
-            self.parse_diag_multisim(pkt)
+            return self.parse_diag_multisim(pkt)
         else:
             #print("Not parsing non-Log packet %02x" % pkt[0])
             #util.xxd(pkt)
@@ -222,9 +222,31 @@ class QualcommParser:
                 for pkt in buf_atom:
                     if len(pkt) == 0:
                         continue
-                    self.parse_diag(pkt)
+                    parse_result = self.parse_diag(pkt)
+
                     if writer_qmdl:
                         writer_qmdl.write_cp(pkt + b'\x7e')
+
+                    if parse_result is None:
+                        continue
+
+                    if 'radio_id' in parse_result:
+                        radio_id = parse_result['radio_id']
+                    else:
+                        radio_id = 0
+
+                    if 'ts' in parse_result:
+                        ts = parse_result['ts']
+                    else:
+                        ts = None
+
+                    if 'cp' in parse_result:
+                        sock_content = self.parse_result_to_gsmtap(parse_result['cp'])
+                        self.writer.write_cp(sock_content, radio_id, ts)
+
+                    if 'up' in parse_result:
+                        sock_content = self.parse_result_to_gsmtap(parse_result['up'])
+                        self.writer.write_up(sock_content, radio_id, ts)
 
         except KeyboardInterrupt:
             return
@@ -276,7 +298,13 @@ class QualcommParser:
                 self.run_diag()
             self.io_device.open_next_file()
 
-    def parse_diag_log(self, pkt: "DIAG_LOG_F data without trailing CRC", radio_id = 0):
+    def parse_diag_log(self, pkt, radio_id = 0):
+        """Parses the DIAG_LOG_F packet.
+
+        Parameters:
+        pkt (bytes): DIAG_LOG_F data without trailing CRC
+        radio_id (int): used SIM or subscription ID on multi-SIM devices
+        """
         if len(pkt) < 16:
             return
 
@@ -299,7 +327,13 @@ class QualcommParser:
             return
 
     def parse_diag_ext_msg(self, pkt, radio_id):
-        # 79 | 00 | 00 | 00 | 00 00 1c fc 0f 16 e4 00 | e6 04 | 94 13 | 02 00 00 00 
+        """Parses the DIAG_EXT_MSG_F packet.
+
+        Parameters:
+        pkt (bytes): DIAG_EXT_MSG_F data without trailing CRC
+        radio_id (int): used SIM or subscription ID on multi-SIM devices
+        """
+        # 79 | 00 | 00 | 00 | 00 00 1c fc 0f 16 e4 00 | e6 04 | 94 13 | 02 00 00 00
         # cmd_code, ts_type, num_args, drop_cnt, TS, Line number, Message subsystem ID, ?
         # Message: two null-terminated strings, one for log and another for filename
         xdm_hdr = pkt[0:20]
@@ -329,6 +363,11 @@ class QualcommParser:
         self.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, pkt_ts)
 
     def parse_diag_multisim(self, pkt):
+        """Parses the DIAG_MULTI_RADIO_CMD_F packet. This function calls nexted DIAG log packet with correct radio ID attached.
+
+        Parameters:
+        pkt (bytes): DIAG_MULTI_RADIO_CMD_F data without trailing CRC
+        """
         # 98 01 00 00 | 01 00 00 00 -> Subscription ID=1
         # 98 01 00 00 | 02 00 00 00 -> Subscription ID=2
         # Subscription ID is base 1, 0 or -1 is also observed (we treat it as 1)
@@ -342,6 +381,12 @@ class QualcommParser:
         self.parse_diag(pkt_body, hdlc_encoded=False, check_crc=False, radio_id = (xdm_hdr[3]))
 
     def parse_diag_event(self, pkt, radio_id):
+        """Parses the DIAG_EVENT_REPORT_F packet.
+
+        Parameters:
+        pkt (bytes): DIAG_EVENT_REPORT_F data without trailing CRC
+        radio_id (int): used SIM or subscription ID on multi-SIM devices
+        """
         cmd_code, len_msg = struct.unpack('<BH', pkt[0:3])
 
         pos = 3
