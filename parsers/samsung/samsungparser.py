@@ -172,7 +172,7 @@ class SamsungParser:
                         break
 
                     if len(buf) < pos + 11:
-                        self.logger.log(logging.WARNING, 'Packet shorter than expected')
+                        # self.logger.log(logging.WARNING, 'Packet shorter than expected')
                         oldbuf = buf[pos:]
                         break
 
@@ -185,20 +185,22 @@ class SamsungParser:
                         break
 
                     if buf[pos+1+sdm_pkt_hdr.length1] != 0x7e:
-                        self.logger.log(logging.WARNING, 'Packet start and end does not match, dropping')
-                        cur_pos += 1
+                        self.logger.log(logging.WARNING, 'Packet start {:02x} and end {:02x} does not match, dropping'.format(buf[pos], buf[pos+1+sdm_pkt_hdr.length1]))
+                        cur_pos = pos + 2
+                        # cur_pos = (pos + 1 + sdm_pkt_hdr.length1)
                         continue
 
                     if sdm_pkt_hdr.length2 + 3 != sdm_pkt_hdr.length1:
                         self.logger.log(logging.WARNING, 'Inner and outer length does not match, dropping')
-                        cur_pos += 1
+                        cur_pos = pos + 2
+                        # cur_pos = (pos + 1 + sdm_pkt_hdr.length1)
                         continue
 
                     parse_result = self.parse_diag(buf[pos:pos + sdm_pkt_hdr.length1 + 2])
                     if parse_result is not None:
                         self.postprocess_parse_result(parse_result)
 
-                    cur_pos += (sdm_pkt_hdr.length1 + 2)
+                    cur_pos = (pos + sdm_pkt_hdr.length1 + 2)
 
         except KeyboardInterrupt:
             return
