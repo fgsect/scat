@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 from enum import IntEnum, unique
+from collections import namedtuple
 import struct
 
 @unique
@@ -88,6 +89,8 @@ class sdm_edge_data(IntEnum):
 class sdm_hspa_data(IntEnum):
     HSPA_WCDMA_RRC_STATUS   = 0x20
     HSPA_WCDMA_SERVING_CELL = 0x22
+
+sdmheader = namedtuple('SdmHeader', 'length1 zero length2 stamp direction group command')
 
 def generate_sdm_packet(direction, group, command, payload):
     pkt_len = 2 + 3 + len(payload) + 2
