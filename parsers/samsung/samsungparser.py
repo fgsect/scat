@@ -133,9 +133,7 @@ class SamsungParser:
         self.logger.log(logging.INFO, 'Initialize diag')
         if self.model == 'e333' or self.model == 'e5123':
             self.init_diag_e333()
-        elif self.model == 'e303':
-            self.init_diag_e303()
-        elif self.model == 'cmc221s':
+        elif self.model == 'e303' or self.model == 'cmc221s':
             self.init_diag_e303()
         else:
             assert False, "Invalid model."
@@ -187,13 +185,11 @@ class SamsungParser:
                     if buf[pos+1+sdm_pkt_hdr.length1] != 0x7e:
                         self.logger.log(logging.WARNING, 'Packet start {:02x} and end {:02x} does not match, dropping'.format(buf[pos], buf[pos+1+sdm_pkt_hdr.length1]))
                         cur_pos = pos + 2
-                        # cur_pos = (pos + 1 + sdm_pkt_hdr.length1)
                         continue
 
                     if sdm_pkt_hdr.length2 + 3 != sdm_pkt_hdr.length1:
                         self.logger.log(logging.WARNING, 'Inner and outer length does not match, dropping')
                         cur_pos = pos + 2
-                        # cur_pos = (pos + 1 + sdm_pkt_hdr.length1)
                         continue
 
                     parse_result = self.parse_diag(buf[pos:pos + sdm_pkt_hdr.length1 + 2])
@@ -307,7 +303,7 @@ class SamsungParser:
         radio_id = (sdm_pkt_hdr.group >> 5)
         group_real = sdm_pkt_hdr.group & 0x1F
 
-        # print('SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}'.format(radio_id, group_real, sdm_pkt_hdr.command))
+        print('SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}'.format(radio_id, group_real, sdm_pkt_hdr.command))
 
         cmd_sig = (group_real << 8) | sdm_pkt_hdr.command
         if cmd_sig in self.process.keys():

@@ -23,20 +23,12 @@ class SdmLteParser:
         }
 
     def sdm_lte_phy_cell_info(self, pkt):
-        pkt = pkt[11:-1]
+        if self.parent.model == 'e5123':
+            return self.sdm_lte_phy_cell_info_e5123(pkt)
+        else:
+            return self.sdm_lte_phy_cell_info_e333(pkt)
 
-        if len(pkt) < 20:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (20)'.format(len(pkt)))
-            return
-
-        header = namedtuple('SdmLtePhyCellInfo', 'timestamp plmn zero arfcn pci')
-        cell_info = header._make(struct.unpack('<IIIII', pkt[0:20]))
-
-        self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
-        self.parent.lte_last_pci[0] = cell_info.pci
-        print(cell_info)
-        # print(util.xxd(pkt))
-
+    def sdm_lte_phy_cell_info_e333(self, pkt):
         # 5-7: Current PLMN (BCD or decimal)
         # 8-11: zero
         # 12: cell RAT (0-LTE, 1-3G, 2-2G?)
@@ -46,20 +38,54 @@ class SdmLteParser:
         # 003818 64000000 0019e4250000dc0500000000
         # 003818 7b000000 001910270000dc0500000000
         # 003818 57000000 641910270000080700000000
-        # cell_info = header._make(struct.unpack('<IBBBIBHI', pkt[0:18]))
-        # cell_info = struct.unpack('<BHI', pkt[12:19])
+        pkt = pkt[11:-1]
 
-        # if cell_info[0] == 0:
-        #     self.parent.lte_last_earfcn_dl[0] = cell_info[1]
-        #     self.parent.lte_last_earfcn_ul[0] = self.lte_last_earfcn_dl[0] | (1 << 14)
-        #     self.parent.lte_last_cell_id[0] = cell_info[2]
-        # elif cell_info[0] == 1:
-        #     self.parent.umts_last_uarfcn_dl[0] = cell_info[1]
-        #     self.parent.umts_last_cell_id[0] = cell_info[2]
-        # else:
-        #     self.parent.logger.log(logging.WARNING, 'Unhandled RAT %02x' % cell_info[0])
+        if len(pkt) < 18:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (18)'.format(len(pkt)))
+            return
+
+        header = namedtuple('SdmLtePhyCellInfo', 'timestamp plmn zero1 arfcn pci zero2')
+        cell_info = header._make(struct.unpack('<IIIHHH', pkt[0:18]))
+
+        self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
+        self.parent.lte_last_pci[0] = cell_info.pci
+        print(cell_info)
+
+    def sdm_lte_phy_cell_info_e5123(self, pkt):
+        pkt = pkt[11:-1]
+
+        if len(pkt) < 20:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (20)'.format(len(pkt)))
+            return
+
+        header = namedtuple('SdmLtePhyCellInfo', 'timestamp plmn zero1 arfcn pci zero2')
+        cell_info = header._make(struct.unpack('<IIIIHH', pkt[0:20]))
+
+        self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
+        self.parent.lte_last_pci[0] = cell_info.pci
+        print(cell_info)
 
     def sdm_lte_rrc_serving_cell(self, pkt):
+        if self.parent.model == 'e5123':
+            return self.sdm_lte_rrc_serving_cell_e5123(pkt)
+        else:
+            return self.sdm_lte_rrc_serving_cell_e333(pkt)
+
+    def sdm_lte_rrc_serving_cell_e333(self, pkt):
+        pkt = pkt[11:-1]
+
+        if len(pkt) < 22:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (22)'.format(len(pkt)))
+            return
+
+        # 41 dd fa 05 | 09 23 00 01 | 01 00 00 00 | 00 00 00 00 | d0 af 00 00 | 06 db
+        header = namedtuple('SdmLteRrcServingCell', 'timestamp cid zero1 zero2 plmn tac')
+        cell_info = header._make(struct.unpack('<IIIIIH', pkt[0:22]))
+        self.parent.lte_last_cell_id = cell_info.cid
+        tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
+        print(cell_info, tac_real)
+
+    def sdm_lte_rrc_serving_cell_e5123(self, pkt):
         '''
         0x50: 'LteRrcServ?', len:24
             "cid", '<L',  4 bytes, pos:4
@@ -72,10 +98,10 @@ class SdmLteParser:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (24)'.format(len(pkt)))
             return
 
-        header = namedtuple('SdmLteRrcServingCell', 'timestamp cid zero1 zero2 plmn tac')
-        cell_info = header._make(struct.unpack('<IIIIII', pkt[0:24]))
-        self.parent.lte_last_cell_id = cell_info.cid
-        print(cell_info)
+        header = namedtuple('SdmLteRrcServingCell', 'timestamp cid zero1 zero2 plmn tac band_indicator')
+        cell_info = header._make(struct.unpack('<IIIIIHH', pkt[0:24]))
+        tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
+        print(cell_info, tac_real)
 
     def sdm_lte_rrc_state(self, pkt):
         '''

@@ -25,6 +25,7 @@ class sdm_control_message(IntEnum):
 
 @unique
 class sdm_common_data(IntEnum):
+    COMMON_BASIC_INFO             = 0x00
     COMMON_DATA_SIGNALING_INFO    = 0x03
 
 @unique

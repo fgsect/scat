@@ -3,6 +3,7 @@
 from .sdmcmd import *
 from collections import namedtuple
 import util
+import binascii
 
 import struct
 import logging
@@ -12,8 +13,47 @@ class SdmCommonParser:
         self.parent = parent
 
         self.process = {
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x)
+            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | 0x02: lambda x: self.sdm_common_0x02(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | 0x04: lambda x: self.sdm_common_0x04(x),
         }
+
+    def sdm_common_basic_info(self, pkt):
+        pkt = pkt[11:-1]
+        if len(pkt) < 15:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than minimum expected (15)'.format(len(pkt)))
+            return
+
+        # cmc221s:
+        # 4f 61 01 0f | 17 00 03 | 00 2c ac 6d | 40 96 02 68
+
+        # e303/e333:
+        # c3 87 76 05 | 17 04 03 | 00 2c ac 6d | 40 96 02 68 | 41 00 00 00
+        # 20 61 bd 37 | 17 00 02 | 80 9d c2 9c | 80 8f 9b 95 | 1f 7e 7f 1a
+        # 41 19 01 38 | 17 00 02 | 80 9d c2 9c | 80 8f 9b 95 | 15 7e 7f 1a
+        # 8f 19 c0 3d | 17 04 02 | 80 9d c2 9c | 80 8f 9b 95 | 7f 1a 00 00
+
+        # e5123:
+        # c6 aa ec 03 | 17 00 03 | 60 76 e1 38 | 20 d1 32 36 | 00 6f 30 c3 | 00 ff ff ff ff ff ff ff
+        # e1 aa ec 03 | 19 00 00 | ff ff ff ff | ff ff ff ff | 00 6f 30 c3 | 00 ff ff ff ff ff ff ff
+        # c2 31 fd 03 | 20 04 03 | 60 76 e1 38 | 20 d1 32 36 | 00 6f 30 c3 | 00 ff ff ff ff ff ff ff
+
+        # rat: GSM 10, 13 / WCDMA 12, 14 / LTE 17, 19, 20 / 5G TODO
+        header = namedtuple('SdmCommonBasicInfo', 'timestamp rat status mimo dlfreq ulfreq')
+        common_basic = header._make(struct.unpack('<IBBBLL', pkt[0:15]))
+
+        if len(pkt) > 15:
+            extra = pkt[15:]
+            print(str(common_basic) + ", Extra: " + binascii.hexlify(extra).decode('utf-8'))
+        else:
+            print(common_basic)
+
+    def sdm_common_0x02(self, pkt):
+        pkt = pkt[11:-1]
+        print(util.xxd(pkt))
+        # 20 61 bd 37 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
+        # 41 19 01 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
 
     def sdm_common_signaling(self, pkt):
         pkt = pkt[11:-1]
@@ -108,3 +148,7 @@ class SdmCommonParser:
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(pkt_header.type))
             return
+
+    def sdm_common_0x04(self, pkt):
+        pkt = pkt[11:-1]
+        print(util.xxd(pkt))
