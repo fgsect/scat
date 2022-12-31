@@ -17,10 +17,10 @@ from .diagcommoneventparser import DiagCommonEventParser
 from .diaglteeventparser import DiagLteEventParser
 
 import util
-import usb
 import struct
-import calendar, datetime
+import datetime
 import logging
+from collections import namedtuple
 
 class QualcommParser:
     def __init__(self):
@@ -54,9 +54,10 @@ class QualcommParser:
 
         self.logger = logging.getLogger('scat.qualcommparser')
 
-        self.diag_log_parsers = [DiagGsmLogParser(self),
-            DiagWcdmaLogParser(self), DiagUmtsLogParser(self),
-            DiagLteLogParser(self), Diag1xLogParser(self), DiagNrLogParser(self)]
+        # self.diag_log_parsers = [DiagGsmLogParser(self),
+        #     DiagWcdmaLogParser(self), DiagUmtsLogParser(self),
+        #     DiagLteLogParser(self), Diag1xLogParser(self), DiagNrLogParser(self)]
+        self.diag_log_parsers = [ DiagLteLogParser(self) ]
         self.process = { }
         self.no_process = { }
 
@@ -160,7 +161,7 @@ class QualcommParser:
         self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_umts()), 0x1000, False)
         self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_lte()), 0x1000, False)
 
-    def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, radio_id = 0):
+    def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, args = None):
         # Should contain DIAG command and CRC16
         # pkt should not contain trailing 0x7E, and either HDLC encoded or not
         # When the pkt is not HDLC encoded, hdlc_encoded should be set to True
@@ -182,23 +183,21 @@ class QualcommParser:
             pkt = pkt[:-2]
 
         if pkt[0] == diagcmd.DIAG_LOG_F:
-            return self.parse_diag_log(pkt, radio_id)
+            return self.parse_diag_log(pkt, args)
         elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F and self.parse_events:
-            return self.parse_diag_event(pkt, radio_id)
+            return self.parse_diag_event(pkt)
         elif pkt[0] == diagcmd.DIAG_EXT_MSG_F and self.parse_msgs:
-            return self.parse_diag_ext_msg(pkt, radio_id)
+            return self.parse_diag_ext_msg(pkt)
         elif pkt[0] == diagcmd.DIAG_QSR_EXT_MSG_TERSE_F and self.parse_msgs:
-            #return self.parse_diag_qsr_ext_msg(pkt, radio_id)
-            pass
+            return self.parse_diag_qsr_ext_msg(pkt)
         elif pkt[0] == diagcmd.DIAG_QSR4_EXT_MSG_TERSE_F and self.parse_msgs:
-            #return self.parse_diag_qsr4_ext_msg(pkt, radio_id)
-            pass
+            return self.parse_diag_qsr4_ext_msg(pkt)
         elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
             return self.parse_diag_multisim(pkt)
         else:
             #print("Not parsing non-Log packet %02x" % pkt[0])
             #util.xxd(pkt)
-            return
+            return None
 
     def run_diag(self, writer_qmdl = None):
         oldbuf = b''
@@ -227,26 +226,8 @@ class QualcommParser:
                     if writer_qmdl:
                         writer_qmdl.write_cp(pkt + b'\x7e')
 
-                    if parse_result is None:
-                        continue
-
-                    if 'radio_id' in parse_result:
-                        radio_id = parse_result['radio_id']
-                    else:
-                        radio_id = 0
-
-                    if 'ts' in parse_result:
-                        ts = parse_result['ts']
-                    else:
-                        ts = None
-
-                    if 'cp' in parse_result:
-                        sock_content = self.parse_result_to_gsmtap(parse_result['cp'])
-                        self.writer.write_cp(sock_content, radio_id, ts)
-
-                    if 'up' in parse_result:
-                        sock_content = self.parse_result_to_gsmtap(parse_result['up'])
-                        self.writer.write_up(sock_content, radio_id, ts)
+                    if parse_result is not None:
+                        self.postprocess_parse_result(parse_result)
 
         except KeyboardInterrupt:
             return
@@ -277,7 +258,11 @@ class QualcommParser:
                 pkt = pkt + struct.pack('<H', calculated_crc)
 
                 #print("%02x %02x" % (pkt_len, len(buf)))
-                self.parse_diag(pkt, hdlc_encoded = False)
+                parse_result = self.parse_diag(pkt, hdlc_encoded=False)
+
+                if parse_result is not None:
+                    self.postprocess_parse_result(parse_result)
+
                 buf = buf[pkt_len:]
 
                 if len(buf) < 2:
@@ -298,7 +283,32 @@ class QualcommParser:
                 self.run_diag()
             self.io_device.open_next_file()
 
-    def parse_diag_log(self, pkt, radio_id = 0):
+    def postprocess_parse_result(self, parse_result):
+        if 'radio_id' in parse_result:
+            radio_id = parse_result['radio_id']
+        else:
+            radio_id = 0
+
+        if 'ts' in parse_result:
+            ts = parse_result['ts']
+        else:
+            ts = None
+
+        if 'cp' in parse_result:
+            for sock_content in parse_result['cp']:
+                self.writer.write_cp(sock_content, radio_id, ts)
+
+        if 'up' in parse_result:
+            for sock_content in parse_result['up']:
+                self.writer.write_up(sock_content, radio_id, ts)
+
+        if 'stdout' in parse_result:
+            for l in parse_result['stdout'].split('\n'):
+                print('Radio {}: {}'.format(radio_id, l))
+
+    log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
+
+    def parse_diag_log(self, pkt, args=None):
         """Parses the DIAG_LOG_F packet.
 
         Parameters:
@@ -308,38 +318,37 @@ class QualcommParser:
         if len(pkt) < 16:
             return
 
-        xdm_hdr = pkt[4:16]
-        xdm_hdr = struct.unpack('<HHQ', xdm_hdr) # len, ID, TS
-        pkt_ts = util.parse_qxdm_ts(xdm_hdr[2])
+        pkt_header = self.log_header._make(struct.unpack('<BBHHHQ', pkt[0:16]))
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_body = pkt[16:]
 
-        if len(pkt_body) != (xdm_hdr[0] - 12):
-            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(xdm_hdr[0], len(pkt_body)))
+        if len(pkt_body) != (pkt_header.length2 - 12):
+            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length, len(pkt_body)))
 
-        if xdm_hdr[1] in self.process.keys():
-            self.process[xdm_hdr[1]](pkt_ts, pkt_body, radio_id)
-        elif xdm_hdr[1] in self.no_process.keys():
+        if pkt_header.log_id in self.process.keys():
+            return self.process[pkt_header.log_id](pkt_header, pkt_body, args)
+        elif pkt_header.log_id in self.no_process.keys():
             #print("Not handling XDM Header 0x%04x (%s)" % (xdm_hdr[1], self.no_process[xdm_hdr[1]]))
-            return
+            return None
         else:
             #print("Unhandled XDM Header 0x%04x" % xdm_hdr[1])
             #util.xxd(pkt)
-            return
+            return None
 
-    def parse_diag_ext_msg(self, pkt, radio_id):
+    ext_msg_header = namedtuple('QcDiagExtMsgHeader', 'cmd_code ts_type num_args drop_cnt timestamp line_no message_subsys_id reserved1')
+
+    def parse_diag_ext_msg(self, pkt):
         """Parses the DIAG_EXT_MSG_F packet.
 
         Parameters:
         pkt (bytes): DIAG_EXT_MSG_F data without trailing CRC
-        radio_id (int): used SIM or subscription ID on multi-SIM devices
         """
         # 79 | 00 | 00 | 00 | 00 00 1c fc 0f 16 e4 00 | e6 04 | 94 13 | 02 00 00 00
         # cmd_code, ts_type, num_args, drop_cnt, TS, Line number, Message subsystem ID, ?
         # Message: two null-terminated strings, one for log and another for filename
-        xdm_hdr = pkt[0:20]
-        xdm_hdr = struct.unpack('<BBBBQHHL', xdm_hdr)
-        pkt_ts = util.parse_qxdm_ts(xdm_hdr[4])
-        pkt_body = pkt[20 + 4 * xdm_hdr[2]:]
+        pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_body = pkt[20 + 4 * pkt_header.num_args]
         pkt_body = pkt_body.rstrip(b'\0').rsplit(b'\0', maxsplit=1)
 
         if len(pkt_body) == 2:
@@ -351,16 +360,18 @@ class QualcommParser:
 
         osmocore_log_hdr = util.create_osmocore_logging_header(
             timestamp = pkt_ts,
-            subsys_name = str(xdm_hdr[6]).encode('utf-8'),
+            subsys_name = str(pkt_header.message_subsys_id).encode('utf-8'),
             filename = src_fname,
-            line_number = xdm_hdr[5]
+            line_number = pkt_header.line_no
         )
 
         gsmtap_hdr = util.create_gsmtap_header(
             version = 2,
             payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
-        self.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + log_content, radio_id, pkt_ts)
+        return {'cp': gsmtap_hdr + osmocore_log_hdr + log_content, 'ts': pkt_ts}
+
+    multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
 
     def parse_diag_multisim(self, pkt):
         """Parses the DIAG_MULTI_RADIO_CMD_F packet. This function calls nexted DIAG log packet with correct radio ID attached.
@@ -368,26 +379,29 @@ class QualcommParser:
         Parameters:
         pkt (bytes): DIAG_MULTI_RADIO_CMD_F data without trailing CRC
         """
-        # 98 01 00 00 | 01 00 00 00 -> Subscription ID=1
-        # 98 01 00 00 | 02 00 00 00 -> Subscription ID=2
+        # 98 | 01 | 00 00 | 01 00 00 00 -> Subscription ID=1
+        # 98 | 01 | 00 00 | 02 00 00 00 -> Subscription ID=2
         # Subscription ID is base 1, 0 or -1 is also observed (we treat it as 1)
         if len(pkt) < 8:
             return
 
-        xdm_hdr = pkt[0:8]
-        xdm_hdr = struct.unpack('<BBHL', xdm_hdr) # cmd_id, unknown, dummy, subscription_id
+        pkt_header = self.multisim_header._make(struct.unpack('<BBHL', pkt[0:8]))
         pkt_body = pkt[8:]
 
-        self.parse_diag(pkt_body, hdlc_encoded=False, check_crc=False, radio_id = (xdm_hdr[3]))
+        ret = self.parse_diag(pkt_body, hdlc_encoded=False, check_crc=False, args={'radio_id': self.sanitize_radio_id(pkt_header.radio_id)})
+        if type(ret) == dict:
+            ret['radio_id'] = self.sanitize_radio_id(pkt_header.radio_id)
+        return ret
 
-    def parse_diag_event(self, pkt, radio_id):
+    event_header = namedtuple('QcDiagEventHeader', 'cmd_code msg_len')
+
+    def parse_diag_event(self, pkt):
         """Parses the DIAG_EVENT_REPORT_F packet.
 
         Parameters:
         pkt (bytes): DIAG_EVENT_REPORT_F data without trailing CRC
-        radio_id (int): used SIM or subscription ID on multi-SIM devices
         """
-        cmd_code, len_msg = struct.unpack('<BH', pkt[0:3])
+        pkt_header = self.event_header._make(struct.unpack('<BH', pkt[0:3]))
 
         pos = 3
         while pos < len(pkt):
@@ -410,7 +424,7 @@ class QualcommParser:
             if payload_len == 0:
                 # No payload
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id][0](radio_id, ts, event_id)
+                    return self.process_event[event_id][0](ts, event_id)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -420,7 +434,7 @@ class QualcommParser:
                 arg1 = pkt[pos]
 
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id][0](radio_id, ts, event_id, arg1)
+                    return self.process_event[event_id][0](ts, event_id, arg1)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -432,7 +446,7 @@ class QualcommParser:
                 arg2 = pkt[pos+1]
 
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id][0](radio_id, ts, event_id, arg1, arg2)
+                    return self.process_event[event_id][0](ts, event_id, arg1, arg2)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -444,7 +458,7 @@ class QualcommParser:
                 arg_bin = pkt[pos+1:pos+1+bin_len]
 
                 if event_id in self.process_event.keys():
-                    self.process_event[event_id][0](radio_id, ts, event_id, arg_bin)
+                    return self.process_event[event_id][0](ts, event_id, arg_bin)
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
@@ -452,11 +466,11 @@ class QualcommParser:
                     .format(event_id, ts, bin_len, ' '.join('{:02x}'.format(x) for x in arg_bin)))
                 pos += (1 + pkt[pos])
 
-    def parse_diag_qsr_ext_msg(self, pkt, radio_id):
-        pass
+    def parse_diag_qsr_ext_msg(self, pkt):
+        return None
 
-    def parse_diag_qsr4_ext_msg(self, pkt, radio_id):
-        pass
+    def parse_diag_qsr4_ext_msg(self, pkt):
+        return None
 
 __entry__ = QualcommParser
 
