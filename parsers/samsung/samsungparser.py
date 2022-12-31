@@ -276,6 +276,9 @@ class SamsungParser:
             sock_content = parse_result['up']
             self.writer.write_up(sock_content, radio_id, ts)
 
+        if 'stdout' in parse_result:
+            print(parse_result['stdout'])
+
     def parse_diag_log(self, pkt):
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
