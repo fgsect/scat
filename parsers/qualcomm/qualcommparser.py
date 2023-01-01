@@ -15,6 +15,8 @@ from .diagnrlogparser import DiagNrLogParser
 
 from .diagcommoneventparser import DiagCommonEventParser
 from .diaglteeventparser import DiagLteEventParser
+from .diaggsmeventparser import DiagGsmEventParser
+from .diagfallbackeventparser import DiagFallbackEventParser
 
 import util
 import struct
@@ -68,7 +70,8 @@ class QualcommParser:
                 pass
 
         self.diag_event_parsers = [DiagCommonEventParser(self),
-            DiagLteEventParser(self)]
+            DiagGsmEventParser(self), DiagLteEventParser(self)]
+        self.diag_fallback_event_parser = DiagFallbackEventParser(self)
 
         self.process_event = { }
         self.no_process_event = { }
@@ -404,6 +407,7 @@ class QualcommParser:
         pkt_header = self.event_header._make(struct.unpack('<BH', pkt[0:3]))
 
         pos = 3
+        event_pkts = []
         while pos < len(pkt):
             # id 12b, _pad 1b, payload_len 2b, ts_trunc 1b
             _eid = struct.unpack('<H', pkt[pos:pos+2])[0]
@@ -424,21 +428,21 @@ class QualcommParser:
             if payload_len == 0:
                 # No payload
                 if event_id in self.process_event.keys():
-                    return self.process_event[event_id][0](ts, event_id)
+                    event_pkts.append(self.process_event[event_id][0](ts, event_id))
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
-                    print("Event: {} {}".format(event_id, ts))
+                    event_pkts.append(self.diag_fallback_event_parser.parse_event_fallback(ts, event_id))
             elif payload_len == 1:
                 # 1x uint8
                 arg1 = pkt[pos]
 
                 if event_id in self.process_event.keys():
-                    return self.process_event[event_id][0](ts, event_id, arg1)
+                    event_pkts.append(self.process_event[event_id][0](ts, event_id, arg1))
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
-                    print("Event: {} {}: 0x{:02x}".format(event_id, ts, arg1))
+                    event_pkts.append(self.diag_fallback_event_parser.parse_event_fallback(ts, event_id, arg1))
                 pos += 1
             elif payload_len == 2:
                 # 2x uint8
@@ -446,11 +450,11 @@ class QualcommParser:
                 arg2 = pkt[pos+1]
 
                 if event_id in self.process_event.keys():
-                    return self.process_event[event_id][0](ts, event_id, arg1, arg2)
+                    event_pkts.append(self.process_event[event_id][0](ts, event_id, arg1, arg2))
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
-                    print("Event: {} {}: 0x{:02x} 0x{:02x}".format(event_id, ts, arg1, arg2))
+                    event_pkts.append(self.diag_fallback_event_parser.parse_event_fallback(ts, event_id, arg1, arg2))
                 pos += 2
             elif payload_len == 3:
                 # Pascal string
@@ -458,13 +462,14 @@ class QualcommParser:
                 arg_bin = pkt[pos+1:pos+1+bin_len]
 
                 if event_id in self.process_event.keys():
-                    return self.process_event[event_id][0](ts, event_id, arg_bin)
+                    event_pkts.append(self.process_event[event_id][0](ts, event_id, arg_bin))
                 elif event_id in self.no_process_event.keys():
                     pass
                 else:
-                    print("Event {}: {}: Binary(len=0x{:02x}) = {}"
-                    .format(event_id, ts, bin_len, ' '.join('{:02x}'.format(x) for x in arg_bin)))
+                    event_pkts.append(self.diag_fallback_event_parser.parse_event_fallback(ts, event_id, arg_bin))
                 pos += (1 + pkt[pos])
+
+        return {'cp': event_pkts}
 
     def parse_diag_qsr_ext_msg(self, pkt):
         return None

@@ -23,7 +23,7 @@ class DiagLteEventParser:
             1606: (self.parse_event_lte_rrc_state_change, 'LTE_RRC_STATE_CHANGE'),
             1609: (self.parse_event_lte_rrc_dl_msg, 'LTE_RRC_DL_MSG'),
             1610: (self.parse_event_lte_rrc_ul_msg, 'LTE_RRC_UL_MSG'),
-            #1611: (self.parse_evnet_lte_rrc_new_cell_ind),
+            # 1611: (self.parse_evnet_lte_rrc_new_cell_ind, 'LTE_RRC_NEW_CELL'),
             1614: (self.parse_event_lte_rrc_paging_drx_cycle, 'LTE_RRC_PAGING_DRX_CYCLE'),
 
             1627: (self.parse_event_lte_nas_msg, 'LTE_CM_INCOMING_MSG'),
@@ -72,7 +72,7 @@ class DiagLteEventParser:
     def parse_event_lte_rrc_timer_status(self, ts, event_id, arg_bin):
         log_content = "{}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_rrc_state_change(self, ts, event_id, arg1):
@@ -90,7 +90,7 @@ class DiagLteEventParser:
 
         log_content = "rrc_state={}".format(rrc_state).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_rrc_dl_msg(self, ts, event_id, arg1, arg2):
@@ -128,7 +128,7 @@ class DiagLteEventParser:
 
         log_content = "channel={}, message_type={}".format(channel, message_type).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_rrc_ul_msg(self, ts, event_id, arg1, arg2):
@@ -155,41 +155,41 @@ class DiagLteEventParser:
 
         log_content = "channel={}, message_type={}".format(channel, message_type).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_rrc_paging_drx_cycle(self, ts, event_id, arg1, arg2):
         log_content = "{:02x} {:02x}".format(arg1, arg2).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_nas_msg(self, ts, event_id, arg1):
         message_id = struct.unpack('<L', arg1[:4])[0]
         log_content = "0x{:04x}".format(message_id).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_nas_ota_msg(self, ts, event_id, arg1):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_emm_esm_timer(self, ts, event_id, arg1):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_ml1_phr_report(self, ts, event_id, arg1, arg2):
         log_content = "{:02x} {:02x}".format(arg1, arg2).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
 
     @build_header
     def parse_event_lte_rrc_state_change_trigger(self, ts, event_id, arg1):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
-        return {'cp': [self.header + log_content], 'ts': ts}
+        return self.header + log_content
