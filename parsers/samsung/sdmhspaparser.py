@@ -21,8 +21,9 @@ class SdmHspaParser:
         pkt = pkt[11:-1]
 
         if len(pkt) < 9:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (9)'.format(len(pkt)))
-            return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (9)'.format(len(pkt)))
+            return None
 
         header = namedtuple('SdmHspaWcdmaRrcState', 'timestamp val1 val2 val3 val4 val5')
         rrc_state = header._make(struct.unpack('<IBBBBB', pkt[0:9]))
@@ -32,12 +33,14 @@ class SdmHspaParser:
         pkt = pkt[11:-1]
 
         if len(pkt) < 12:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (12)'.format(len(pkt)))
-            return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (12)'.format(len(pkt)))
+            return None
 
         header = namedtuple('SdmHspaWcdmaServingCell', 'timestamp ul_uarfcn dl_uarfcn mcc mnc')
         scell_info = header._make(struct.unpack('<IHHHH', pkt[0:12]))
         print(scell_info)
 
-        self.parent.umts_last_uarfcn_dl[0] = scell_info.dl_uarfcn
-        self.parent.umts_last_uarfcn_ul[0] = scell_info.ul_uarfcn
+        if self.parent:
+            self.parent.umts_last_uarfcn_dl[0] = scell_info.dl_uarfcn
+            self.parent.umts_last_uarfcn_ul[0] = scell_info.ul_uarfcn

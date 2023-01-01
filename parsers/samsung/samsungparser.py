@@ -269,15 +269,17 @@ class SamsungParser:
             ts = None
 
         if 'cp' in parse_result:
-            sock_content = parse_result['cp']
-            self.writer.write_cp(sock_content, radio_id, ts)
+            for sock_content in parse_result['cp']:
+                self.writer.write_cp(sock_content, radio_id, ts)
 
         if 'up' in parse_result:
-            sock_content = parse_result['up']
-            self.writer.write_up(sock_content, radio_id, ts)
+            for sock_content in parse_result['up']:
+                self.writer.write_up(sock_content, radio_id, ts)
 
         if 'stdout' in parse_result:
-            print(parse_result['stdout'])
+            if len(parse_result['stdout']) > 0:
+                for l in parse_result['stdout'].split('\n'):
+                    print('Radio {}: {}'.format(radio_id, l))
 
     def parse_diag_log(self, pkt):
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):

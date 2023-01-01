@@ -7,8 +7,12 @@ import struct
 import logging
 
 class SdmLteParser:
-    def __init__(self, parent):
+    def __init__(self, parent, model=None):
         self.parent = parent
+        if model:
+            self.model = model
+        else:
+            self.model = self.parent.model
 
         self.process = {
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_CELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
@@ -23,7 +27,7 @@ class SdmLteParser:
         }
 
     def sdm_lte_phy_cell_info(self, pkt):
-        if self.parent.model == 'e5123':
+        if self.model == 'e5123':
             return self.sdm_lte_phy_cell_info_e5123(pkt)
         else:
             return self.sdm_lte_phy_cell_info_e333(pkt)
@@ -47,8 +51,9 @@ class SdmLteParser:
         header = namedtuple('SdmLtePhyCellInfo', 'timestamp plmn zero1 arfcn pci zero2')
         cell_info = header._make(struct.unpack('<IIIHHH', pkt[0:18]))
 
-        self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
-        self.parent.lte_last_pci[0] = cell_info.pci
+        if self.parent:
+            self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
+            self.parent.lte_last_pci[0] = cell_info.pci
         print(cell_info)
 
     def sdm_lte_phy_cell_info_e5123(self, pkt):
@@ -61,12 +66,13 @@ class SdmLteParser:
         header = namedtuple('SdmLtePhyCellInfo', 'timestamp plmn zero1 arfcn pci zero2')
         cell_info = header._make(struct.unpack('<IIIIHH', pkt[0:20]))
 
-        self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
-        self.parent.lte_last_pci[0] = cell_info.pci
+        if self.parent:
+            self.parent.lte_last_earfcn_dl[0] = cell_info.arfcn
+            self.parent.lte_last_pci[0] = cell_info.pci
         print(cell_info)
 
     def sdm_lte_rrc_serving_cell(self, pkt):
-        if self.parent.model == 'e5123':
+        if self.model == 'e5123':
             return self.sdm_lte_rrc_serving_cell_e5123(pkt)
         else:
             return self.sdm_lte_rrc_serving_cell_e333(pkt)
@@ -76,7 +82,7 @@ class SdmLteParser:
 
         if len(pkt) < 22:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (22)'.format(len(pkt)))
-            return
+            return None
 
         # 41 dd fa 05 | 09 23 00 01 | 01 00 00 00 | 00 00 00 00 | d0 af 00 00 | 06 db
         header = namedtuple('SdmLteRrcServingCell', 'timestamp cid zero1 zero2 plmn tac')
@@ -95,8 +101,9 @@ class SdmLteParser:
         pkt = pkt[11:-1]
 
         if len(pkt) < 24:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (24)'.format(len(pkt)))
-            return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (24)'.format(len(pkt)))
+            return None
 
         header = namedtuple('SdmLteRrcServingCell', 'timestamp cid zero1 zero2 plmn tac band_indicator')
         cell_info = header._make(struct.unpack('<IIIIIHH', pkt[0:24]))
@@ -111,8 +118,9 @@ class SdmLteParser:
         pkt = pkt[11:-1]
 
         if len(pkt) < 5:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (5)'.format(len(pkt)))
-            return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (5)'.format(len(pkt)))
+            return None
 
         header = namedtuple('SdmLteRrcState', 'timestamp state')
         rrc_state = header._make(struct.unpack('<IB', pkt[0:5]))
@@ -122,8 +130,9 @@ class SdmLteParser:
         pkt = pkt[11:-1]
 
         if len(pkt) < 8:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (8)'.format(len(pkt)))
-            return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (8)'.format(len(pkt)))
+            return None
 
         # direction - 0: DL, 1: UL
         header = namedtuple('SdmLteRrcOtaPacket', 'timestamp channel direction length')
@@ -150,20 +159,27 @@ class SdmLteParser:
             else:
                 subtype = rrc_subtype_ul[rrc_header.channel]
         except KeyError:
-            self.parent.logger.log(logging.WARNING, "Unknown LTE RRC channel type %d" % rrc_header.channel)
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, "Unknown LTE RRC channel type 0x{:x}".format(rrc_header.channel))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
 
         if rrc_header.direction == 0:
-            arfcn = self.parent.lte_last_earfcn_dl[0]
+            if self.parent:
+                arfcn = self.parent.lte_last_earfcn_dl[0]
+            else:
+                arfcn = 0
         else:
-            arfcn = self.parent.lte_last_earfcn_ul[0]
+            if self.parent:
+                arfcn = self.parent.lte_last_earfcn_ul[0]
+            else:
+                arfcn = 0
 
         gsmtap_hdr = util.create_gsmtap_header(
             version = 2,
             payload_type = util.gsmtap_type.LTE_RRC,
             arfcn = arfcn,
             sub_type = subtype)
-        return {'cp': gsmtap_hdr + rrc_msg}
+        return {'cp': [gsmtap_hdr + rrc_msg]}
 
     def sdm_lte_0x55(self, pkt):
         pkt = pkt[11:-1]
@@ -180,9 +196,10 @@ class SdmLteParser:
             # MAC-LTE: RAR Header, TA, UL Grant, T-C-RNTI
             pass
         else:
-            self.parent.logger.log(logging.WARNING, "Invalid RACH direction 0x{:02x}".format(direction))
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
-        return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, "Invalid RACH direction 0x{:02x}".format(direction))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
+        return None
 
     def sdm_lte_0x57(self, pkt):
         '''
@@ -218,13 +235,8 @@ class SdmLteParser:
         nas_msg = pkt[8:]
         print(nas_header)
 
-        if nas_header.direction == 0:
-            arfcn = self.parent.lte_last_earfcn_dl[0]
-        else:
-            arfcn = self.parent.lte_last_earfcn_ul[0]
-
         gsmtap_hdr = util.create_gsmtap_header(
             version = 2,
             payload_type = util.gsmtap_type.LTE_NAS,
-            arfcn = arfcn)
-        return {'cp': gsmtap_hdr + nas_msg}
+            arfcn = 0)
+        return {'cp': [gsmtap_hdr + nas_msg]}

@@ -9,8 +9,12 @@ import struct
 import logging
 
 class SdmCommonParser:
-    def __init__(self, parent):
+    def __init__(self, parent, model=None):
         self.parent = parent
+        if model:
+            self.model = model
+        else:
+            self.model = self.parent.model
 
         self.process = {
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
@@ -25,19 +29,7 @@ class SdmCommonParser:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than minimum expected (15)'.format(len(pkt)))
             return
 
-        # cmc221s:
-        # 4f 61 01 0f | 17 00 03 | 00 2c ac 6d | 40 96 02 68
-
-        # e303/e333:
-        # c3 87 76 05 | 17 04 03 | 00 2c ac 6d | 40 96 02 68 | 41 00 00 00
-        # 20 61 bd 37 | 17 00 02 | 80 9d c2 9c | 80 8f 9b 95 | 1f 7e 7f 1a
-        # 41 19 01 38 | 17 00 02 | 80 9d c2 9c | 80 8f 9b 95 | 15 7e 7f 1a
-        # 8f 19 c0 3d | 17 04 02 | 80 9d c2 9c | 80 8f 9b 95 | 7f 1a 00 00
-
-        # e5123:
-        # c6 aa ec 03 | 17 00 03 | 60 76 e1 38 | 20 d1 32 36 | 00 6f 30 c3 | 00 ff ff ff ff ff ff ff
-        # e1 aa ec 03 | 19 00 00 | ff ff ff ff | ff ff ff ff | 00 6f 30 c3 | 00 ff ff ff ff ff ff ff
-        # c2 31 fd 03 | 20 04 03 | 60 76 e1 38 | 20 d1 32 36 | 00 6f 30 c3 | 00 ff ff ff ff ff ff ff
+        stdout = ''
 
         # rat: GSM 10, 13 / WCDMA 12, 14 / LTE 17, 19, 20 / 5G TODO
         header = namedtuple('SdmCommonBasicInfo', 'timestamp rat status mimo dlfreq ulfreq')
@@ -45,9 +37,18 @@ class SdmCommonParser:
 
         if len(pkt) > 15:
             extra = pkt[15:]
-            print(str(common_basic) + ", Extra: " + binascii.hexlify(extra).decode('utf-8'))
+            stdout = 'Common Basic Info: RAT {}, MIMO {}, Frequency {:.2f}/{:.2f} MHz, Extra: {}'.format(common_basic.rat,
+                common_basic.mimo,
+                0 if common_basic.dlfreq == 4294967295 else common_basic.dlfreq / 1000000,
+                0 if common_basic.ulfreq == 4294967295 else common_basic.ulfreq / 1000000,
+                binascii.hexlify(extra).decode('utf-8'))
         else:
-            print(common_basic)
+            stdout = 'Common Basic Info: RAT {}, MIMO {}, Frequency {:.2f}/{:.2f} MHz'.format(common_basic.rat,
+                common_basic.mimo,
+                0 if common_basic.dlfreq == 4294967295 else common_basic.dlfreq / 1000000,
+                0 if common_basic.ulfreq == 4294967295 else common_basic.ulfreq / 1000000)
+
+        return {'stdout': stdout}
 
     def sdm_common_0x02(self, pkt):
         pkt = pkt[11:-1]
@@ -61,8 +62,6 @@ class SdmCommonParser:
         header = namedtuple('SdmCommonSignalingHeader', 'timestamp type subtype direction length')
         pkt_header = header._make(struct.unpack('<LBBBH', pkt[0:9]))
         msg_content = pkt[9:]
-
-        print(pkt_header)
 
         if pkt_header.type == 0x30: # UMTS RRC
             chan_map_ul = {
@@ -79,13 +78,20 @@ class SdmCommonParser:
             subtype = 0
             if pkt_header.direction == 2:
                 subtype = chan_map_dl[pkt_header.subtype]
-                arfcn = self.parent.umts_last_uarfcn_dl[0]
+                if self.parent:
+                    arfcn = self.parent.umts_last_uarfcn_dl[0]
+                else:
+                    arfcn = 0
             elif pkt_header.direction == 1:
                 subtype = chan_map_ul[pkt_header.subtype]
-                arfcn = self.parent.umts_last_uarfcn_ul[0]
+                if self.parent:
+                    arfcn = self.parent.umts_last_uarfcn_ul[0]
+                else:
+                    arfcn = 0
             else:
-                self.parent.logger.log(logging.WARNING, 'Unknown direction 0x{:02x}'.format(pkt_header.direction))
-                return
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown direction 0x{:02x}'.format(pkt_header.direction))
+                return None
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
@@ -93,19 +99,25 @@ class SdmCommonParser:
                 arfcn = arfcn,
                 sub_type = subtype)
 
-            return {'cp': gsmtap_hdr + msg_content}
+            return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x01: # UMTS NAS
             if pkt_header.direction == 2:
-                arfcn = self.parent.umts_last_uarfcn_dl[0]
+                if self.parent:
+                    arfcn = self.parent.umts_last_uarfcn_dl[0]
+                else:
+                    arfcn = 0
             elif pkt_header.direction == 1:
-                arfcn = self.parent.umts_last_uarfcn_ul[0]
+                if self.parent:
+                    arfcn = self.parent.umts_last_uarfcn_ul[0]
+                else:
+                    arfcn = 0
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
                 payload_type = util.gsmtap_type.ABIS,
                 arfcn = arfcn)
 
-            return {'cp': gsmtap_hdr + msg_content}
+            return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x20: # GSM RR
             # TODO: CCCH and SACCH are not distinguished by headers!
             # Some values are RR message, some are RR_short_PD
@@ -115,8 +127,9 @@ class SdmCommonParser:
                 lapdm_control = b'\x03'
                 # length field
                 if pkt_header.length > 63:
-                    self.parent.logger.log(logging.WARNING, 'message length longer than 63, got {}'.format(pkt_header.length))
-                    return
+                    if self.parent:
+                        self.parent.logger.log(logging.WARNING, 'message length longer than 63, got {}'.format(pkt_header.length))
+                    return None
                 lapdm_len = bytes([(pkt_header.length << 2) | 0x01])
 
                 #msg_content = lapdm_address + lapdm_control + lapdm_len + msg_content
@@ -126,13 +139,13 @@ class SdmCommonParser:
                     payload_type = util.gsmtap_type.UM,
                     sub_type = util.gsmtap_channel.CCCH) # Subtype (XXX: All CCCH)
 
-                return {'cp': gsmtap_hdr + msg_content}
+                return {'cp': [gsmtap_hdr + msg_content]}
             elif pkt_header.direction == 1: # Only RR
                 gsmtap_hdr = util.create_gsmtap_header(
                     version = 2,
                     payload_type = util.gsmtap_type.ABIS)
 
-                return {'cp': gsmtap_hdr + msg_content}
+                return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x21: # GSM RLC/MAC
             arfcn = 1
             if pkt_header.direction == 1:
@@ -144,10 +157,11 @@ class SdmCommonParser:
                 sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
 
             #return gsmtap_hdr + msg_content
-            return
+            return None
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(pkt_header.type))
-            return
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(pkt_header.type))
+            return None
 
     def sdm_common_0x04(self, pkt):
         pkt = pkt[11:-1]

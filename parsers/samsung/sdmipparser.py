@@ -29,5 +29,6 @@ class SdmIpParser:
 
         if ip_hdr[0] == 0x00:
             if ip_hdr[5] != len(ip_payload):
-                self.parent.logger.log(logging.WARNING, 'IP length mismatch, expected %04x, got %04x' % (ip_hdr[5], len(ip_payload)))
-            return {'up': ip_payload}
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'IP length mismatch, expected 0x{:04x}, got 0x{:04x}'.format(ip_hdr[5], len(ip_payload)))
+            return {'up': [ip_payload]}
