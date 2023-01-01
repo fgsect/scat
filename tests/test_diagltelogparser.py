@@ -209,17 +209,17 @@ class TestDiagLteLogParser(unittest.TestCase):
     def test_parse_lte_rrc_cell_info(self):
         # V2
         result = self.parser.parse_lte_rrc_cell_info(None, binascii.unhexlify('028F001405644B64640074BC01D60503000000060102010000'), None)
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 1300/19300, Band 3, Bandwidth 20/20 MHz, PCI 143, xCID/xTAC 1bc7400/5d6, MCC 262, MNC 01')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 1300/19300, Band 3, Bandwidth 20/20 MHz, PCI 143, xTAC/xCID 5d6/1bc7400, MCC 262, MNC 01')
 
         # V3
         result = self.parser.parse_lte_rrc_cell_info(None, binascii.unhexlify('034D0021070000714D00004B4B33C8B009159B03000000CC01020B0000'), None)
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 1825/19825, Band 3, Bandwidth 15/15 MHz, PCI 77, xCID/xTAC 9b0c833/9b15, MCC 460, MNC 11')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 1825/19825, Band 3, Bandwidth 15/15 MHz, PCI 77, xTAC/xCID 9b15/9b0c833, MCC 460, MNC 11')
 
         result = self.parser.parse_lte_rrc_cell_info(None, binascii.unhexlify('030b00fa0900004A50000000000b0692000b9005000000c20102060000'), None)
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 2554/20554, Band 5, Bandwidth 0/0 PRBs, PCI 11, xCID/xTAC 92060b/900b, MCC 450, MNC 06')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 2554/20554, Band 5, Bandwidth 0/0 PRBs, PCI 11, xTAC/xCID 900b/92060b, MCC 450, MNC 06')
 
         result = self.parser.parse_lte_rrc_cell_info(None, binascii.unhexlify('03eb0138180000885e0000323203c06600045614000000060102030000'), None)
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 6200/24200, Band 20, Bandwidth 10/10 MHz, PCI 491, xCID/xTAC 66c003/5604, MCC 262, MNC 03')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN 6200/24200, Band 20, Bandwidth 10/10 MHz, PCI 491, xTAC/xCID 5604/66c003, MCC 262, MNC 03')
 
     def test_parse_lte_nas(self):
         pass
