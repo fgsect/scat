@@ -4,7 +4,6 @@ import unittest
 import binascii
 
 from parsers.samsung.sdmhspaparser import SdmHspaParser
-from parsers.samsung import sdmcmd
 
 class TestSdmHspaParser(unittest.TestCase):
     parser = SdmHspaParser(parent=None)
