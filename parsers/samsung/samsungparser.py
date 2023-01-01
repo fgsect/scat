@@ -291,7 +291,7 @@ class SamsungParser:
             self.logger.log(logging.WARNING, 'Packet shorter than expected')
             return
 
-        sdm_pkt_hdr = sdmheader._make(struct.unpack('<HBHHBBB', pkt[1:11]))
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
 
         if sdm_pkt_hdr.length2 + 3 != sdm_pkt_hdr.length1:
             self.logger.log(logging.WARNING, 'Inner and outer length does not match, dropping')
@@ -305,22 +305,19 @@ class SamsungParser:
             self.logger.log(logging.WARNING, 'Unexpected direction ID 0x{:02x}'.format(sdm_pkt_hdr.direction))
             return
 
-        radio_id = (sdm_pkt_hdr.group >> 5)
-        group_real = sdm_pkt_hdr.group & 0x1F
+        # print('SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}'.format(sdm_pkt_hdr.radio_id, sdm_pkt_hdr.group, sdm_pkt_hdr.command))
 
-        print('SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}'.format(radio_id, group_real, sdm_pkt_hdr.command))
-
-        cmd_sig = (group_real << 8) | sdm_pkt_hdr.command
+        cmd_sig = (sdm_pkt_hdr.group << 8) | sdm_pkt_hdr.command
         if cmd_sig in self.process.keys():
             parse_result = self.process[cmd_sig](pkt)
         elif cmd_sig in self.no_process.keys():
-            print("Not handling group 0x{:02x} command 0x{:02x}".format(group_real, sdm_pkt_hdr.command))
+            print("Not handling group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
             parse_result = None
         else:
             parse_result = None
 
         if type(parse_result) == dict:
-            parse_result['radio_id'] = radio_id
+            parse_result['radio_id'] = sdm_pkt_hdr.radio_id
             return parse_result
         else:
             return None

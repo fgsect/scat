@@ -92,8 +92,23 @@ class sdm_hspa_data(IntEnum):
     HSPA_WCDMA_SERVING_CELL = 0x22
 
 sdmheader = namedtuple('SdmHeader', 'length1 zero length2 stamp direction group command')
+sdmheader_ext = namedtuple('SdmHeaderExt', 'length1 zero length2 stamp direction radio_id group command')
 
 def generate_sdm_packet(direction, group, command, payload):
     pkt_len = 2 + 3 + len(payload) + 2
     pkt_header = struct.pack('<HBHHBBB', pkt_len + 3, 0, pkt_len, 0, direction, group, command)
     return b'\x7f' + pkt_header + payload + b'\x7e'
+
+def parse_sdm_header(hdr):
+    tmp_hdr = sdmheader._make(struct.unpack('<HBHHBBB', hdr))
+    radio_id = (tmp_hdr.group) >> 5
+    group_real = tmp_hdr.group & 0x1F
+    if radio_id <= 0:
+        radio_id = 0
+    elif radio_id > 2:
+        radio_id = 1
+    else:
+        radio_id -= 1
+
+    return sdmheader_ext(tmp_hdr.length1, tmp_hdr.zero, tmp_hdr.length2,
+        tmp_hdr.stamp, tmp_hdr.direction, radio_id, group_real, tmp_hdr.command)
