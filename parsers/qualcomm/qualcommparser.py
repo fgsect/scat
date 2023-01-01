@@ -348,7 +348,7 @@ class QualcommParser:
         # Message: two null-terminated strings, one for log and another for filename
         pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_body = pkt[20 + 4 * pkt_header.num_args]
+        pkt_body = pkt[20 + 4 * pkt_header.num_args:]
         pkt_body = pkt_body.rstrip(b'\0').rsplit(b'\0', maxsplit=1)
 
         if len(pkt_body) == 2:
@@ -369,7 +369,7 @@ class QualcommParser:
             version = 2,
             payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
-        return {'cp': gsmtap_hdr + osmocore_log_hdr + log_content, 'ts': pkt_ts}
+        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content], 'ts': pkt_ts}
 
     multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
 
