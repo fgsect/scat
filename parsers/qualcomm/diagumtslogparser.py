@@ -4,6 +4,7 @@ import util
 
 import struct
 import calendar
+import logging
 from collections import namedtuple
 
 class DiagUmtsLogParser:
@@ -24,6 +25,11 @@ class DiagUmtsLogParser:
         item_struct = namedtuple('QcDiagUmtsUeOta', 'direction length')
         item = item_struct._make(struct.unpack('<BL', pkt_body[0:5]))
         msg_content = pkt_body[5:]
+
+        if item.length != len(msg_content):
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(msg_content), item.length))
+            return None
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
