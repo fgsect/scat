@@ -257,13 +257,64 @@ class SamsungParser:
         except KeyboardInterrupt:
             return
 
+    def run_logger(self):
+        self.logger.log(logging.INFO, 'Starting diag from logger output')
+        logger_header_struct = namedtuple('SdmLoggerHeader', 'magic1 streamid magic2 seqnr direction group command timestamp')
+
+        oldbuf = b''
+        loop = True
+        cur_pos = 0
+        try:
+            while loop:
+                buf = self.io_device.read(0x1000)
+                if len(buf) == 0:
+                    if self.io_device.block_until_data:
+                        continue
+                    else:
+                        loop = False
+                buf = oldbuf + buf
+
+                cur_pos = 0
+                while cur_pos < len(buf):
+                    if cur_pos + 2 > len(buf):
+                        oldbuf = buf[cur_pos:]
+                        break
+                    pkt_len = struct.unpack('<H', buf[cur_pos:cur_pos+2])[0]
+                    if cur_pos + pkt_len > len(buf):
+                        oldbuf = buf[cur_pos:]
+                        break
+                    pkt = buf[cur_pos+2:cur_pos+2+pkt_len]
+                    if len(pkt) < pkt_len:
+                        oldbuf = buf[cur_pos:]
+                        break
+                    cur_pos += (2 + pkt_len)
+
+                    # print(binascii.hexlify(pkt))
+                    if len(pkt) < 17:
+                        print('Skipping packet as shorter than expected')
+                        continue
+                    logger_header = logger_header_struct._make(struct.unpack('<HLHHBBBL', pkt[0:17]))
+                    if not (logger_header.magic1 == 0x7f39 and (logger_header.magic2 == 0x017f or logger_header.magic2 == 0x0185)):
+                        print('Skipping packet as magic does not match')
+                        continue
+                    payload = pkt[17:]
+                    parse_result = self.parse_diag(generate_sdm_packet(logger_header.direction, logger_header.group, logger_header.command, payload, logger_header.timestamp))
+                    if parse_result is not None:
+                        self.postprocess_parse_result(parse_result)
+
+                if cur_pos == len(buf):
+                    oldbuf = b''
+
+        except KeyboardInterrupt:
+            return
+
     def read_dump(self):
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
             if self.io_device.fname.find('.sdmraw') > 0:
                 self.run_diag()
             elif self.io_device.fname.find('.sdm') > 0:
-                self.run_dump()
+                self.run_logger()
             else:
                 self.logger.log(logging.INFO, 'Unknown baseband dump type, assuming raw SDM')
                 self.run_diag()
