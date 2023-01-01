@@ -18,6 +18,7 @@ class DiagLteEventParser:
         # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
         self.process = {
+            # event ID, (function, event name)
             1605: (self.parse_event_lte_rrc_timer_status, 'LTE_RRC_TIMER_STATUS'),
             1606: (self.parse_event_lte_rrc_state_change, 'LTE_RRC_STATE_CHANGE'),
             1609: (self.parse_event_lte_rrc_dl_msg, 'LTE_RRC_DL_MSG'),
@@ -52,29 +53,29 @@ class DiagLteEventParser:
         @wraps(func)
         def wrapped_function(self, *args, **kwargs):
             osmocore_log_hdr = util.create_osmocore_logging_header(
-                timestamp = args[1],
+                timestamp = args[0],
                 process_name = b'Event',
-                pid = args[2],
+                pid = args[1],
             )
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
                 payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
-            log_precontent = "{}: ".format(self.process[args[2]][1]).encode('utf-8')
+            log_precontent = "{}: ".format(self.process[args[1]][1]).encode('utf-8')
 
             self.header = gsmtap_hdr + osmocore_log_hdr + log_precontent
             return func(self, *args, **kwargs)
         return wrapped_function
 
     @build_header
-    def parse_event_lte_rrc_timer_status(self, radio_id, ts, event_id, arg_bin):
+    def parse_event_lte_rrc_timer_status(self, ts, event_id, arg_bin):
         log_content = "{}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_rrc_state_change(self, radio_id, ts, event_id, arg1):
+    def parse_event_lte_rrc_state_change(self, ts, event_id, arg1):
         rrc_state_map = {
             1: "RRC_IDLE_NOT_CAMPED",
             2: "RRC_IDLE_CAMPED",
@@ -89,10 +90,10 @@ class DiagLteEventParser:
 
         log_content = "rrc_state={}".format(rrc_state).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_rrc_dl_msg(self, radio_id, ts, event_id, arg1, arg2):
+    def parse_event_lte_rrc_dl_msg(self, ts, event_id, arg1, arg2):
         channel_dl_map = {
             1: "BCCH",
             2: "PCCH",
@@ -127,10 +128,10 @@ class DiagLteEventParser:
 
         log_content = "channel={}, message_type={}".format(channel, message_type).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_rrc_ul_msg(self, radio_id, ts, event_id, arg1, arg2):
+    def parse_event_lte_rrc_ul_msg(self, ts, event_id, arg1, arg2):
         channel_ul_map = {
             5: "CCCH",
             6: "DCCH"
@@ -154,41 +155,41 @@ class DiagLteEventParser:
 
         log_content = "channel={}, message_type={}".format(channel, message_type).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_rrc_paging_drx_cycle(self, radio_id, ts, event_id, arg1, arg2):
+    def parse_event_lte_rrc_paging_drx_cycle(self, ts, event_id, arg1, arg2):
         log_content = "{:02x} {:02x}".format(arg1, arg2).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_nas_msg(self, radio_id, ts, event_id, arg1):
+    def parse_event_lte_nas_msg(self, ts, event_id, arg1):
         message_id = struct.unpack('<L', arg1[:4])[0]
         log_content = "0x{:04x}".format(message_id).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_nas_ota_msg(self, radio_id, ts, event_id, arg1):
+    def parse_event_lte_nas_ota_msg(self, ts, event_id, arg1):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_emm_esm_timer(self, radio_id, ts, event_id, arg1):
+    def parse_event_lte_emm_esm_timer(self, ts, event_id, arg1):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_ml1_phr_report(self, radio_id, ts, event_id, arg1, arg2):
+    def parse_event_lte_ml1_phr_report(self, ts, event_id, arg1, arg2):
         log_content = "{:02x} {:02x}".format(arg1, arg2).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
 
     @build_header
-    def parse_event_lte_rrc_state_change_trigger(self, radio_id, ts, event_id, arg1):
+    def parse_event_lte_rrc_state_change_trigger(self, ts, event_id, arg1):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
-        self.parent.writer.write_cp(self.header + log_content, radio_id, ts)
+        return {'cp': [self.header + log_content], 'ts': ts}
