@@ -285,25 +285,25 @@ class SamsungParser:
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
             self.logger.log(logging.DEBUG, util.xxd(pkt))
-            return
+            return None
 
         if len(pkt) < 11:
             self.logger.log(logging.WARNING, 'Packet shorter than expected')
-            return
+            return None
 
         sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
 
         if sdm_pkt_hdr.length2 + 3 != sdm_pkt_hdr.length1:
             self.logger.log(logging.WARNING, 'Inner and outer length does not match, dropping')
-            return
+            return None
 
         if len(pkt) != (sdm_pkt_hdr.length1 + 2):
             self.logger.log(logging.WARNING, 'Inner and outer length does not match, dropping')
-            return
+            return None
 
         if sdm_pkt_hdr.direction != sdm_command_type.IPC_DM_CMD and sdm_pkt_hdr.direction != sdm_command_type.IPC_CT_CMD:
             self.logger.log(logging.WARNING, 'Unexpected direction ID 0x{:02x}'.format(sdm_pkt_hdr.direction))
-            return
+            return None
 
         # print('SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}'.format(sdm_pkt_hdr.radio_id, sdm_pkt_hdr.group, sdm_pkt_hdr.command))
 
