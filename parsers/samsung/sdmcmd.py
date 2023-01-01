@@ -19,9 +19,43 @@ class sdm_command_group(IntEnum):
     CMD_TRACE_DATA      = 0x05
     CMD_IP_DATA         = 0x07
 
+# Part of constants obtained from:
+# https://github.com/P1sec/LTE_monitor_c2xx/blob/master/wireshark/epan/dissectors/packet-c2xx.c
 @unique
 class sdm_control_message(IntEnum):
-    CONTROL_STOP = 0x02
+    CONTROL_START                 = 0x00
+    CONTROL_START_RESPONSE        = 0x01
+    CONTROL_STOP                  = 0x02
+    CONTROL_STOP_RESPONSE         = 0x03
+    RESET_REQUEST                 = 0x04
+    RESET_RESPONSE                = 0x05
+    CHANGE_UPDATE_PERIOD_REQUEST  = 0x06
+    CHANGE_UPDATE_PERIOD_RESPONSE = 0x07
+    SLEEP_REQUEST                 = 0x08
+    WAKEUP_REQUEST                = 0x09
+
+    COMMON_ITEM_SELECT_REQUEST    = 0x10
+    COMMON_ITEM_SELECT_RESPONSE   = 0x11
+    COMMON_ITEM_REFRESH_REQUEST   = 0x12
+    COMMON_ITEM_REFRESH_RESPONSE  = 0x13
+
+    LTE_ITEM_SELECT_REQUEST       = 0x20
+    LTE_ITEM_SELECT_RESPONSE      = 0x21
+    LTE_ITEM_REFRESH_REQUEST      = 0x22
+    LTE_ITEM_REFRESH_RESPONSE     = 0x23
+
+    EDGE_ITEM_SELECT_REQUEST      = 0x30
+    EDGE_ITEM_SELECT_RESPONSE     = 0x31
+    EDGE_ITEM_REFRESH_REQUEST     = 0x32
+    EDGE_ITEM_REFRESH_RESPONSE    = 0x33
+
+    HSPA_ITEM_SELECT_REQUEST      = 0x40
+    HSPA_ITEM_SELECT_RESPONSE     = 0x41
+    HSPA_ITEM_REFRESH_REQUEST     = 0x42
+    HSPA_ITEM_REFRESH_RESPONSE    = 0x43
+
+    TRACE_ITEM_SELECT_REQUEST     = 0x50
+    TRACE_ITEM_SELECT_RESPONSE    = 0x51
 
 @unique
 class sdm_common_data(IntEnum):
