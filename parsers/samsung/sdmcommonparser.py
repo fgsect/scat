@@ -52,7 +52,7 @@ class SdmCommonParser:
 
     def sdm_common_0x02(self, pkt):
         pkt = pkt[11:-1]
-        print(util.xxd(pkt))
+        # print(util.xxd(pkt))
         # 20 61 bd 37 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
         # 41 19 01 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
 
@@ -165,4 +165,4 @@ class SdmCommonParser:
 
     def sdm_common_0x04(self, pkt):
         pkt = pkt[11:-1]
-        print(util.xxd(pkt))
+        # print(util.xxd(pkt))

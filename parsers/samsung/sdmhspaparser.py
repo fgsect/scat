@@ -27,9 +27,10 @@ class SdmHspaParser:
 
         header = namedtuple('SdmHspaWcdmaRrcState', 'timestamp val1 val2 val3 val4 val5')
         rrc_state = header._make(struct.unpack('<IBBBBB', pkt[0:9]))
-        print(rrc_state)
+        # print(rrc_state)
 
     def sdm_hspa_wcdma_serving_cell(self, pkt):
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
         pkt = pkt[11:-1]
 
         if len(pkt) < 12:
@@ -39,8 +40,13 @@ class SdmHspaParser:
 
         header = namedtuple('SdmHspaWcdmaServingCell', 'timestamp ul_uarfcn dl_uarfcn mcc mnc')
         scell_info = header._make(struct.unpack('<IHHHH', pkt[0:12]))
-        print(scell_info)
+        if scell_info.dl_uarfcn == 0:
+            return None
+        stdout = 'WCDMA Serving Cell: UARFCN {}/{}, MCC {:x}, MNC {:x}'.format(scell_info.dl_uarfcn,
+            scell_info.ul_uarfcn, scell_info.mcc, scell_info.mnc)
 
         if self.parent:
-            self.parent.umts_last_uarfcn_dl[0] = scell_info.dl_uarfcn
-            self.parent.umts_last_uarfcn_ul[0] = scell_info.ul_uarfcn
+            self.parent.umts_last_uarfcn_dl[sdm_pkt_hdr.radio_id] = scell_info.dl_uarfcn
+            self.parent.umts_last_uarfcn_ul[sdm_pkt_hdr.radio_id] = scell_info.ul_uarfcn
+
+        return {'stdout': stdout}
