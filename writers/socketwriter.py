@@ -22,7 +22,7 @@ class SocketWriter:
         if radio_id <= 0:
             dest_address = self.base_address
         else:
-            dest_address = self.base_address + radio_id - 1
+            dest_address = self.base_address + radio_id
         dest_address_str = socket.inet_ntoa(struct.pack('!I', dest_address))
         self.sock_cp.sendto(sock_content, (dest_address_str, self.port_cp))
 
@@ -30,7 +30,7 @@ class SocketWriter:
         if radio_id <= 0:
             dest_address = self.base_address
         else:
-            dest_address = self.base_address + radio_id - 1
+            dest_address = self.base_address + radio_id
         dest_address_str = socket.inet_ntoa(struct.pack('!I', dest_address))
         self.sock_up.sendto(sock_content, (dest_address_str, self.port_up))
 

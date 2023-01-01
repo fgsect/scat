@@ -54,10 +54,9 @@ class QualcommParser:
 
         self.logger = logging.getLogger('scat.qualcommparser')
 
-        # self.diag_log_parsers = [DiagGsmLogParser(self),
-        #     DiagWcdmaLogParser(self), DiagUmtsLogParser(self),
-        #     DiagLteLogParser(self), Diag1xLogParser(self), DiagNrLogParser(self)]
-        self.diag_log_parsers = [ DiagLteLogParser(self) ]
+        self.diag_log_parsers = [DiagGsmLogParser(self),
+            DiagWcdmaLogParser(self), DiagUmtsLogParser(self),
+            DiagLteLogParser(self), Diag1xLogParser(self), DiagNrLogParser(self)]
         self.process = { }
         self.no_process = { }
 
@@ -303,8 +302,9 @@ class QualcommParser:
                 self.writer.write_up(sock_content, radio_id, ts)
 
         if 'stdout' in parse_result:
-            for l in parse_result['stdout'].split('\n'):
-                print('Radio {}: {}'.format(radio_id, l))
+            if len(parse_result['stdout']) > 0:
+                for l in parse_result['stdout'].split('\n'):
+                    print('Radio {}: {}'.format(radio_id, l))
 
     log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
 
@@ -313,7 +313,7 @@ class QualcommParser:
 
         Parameters:
         pkt (bytes): DIAG_LOG_F data without trailing CRC
-        radio_id (int): used SIM or subscription ID on multi-SIM devices
+        args (dict): 'radio_id' (int): used SIM or subscription ID on multi-SIM devices
         """
         if len(pkt) < 16:
             return

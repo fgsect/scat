@@ -37,7 +37,7 @@ class PcapWriter:
         if radio_id <= 0:
             dest_address = self.base_address
         else:
-            dest_address = self.base_address + radio_id - 1
+            dest_address = self.base_address + radio_id
         ip_hdr = struct.pack('!BBHHBBBBHLL',
                 0x45,                        # version, IHL, dsf
                 0x00,
