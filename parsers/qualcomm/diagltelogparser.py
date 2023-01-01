@@ -354,7 +354,7 @@ class DiagLteLogParser:
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
 
-        item_struct = namedtuple('QcDiagLteMl1CellInfo', 'dl_bandwidth sfn earfcn cid_pbch_phich pss sss ref_time mib_bytes freq_offset num_antennas')
+        item_struct = namedtuple('QcDiagLteMl1CellInfo', 'dl_bandwidth sfn earfcn pci_pbch_phich pss sss ref_time mib_bytes freq_offset num_antennas')
         item = None
         mib_payload = b''
         stdout = ''
@@ -369,10 +369,10 @@ class DiagLteLogParser:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 cell info packet version 0x{:02x}'.format(pkt_version))
             return None
 
-        pci = item.cid_pbch_phich & 0x1ff
-        pbch = (item.cid_pbch_phich >> 9) & 0x1
-        phich_duration = (item.cid_pbch_phich >> 10) & 0x7
-        phich_resource = (item.cid_pbch_phich >> 13) & 0x7
+        pci = item.pci_pbch_phich & 0x1ff
+        pbch = (item.pci_pbch_phich >> 9) & 0x1
+        phich_duration = (item.pci_pbch_phich >> 10) & 0x7
+        phich_resource = (item.pci_pbch_phich >> 13) & 0x7
 
         if self.parent:
             self.parent.lte_last_bw_dl[radio_id] = item.dl_bandwidth
