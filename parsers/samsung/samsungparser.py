@@ -169,12 +169,12 @@ class SamsungParser:
                         oldbuf = buf
                         break
 
-                    if len(buf) < pos + 11:
+                    if len(buf) < pos + 15:
                         # self.logger.log(logging.WARNING, 'Packet shorter than expected')
                         oldbuf = buf[pos:]
                         break
 
-                    sdm_pkt_hdr = sdmheader._make(struct.unpack('<HBHHBBB', buf[pos+1:pos+11]))
+                    sdm_pkt_hdr = sdmheader._make(struct.unpack('<HBHHBBBL', buf[pos+1:pos+15]))
 
                     # Sanity check
                     if len(buf) < (pos + 2 + sdm_pkt_hdr.length1):
@@ -197,6 +197,9 @@ class SamsungParser:
                         self.postprocess_parse_result(parse_result)
 
                     cur_pos = (pos + sdm_pkt_hdr.length1 + 2)
+
+                if cur_pos == len(buf):
+                    oldbuf = b''
 
         except KeyboardInterrupt:
             return
@@ -291,7 +294,7 @@ class SamsungParser:
             self.logger.log(logging.WARNING, 'Packet shorter than expected')
             return None
 
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
 
         if sdm_pkt_hdr.length2 + 3 != sdm_pkt_hdr.length1:
             self.logger.log(logging.WARNING, 'Inner and outer length does not match, dropping')

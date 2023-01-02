@@ -18,28 +18,28 @@ class SdmHspaParser:
     def sdm_hspa_wcdma_rrc_status(self, pkt):
         # uint8: channel
         # 0x00 - DISCONNECTED, 0x01: CELL_DCH, 0x02: CELL_FACH, 0x03: CELL_PCH, 0x04: URA_PCH
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
 
-        if len(pkt) < 9:
+        if len(pkt) < 5:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (9)'.format(len(pkt)))
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (5)'.format(len(pkt)))
             return None
 
-        header = namedtuple('SdmHspaWcdmaRrcState', 'timestamp val1 val2 val3 val4 val5')
-        rrc_state = header._make(struct.unpack('<IBBBBB', pkt[0:9]))
+        header = namedtuple('SdmHspaWcdmaRrcState', 'val1 val2 val3 val4 val5')
+        rrc_state = header._make(struct.unpack('<BBBBB', pkt[0:5]))
         # print(rrc_state)
 
     def sdm_hspa_wcdma_serving_cell(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
-        pkt = pkt[11:-1]
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
 
-        if len(pkt) < 12:
+        if len(pkt) < 8:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (12)'.format(len(pkt)))
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (8)'.format(len(pkt)))
             return None
 
-        header = namedtuple('SdmHspaWcdmaServingCell', 'timestamp ul_uarfcn dl_uarfcn mcc mnc')
-        scell_info = header._make(struct.unpack('<IHHHH', pkt[0:12]))
+        header = namedtuple('SdmHspaWcdmaServingCell', 'ul_uarfcn dl_uarfcn mcc mnc')
+        scell_info = header._make(struct.unpack('<HHHH', pkt[0:8]))
         if scell_info.dl_uarfcn == 0:
             return None
         stdout = 'WCDMA Serving Cell: UARFCN {}/{}, MCC {:x}, MNC {:x}'.format(scell_info.dl_uarfcn,

@@ -24,19 +24,19 @@ class SdmCommonParser:
         }
 
     def sdm_common_basic_info(self, pkt):
-        pkt = pkt[11:-1]
-        if len(pkt) < 15:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than minimum expected (15)'.format(len(pkt)))
+        pkt = pkt[15:-1]
+        if len(pkt) < 11:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than minimum expected (11)'.format(len(pkt)))
             return
 
         stdout = ''
 
         # rat: GSM 10, 13 / WCDMA 12, 14 / LTE 17, 19, 20 / 5G TODO
-        header = namedtuple('SdmCommonBasicInfo', 'timestamp rat status mimo dlfreq ulfreq')
-        common_basic = header._make(struct.unpack('<IBBBLL', pkt[0:15]))
+        header = namedtuple('SdmCommonBasicInfo', 'rat status mimo dlfreq ulfreq')
+        common_basic = header._make(struct.unpack('<BBBLL', pkt[0:11]))
 
-        if len(pkt) > 15:
-            extra = pkt[15:]
+        if len(pkt) > 11:
+            extra = pkt[11:]
             stdout = 'Common Basic Info: RAT {}, MIMO {}, Frequency {:.2f}/{:.2f} MHz, Extra: {}'.format(common_basic.rat,
                 common_basic.mimo,
                 0 if common_basic.dlfreq == 4294967295 else common_basic.dlfreq / 1000000,
@@ -51,16 +51,16 @@ class SdmCommonParser:
         return {'stdout': stdout}
 
     def sdm_common_0x02(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # print(util.xxd(pkt))
-        # 20 61 bd 37 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
-        # 41 19 01 38 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
+        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
+        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
 
     def sdm_common_signaling(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
 
-        header = namedtuple('SdmCommonSignalingHeader', 'timestamp type subtype direction length')
-        pkt_header = header._make(struct.unpack('<LBBBH', pkt[0:9]))
+        header = namedtuple('SdmCommonSignalingHeader', 'type subtype direction length')
+        pkt_header = header._make(struct.unpack('<BBBH', pkt[0:5]))
         msg_content = pkt[9:]
 
         if pkt_header.type == 0x30: # UMTS RRC
@@ -164,5 +164,5 @@ class SdmCommonParser:
             return None
 
     def sdm_common_0x04(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # print(util.xxd(pkt))

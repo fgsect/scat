@@ -18,7 +18,7 @@ class SdmEdgeParser:
         }
 
     def sdm_edge_0x05(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # print(util.xxd(pkt))
 
     def sdm_edge_gsm_serving_cell(self, pkt):
@@ -33,13 +33,13 @@ class SdmEdgeParser:
         ], []),
         if pkt[0] == 0x07:
         '''
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # print(util.xxd(pkt))
 
     def sdm_edge_0x10(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # print(util.xxd(pkt))
 
     def sdm_edge_0x11(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # print(util.xxd(pkt))

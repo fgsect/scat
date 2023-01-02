@@ -36,22 +36,22 @@ class SdmLteParser:
         # 003818 64000000 0019e4250000dc0500000000
         # 003818 7b000000 001910270000dc0500000000
         # 003818 57000000 641910270000080700000000
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
-        pkt = pkt[11:-1]
-        header = namedtuple('SdmLtePhyCellInfo', 'timestamp plmn zero1 arfcn pci zero2')
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2')
 
         if self.model == 'e5123':
-            expected_len = 20
+            expected_len = 16
         else:
-            expected_len = 18
+            expected_len = 14
         if len(pkt) < expected_len:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), expected_len))
             return None
 
         if self.model == 'e5123':
-            cell_info = header._make(struct.unpack('<IIIIHH', pkt[0:20]))
+            cell_info = header._make(struct.unpack('<IIIHH', pkt[0:16]))
         else:
-            cell_info = header._make(struct.unpack('<IIIHHH', pkt[0:18]))
+            cell_info = header._make(struct.unpack('<IIHHH', pkt[0:14]))
 
         if self.parent:
             self.parent.lte_last_earfcn_dl[sdm_pkt_hdr.radio_id] = cell_info.arfcn
@@ -66,24 +66,24 @@ class SdmLteParser:
             "plmn" '<HB', 3 bytes, pos:16
             "tac", '>H',  2 bytes, pos:20
         '''
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         if self.model == 'e5123':
-            expected_len = 24
+            expected_len = 20
         else:
-            expected_len = 22
+            expected_len = 18
         if len(pkt) < expected_len:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), expected_len))
             return None
 
-        header = namedtuple('SdmLteRrcServingCell', 'timestamp cid zero1 zero2 plmn tac')
-        header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'timestamp cid zero1 zero2 plmn tac band_indicator')
+        header = namedtuple('SdmLteRrcServingCell', 'cid zero1 zero2 plmn tac')
+        header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid zero1 zero2 plmn tac band_indicator')
         if self.model == 'e5123':
-            cell_info = header_e5123._make(struct.unpack('<IIIIIHH', pkt[0:24]))
+            cell_info = header_e5123._make(struct.unpack('<IIIIHH', pkt[0:20]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}, Band {}'.format(tac_real, cell_info.cid, cell_info.plmn, cell_info.band_indicator)
         else:
             # 41 dd fa 05 | 09 23 00 01 | 01 00 00 00 | 00 00 00 00 | d0 af 00 00 | 06 db
-            cell_info = header._make(struct.unpack('<IIIIIH', pkt[0:22]))
+            cell_info = header._make(struct.unpack('<IIIIH', pkt[0:18]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}'.format(tac_real, cell_info.cid, cell_info.plmn)
 
@@ -94,32 +94,32 @@ class SdmLteParser:
         0x51: 'LteRrcState' len:5
             "rrc_state", '<B', 1 byte, pos:4  # (00 - IDLE, 01 - CONNECTING, 02 - CONNECTED)
         '''
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
 
-        if len(pkt) < 5:
+        if len(pkt) < 1:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (5)'.format(len(pkt)))
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (1)'.format(len(pkt)))
             return None
 
-        header = namedtuple('SdmLteRrcState', 'timestamp state')
-        rrc_state = header._make(struct.unpack('<IB', pkt[0:5]))
+        header = namedtuple('SdmLteRrcState', 'state')
+        rrc_state = header._make(struct.unpack('<B', pkt[0:1]))
         rrc_state_map = {0: 'IDLE', 1: 'CONNECTING', 2: 'CONNECTED'}
         stdout = 'LTE RRC State: {}'.format(rrc_state_map[rrc_state.state] if rrc_state.state in rrc_state_map else 'UNKNOWN')
         return {'stdout': stdout}
 
     def sdm_lte_rrc_ota_packet(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:11])
-        pkt = pkt[11:-1]
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
 
-        if len(pkt) < 8:
+        if len(pkt) < 4:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (8)'.format(len(pkt)))
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (4)'.format(len(pkt)))
             return None
 
         # direction - 0: DL, 1: UL
-        header = namedtuple('SdmLteRrcOtaPacket', 'timestamp channel direction length')
-        rrc_header = header._make(struct.unpack('<IBBH', pkt[0:8]))
-        rrc_msg = pkt[8:]
+        header = namedtuple('SdmLteRrcOtaPacket', 'channel direction length')
+        rrc_header = header._make(struct.unpack('<BBH', pkt[0:4]))
+        rrc_msg = pkt[4:]
 
         rrc_subtype_dl = {
             0: util.gsmtap_lte_rrc_types.DL_CCCH,
@@ -163,11 +163,11 @@ class SdmLteParser:
         return {'cp': [gsmtap_hdr + rrc_msg]}
 
     def sdm_lte_0x55(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # TODO: RACH Preamble/Response
         # pkt[1] - pkt[4]: TS
-        direction = pkt[5] # 0 - UL, 1 - DL
-        rach_vals = struct.unpack('<HIIH', pkt[6:18])
+        direction = pkt[1] # 0 - UL, 1 - DL
+        rach_vals = struct.unpack('<HIIH', pkt[2:14])
 
         if direction == 0:
             # UL: RACH cause, Preamble ID, ?, ?
@@ -189,7 +189,7 @@ class SdmLteParser:
             "pci",    '<H', 2 bytes, pos:11
         if pkt[0] == 0x57:
         '''
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
 
     def sdm_lte_nas_sim_data(self, pkt):
         '''
@@ -199,21 +199,21 @@ class SdmLteParser:
             "IMSI", '<9s', 9 bytes, pos:15,  # bcd encoded
         if pkt[0] == 0x58:
         '''
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
 
     def sdm_lte_nas_msg(self, pkt):
-        pkt = pkt[11:-1]
+        pkt = pkt[15:-1]
         # 0x5A: LTE NAS EMM Message
         # 0x5F: LTE NAS ESM Message
 
-        if len(pkt) < 8:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (8)'.format(len(pkt)))
+        if len(pkt) < 4:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (4)'.format(len(pkt)))
             return
 
         # direction: 0 - DL, 1 - UL
-        header = namedtuple('SdmLteNasMsg', 'timestamp direction length spare')
-        nas_header = header._make(struct.unpack('<IBHB', pkt[0:8]))
-        nas_msg = pkt[8:]
+        header = namedtuple('SdmLteNasMsg', 'direction length spare')
+        nas_header = header._make(struct.unpack('<BHB', pkt[0:4]))
+        nas_msg = pkt[4:]
         if nas_header.length != len(nas_msg):
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(nas_msg), nas_header.length))
