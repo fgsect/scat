@@ -259,8 +259,9 @@ class QualcommParser:
                 calculated_crc = util.dm_crc16(pkt)
                 pkt = pkt + struct.pack('<H', calculated_crc)
 
-                #print("%02x %02x" % (pkt_len, len(buf)))
-                parse_result = self.parse_diag(pkt, hdlc_encoded=False)
+#               # remove DLF pkt header
+                pkt = pkt[16:]
+                parse_result = self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
 
                 if parse_result is not None:
                     self.postprocess_parse_result(parse_result)
@@ -326,7 +327,7 @@ class QualcommParser:
         pkt_body = pkt[16:]
 
         if len(pkt_body) != (pkt_header.length2 - 12):
-            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length, len(pkt_body)))
+            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length2, len(pkt_body)))
 
         if pkt_header.log_id in self.process.keys():
             return self.process[pkt_header.log_id](pkt_header, pkt_body, args)
