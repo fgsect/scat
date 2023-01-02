@@ -327,7 +327,7 @@ class QualcommParser:
         pkt_body = pkt[16:]
 
         if len(pkt_body) != (pkt_header.length2 - 12):
-            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length2, len(pkt_body)))
+            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length2, len(pkt_body)+12))
 
         if pkt_header.log_id in self.process.keys():
             return self.process[pkt_header.log_id](pkt_header, pkt_body, args)
