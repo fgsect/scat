@@ -13,17 +13,17 @@ class TestSdmLteParser(unittest.TestCase):
         self.parser.model = 'e333'
         payload = binascii.unhexlify('7f3c0000390087ffa002020b418b35d0af0000000000000e067b010000ecc850fb14370000d007000001000e0615010000bc1bcc290000a406000000007e')
         result = self.parser.sdm_lte_phy_cell_info(payload)
-        expected = 'LTE PHY Cell Info: EARFCN 1550, PCI 379, PLMN 45008'
+        expected = 'LTE PHY Cell Info: EARFCN 1550, PCI 379, PLMN 45008, RSRP: -141.00, RSRQ: -20.00\nLTE PHY Cell Info: NCell 0: EARFCN 1550, PCI 277, RSRP: -107.00, RSRQ: -17.00'
         self.assertEqual(result['stdout'], expected)
 
         payload = binascii.unhexlify('7f290000260020ffa00202f7f42335d0af0000000000000e067b0100007ce370fea028000078050000007e')
         result = self.parser.sdm_lte_phy_cell_info(payload)
-        expected = 'LTE PHY Cell Info: EARFCN 1550, PCI 379, PLMN 45008'
+        expected = 'LTE PHY Cell Info: EARFCN 1550, PCI 379, PLMN 45008, RSRP: -104.00, RSRQ: -14.00'
         self.assertEqual(result['stdout'], expected)
 
         payload = binascii.unhexlify('7f2900002600265ca00202f15b1b22ceaf00000000000032000b0000005ce084036829000058020000007e')
         result = self.parser.sdm_lte_phy_cell_info(payload)
-        expected = 'LTE PHY Cell Info: EARFCN 50, PCI 11, PLMN 45006'
+        expected = 'LTE PHY Cell Info: EARFCN 50, PCI 11, PLMN 45006, RSRP: -106.00, RSRQ: -6.00'
         self.assertEqual(result['stdout'], expected)
 
     def test_sdm_lte_rrc_serving_cell(self):

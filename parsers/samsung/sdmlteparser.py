@@ -5,6 +5,7 @@ import util
 
 import struct
 import logging
+import binascii
 
 class SdmLteParser:
     def __init__(self, parent, model=None):
@@ -15,6 +16,7 @@ class SdmLteParser:
             self.model = self.parent.model
 
         self.process = {
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_CELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_SERVING_CELL: lambda x: self.sdm_lte_rrc_serving_cell(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_STATUS: lambda x: self.sdm_lte_rrc_state(x),
@@ -26,38 +28,54 @@ class SdmLteParser:
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
         }
 
-    def sdm_lte_phy_cell_info(self, pkt):
-        # 5-7: Current PLMN (BCD or decimal)
-        # 8-11: zero
-        # 12: cell RAT (0-LTE, 1-3G, 2-2G?)
-        # 13-4: EARFCN/UARFCN/ARFCN
-        # 15-18: Physical CID
-        # 003818 ac000000 70e5d4fe1c250000b004000003
-        # 003818 64000000 0019e4250000dc0500000000
-        # 003818 7b000000 001910270000dc0500000000
-        # 003818 57000000 641910270000080700000000
+    def sdm_lte_phy_status(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
-        header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2')
+
+        if len(pkt) != 2:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (2)'.format(len(pkt), 2))
+            return None
+
+        header = namedtuple('SdmLtePhyStatus', 'sfn')
+        phy_status = header._make(struct.unpack('<H', pkt[0:2]))
+        stdout = 'LTE PHY Status: Current SFN {}'.format(phy_status.sfn)
+        return {'stdout': stdout}
+
+    def sdm_lte_phy_cell_info(self, pkt):
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2 reserved1 reserved2 rsrp rsrq num_ncell')
+        ncell_header = namedtuple('SdmLtePhyCellInfoNCellMeas', 'type earfcn pci zero1 reserved1 rsrp rsrq reserved2')
 
         if self.model == 'e5123':
-            expected_len = 16
+            struct_format = '<IIIHHHHLLB'
         else:
-            expected_len = 14
+            struct_format = '<IIHHHHHLLB'
+        expected_len = struct.calcsize(struct_format)
         if len(pkt) < expected_len:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), expected_len))
             return None
 
-        if self.model == 'e5123':
-            cell_info = header._make(struct.unpack('<IIIHH', pkt[0:16]))
-        else:
-            cell_info = header._make(struct.unpack('<IIHHH', pkt[0:14]))
+        cell_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+        extra = pkt[expected_len:]
 
         if self.parent:
             self.parent.lte_last_earfcn_dl[sdm_pkt_hdr.radio_id] = cell_info.arfcn
             self.parent.lte_last_pci[sdm_pkt_hdr.radio_id] = cell_info.pci
-        stdout = 'LTE PHY Cell Info: EARFCN {}, PCI {}, PLMN {}'.format(cell_info.arfcn, cell_info.pci, cell_info.plmn)
-        return {'stdout': stdout}
+        stdout = 'LTE PHY Cell Info: EARFCN {}, PCI {}, PLMN {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(cell_info.arfcn, cell_info.pci, cell_info.plmn, cell_info.rsrp / -100.0, cell_info.rsrq / -100.0)
+
+        if cell_info.num_ncell > 0:
+            ncell_header_format = '<BHHHHLLH'
+            ncell_len = struct.calcsize(ncell_header_format)
+            if len(extra) == ncell_len * cell_info.num_ncell:
+                for i in range(cell_info.num_ncell):
+                    ncell = ncell_header._make(struct.unpack(ncell_header_format, extra[i*ncell_len:(i+1)*ncell_len]))
+                    stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                        ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+            else:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
+        return {'stdout': stdout.rstrip()}
 
     def sdm_lte_rrc_serving_cell(self, pkt):
         '''
@@ -68,9 +86,10 @@ class SdmLteParser:
         '''
         pkt = pkt[15:-1]
         if self.model == 'e5123':
-            expected_len = 20
+            struct_format = '<IIIIHH'
         else:
-            expected_len = 18
+            struct_format = '<IIIIH'
+        expected_len = struct.calcsize(struct_format)
         if len(pkt) < expected_len:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), expected_len))
             return None
@@ -78,12 +97,12 @@ class SdmLteParser:
         header = namedtuple('SdmLteRrcServingCell', 'cid zero1 zero2 plmn tac')
         header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid zero1 zero2 plmn tac band_indicator')
         if self.model == 'e5123':
-            cell_info = header_e5123._make(struct.unpack('<IIIIHH', pkt[0:20]))
+            cell_info = header_e5123._make(struct.unpack(struct_format, pkt[0:expected_len]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}, Band {}'.format(tac_real, cell_info.cid, cell_info.plmn, cell_info.band_indicator)
         else:
             # 41 dd fa 05 | 09 23 00 01 | 01 00 00 00 | 00 00 00 00 | d0 af 00 00 | 06 db
-            cell_info = header._make(struct.unpack('<IIIIH', pkt[0:18]))
+            cell_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}'.format(tac_real, cell_info.cid, cell_info.plmn)
 
