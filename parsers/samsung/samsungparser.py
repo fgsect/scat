@@ -308,7 +308,8 @@ class SamsungParser:
             self.logger.log(logging.WARNING, 'Unexpected direction ID 0x{:02x}'.format(sdm_pkt_hdr.direction))
             return None
 
-        # print('SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}'.format(sdm_pkt_hdr.radio_id, sdm_pkt_hdr.group, sdm_pkt_hdr.command))
+        self.logger.log(logging.DEBUG, 'SDM Header: radio id {}, group 0x{:02x}, command 0x{:02x}, timestamp {:04x}'.format(sdm_pkt_hdr.radio_id, sdm_pkt_hdr.group, sdm_pkt_hdr.command, sdm_pkt_hdr.timestamp))
+        self.logger.log(logging.DEBUG, 'Payload: {}'.format(util.xxd(pkt[15:-1])))
 
         cmd_sig = (sdm_pkt_hdr.group << 8) | sdm_pkt_hdr.command
         if cmd_sig in self.process.keys():
