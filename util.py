@@ -75,7 +75,7 @@ def parse_qxdm_ts(ts):
     ts_lower = ts & 0xffff
 
     epoch = datetime.datetime(1980, 1, 6, 0, 0, 0)
-    
+
     try:
         ts_delta = datetime.timedelta(0, 0, 0, ts_upper * 1.25 + ts_lower * (1 / 40960), 0, 0, 0)
         date = epoch + ts_delta
@@ -472,3 +472,15 @@ def calculate_ul_earfcn(dl_earfcn):
     else:
         offset = 0
     return dl_earfcn + offset
+
+def unpack_mcc_mnc(mcc_mnc_bin):
+    mcc = 0
+    mnc = 0
+
+    mcc = ((mcc_mnc_bin[0] & 0xf) << 8) | (((mcc_mnc_bin[0] & 0xf0) >> 4) << 4) | (mcc_mnc_bin[1] & 0xf)
+    mnc = ((mcc_mnc_bin[2] & 0xf) << 8) | (((mcc_mnc_bin[2] & 0xf0) >> 4) << 4) | ((mcc_mnc_bin[1] & 0xf0) >> 4)
+
+    if mnc & 0xf == 0xf:
+        mnc = (mnc >> 4)
+
+    return (mcc, mnc)

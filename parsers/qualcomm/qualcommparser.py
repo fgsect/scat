@@ -259,7 +259,7 @@ class QualcommParser:
                 calculated_crc = util.dm_crc16(pkt)
                 pkt = pkt + struct.pack('<H', calculated_crc)
 
-#               # remove DLF pkt header
+                # remove DLF pkt header
                 pkt = pkt[16:]
                 parse_result = self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
 
