@@ -9,8 +9,12 @@ import binascii
 from collections import namedtuple
 
 class SdmIpParser:
-    def __init__(self, parent):
+    def __init__(self, parent, model=None):
         self.parent = parent
+        if model:
+            self.model = model
+        else:
+            self.model = self.parent.model
 
         self.process = {
             (sdm_command_group.CMD_IP_DATA << 8) | 0x00: lambda x: self.sdm_ip_data(x),

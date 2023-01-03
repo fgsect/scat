@@ -8,8 +8,12 @@ import logging
 from collections import namedtuple
 
 class SdmHspaParser:
-    def __init__(self, parent):
+    def __init__(self, parent, model=None):
         self.parent = parent
+        if model:
+            self.model = model
+        else:
+            self.model = self.parent.model
 
         self.process = {
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_WCDMA_RRC_STATUS: lambda x: self.sdm_hspa_wcdma_rrc_status(x),

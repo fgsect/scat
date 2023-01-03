@@ -8,8 +8,12 @@ import logging
 from collections import namedtuple
 
 class SdmEdgeParser:
-    def __init__(self, parent):
+    def __init__(self, parent, model=None):
         self.parent = parent
+        if model:
+            self.model = model
+        else:
+            self.model = self.parent.model
 
         self.process = {
             (sdm_command_group.CMD_EDGE_DATA << 8) | 0x05: lambda x: self.sdm_edge_0x05(x),

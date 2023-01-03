@@ -1,10 +1,10 @@
-
 #!/usr/bin/env python3
 
 import unittest
 import binascii
 
 from parsers.samsung.sdmlteparser import SdmLteParser
+from parsers.samsung import sdmcmd
 
 class TestSdmLteParser(unittest.TestCase):
     parser = SdmLteParser(parent=None, model='e5123')
@@ -24,6 +24,18 @@ class TestSdmLteParser(unittest.TestCase):
         payload = binascii.unhexlify('7f2900002600265ca00202f15b1b22ceaf00000000000032000b0000005ce084036829000058020000007e')
         result = self.parser.sdm_lte_phy_cell_info(payload)
         expected = 'LTE PHY Cell Info: EARFCN 50, PCI 11, PLMN 45006, RSRP: -106.00, RSRQ: -6.00'
+        self.assertEqual(result['stdout'], expected)
+
+        self.parser.model = 'e5123'
+        payload = binascii.unhexlify('ceaf000000000000640000000b00000050e21405d8270000e803000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_CELL_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_phy_cell_info(packet)
+        expected = 'LTE PHY Cell Info: EARFCN 100, PCI 11, PLMN 45006, RSRP: -102.00, RSRQ: -10.00'
+        self.assertEqual(result['stdout'], expected)
+        payload = binascii.unhexlify('ceaf000000000000640000000b00000018e37805d8270000e80300000102ea0b00000b0000007017c4220000840300000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_CELL_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_phy_cell_info(packet)
+        expected = 'LTE PHY Cell Info: EARFCN 100, PCI 11, PLMN 45006, RSRP: -102.00, RSRQ: -10.00\nLTE PHY Cell Info: NCell 0: EARFCN 3050, PCI 11, RSRP: -89.00, RSRQ: -9.00'
         self.assertEqual(result['stdout'], expected)
 
     def test_sdm_lte_rrc_serving_cell(self):

@@ -6,7 +6,7 @@ import binascii
 from parsers.samsung.sdmhspaparser import SdmHspaParser
 
 class TestSdmHspaParser(unittest.TestCase):
-    parser = SdmHspaParser(parent=None)
+    parser = SdmHspaParser(parent=None, model='e5123')
 
     def test_sdm_hspa_wcdma_rrc_status(self):
         payload = binascii.unhexlify('7f1300001000c0ffa004205b942c0f00000000007e')

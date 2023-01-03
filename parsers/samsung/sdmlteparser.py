@@ -65,7 +65,10 @@ class SdmLteParser:
         stdout = 'LTE PHY Cell Info: EARFCN {}, PCI {}, PLMN {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(cell_info.arfcn, cell_info.pci, cell_info.plmn, cell_info.rsrp / -100.0, cell_info.rsrq / -100.0)
 
         if cell_info.num_ncell > 0:
-            ncell_header_format = '<BHHHHLLH'
+            if self.model == 'e5123':
+                ncell_header_format = '<BLHHHLLH'
+            else:
+                ncell_header_format = '<BHHHHLLH'
             ncell_len = struct.calcsize(ncell_header_format)
             if len(extra) == ncell_len * cell_info.num_ncell:
                 for i in range(cell_info.num_ncell):
