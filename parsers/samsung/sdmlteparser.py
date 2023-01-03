@@ -6,6 +6,7 @@ import util
 import struct
 import logging
 import binascii
+from collections import namedtuple
 
 class SdmLteParser:
     def __init__(self, parent, model=None):
@@ -18,13 +19,24 @@ class SdmLteParser:
         self.process = {
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_CELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
+
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_L2_RNTI_INFO: lambda x: self.sdm_lte_l2_rnti_info(x),
+
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_SERVING_CELL: lambda x: self.sdm_lte_rrc_serving_cell(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_STATUS: lambda x: self.sdm_lte_rrc_state(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_OTA_PACKET: lambda x: self.sdm_lte_rrc_ota_packet(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | 0x55: lambda x: self.sdm_lte_0x55(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | 0x57: lambda x: self.sdm_lte_0x57(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_PLMN_SELECTION: lambda x: self.sdm_lte_nas_plmn_selection(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_SECURITY: lambda x: self.sdm_lte_nas_security(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_PDP: lambda x: self.sdm_lte_nas_pdp(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_IP: lambda x: self.sdm_lte_nas_ip(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
         }
 
@@ -57,6 +69,7 @@ class SdmLteParser:
             return None
 
         cell_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+        print(cell_info)
         extra = pkt[expected_len:]
 
         if self.parent:
@@ -79,6 +92,32 @@ class SdmLteParser:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
         return {'stdout': stdout.rstrip()}
+
+    def sdm_lte_l2_rach_info(self, pkt):
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE L2 RACH Info: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_l2_rnti_info(self, pkt):
+        # FFFF: SI-RNTI
+        # FFFE: P-RNTI
+        # FFFA: SC-N-RNTI
+        # ffff | feff | faff | 8f36 | faff | faff
+        # ffff | feff | faff | dc19 | faff | faff
+        # ffff | feff | faff | cdc4 | faff | faff (o2)
+        pkt = pkt[15:-1]
+        struct_format = '<HHHHHH'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteL2RntiInfo', 'si_rnti p_rnti tc_rnti c_rnti val5 val6')
+        rnti_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        stdout = 'LTE L2 RNTI Info: {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}'.format(rnti_info.si_rnti, rnti_info.p_rnti, rnti_info.tc_rnti,
+            rnti_info.c_rnti, rnti_info.val5, rnti_info.val6)
+        return {'stdout': stdout}
 
     def sdm_lte_rrc_serving_cell(self, pkt):
         '''
@@ -184,25 +223,60 @@ class SdmLteParser:
             sub_type = subtype)
         return {'cp': [gsmtap_hdr + rrc_msg]}
 
+    def sdm_lte_rrc_timer(self, pkt):
+        # [02, 04, 10] 00000000
+
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE RRC Timer: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_rrc_asn_version(self, pkt):
+        # Always 01? 1b
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE RRC ASN Version: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
     def sdm_lte_0x55(self, pkt):
         pkt = pkt[15:-1]
         # TODO: RACH Preamble/Response
         # pkt[1] - pkt[4]: TS
-        direction = pkt[1] # 0 - UL, 1 - DL
-        rach_vals = struct.unpack('<HIIH', pkt[2:14])
+        # direction = pkt[1] # 0 - UL, 1 - DL
+        # rach_vals = struct.unpack('<HIIH', pkt[2:14])
 
-        if direction == 0:
-            # UL: RACH cause, Preamble ID, ?, ?
-            pass
-        elif direction == 1:
-            # DL: ?, Preamble ID, TA, T-C-RNTI
-            # MAC-LTE: RAR Header, TA, UL Grant, T-C-RNTI
-            pass
-        else:
+        # 01 01 00 0d00 0000 05000000 | 8f360000
+        # 01 01 00 1a00 0000 03000000 | 1e1a0000
+        # 01 01 00 0500 0000 03000000 | 791a0000
+        # 01 01 00 0500 0000 06000000 | 3d450000
+
+        # if direction == 0:
+        #     # UL: RACH cause, Preamble ID, ?, ?
+        #     pass
+        # elif direction == 1:
+        #     # DL: ?, Preamble ID, TA, T-C-RNTI
+        #     # MAC-LTE: RAR Header, TA, UL Grant, T-C-RNTI
+        #     pass
+        # else:
+        #     if self.parent:
+        #         self.parent.logger.log(logging.WARNING, "Invalid RACH direction 0x{:02x}".format(direction))
+        #         self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
+        # # return None
+
+        struct_format = '<BBBLLL'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, "Invalid RACH direction 0x{:02x}".format(direction))
-                self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
-        return None
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteRrcRachMessage', 'direction val1 val2 val3 val4 tc_rnti_prob')
+        # direction: 0, 1
+        # val1: 1, 5, 6, 7
+        # val2: 0
+        # val3: 0, 00-1b, 3e, 3f
+        # val4: 1-7
+        # val5: varies
+        rach_message = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        stdout = 'LTE 0x55: {}'.format(rach_message)
+        return {'stdout': stdout}
 
     def sdm_lte_0x57(self, pkt):
         '''
@@ -212,6 +286,7 @@ class SdmLteParser:
         if pkt[0] == 0x57:
         '''
         pkt = pkt[15:-1]
+        return {'stdout': 'LTE 0x57: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
 
     def sdm_lte_nas_sim_data(self, pkt):
         '''
@@ -222,6 +297,16 @@ class SdmLteParser:
         if pkt[0] == 0x58:
         '''
         pkt = pkt[15:-1]
+        return {'stdout': 'LTE NAS SIM Data: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_nas_status_variable(self, pkt):
+        # 3 bytes
+        # val1: 1, 2
+        # val2: 1, 2, 3, 4, 5
+        # val3: 00-ff
+
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE NAS Status Variable: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
 
     def sdm_lte_nas_msg(self, pkt):
         pkt = pkt[15:-1]
@@ -246,3 +331,36 @@ class SdmLteParser:
             payload_type = util.gsmtap_type.LTE_NAS,
             arfcn = 0)
         return {'cp': [gsmtap_hdr + nas_msg]}
+
+    def sdm_lte_nas_plmn_selection(self, pkt):
+        # All zeroes?
+        # 00050001
+        # 01060002
+        # 01060001
+        # 02070002
+        # 02070001
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE NAS PLMN Selection: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_nas_security(self, pkt):
+        # All zeroes?
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE NAS Security: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_nas_pdp(self, pkt):
+        # 0000ff0000ff0000ff
+        # 0001ff0000ff0000ff
+        # 0501ff0000ff0000ff
+        # EPS bearer identity 5
+
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE NAS PDP: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_nas_ip(self, pkt):
+        # 00000000050000000000000001000000020000000000000000000000
+        # 00000000322c0d000000000000000028caa003050000000000000000
+        # 00000000000000000000000000000000000000000000000000000000
+        # 00000000005ffd75000000000000170035d0a0240000000000000000
+
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE NAS IP: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
