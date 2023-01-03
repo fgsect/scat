@@ -255,12 +255,8 @@ class QualcommParser:
             while len(buf) >= pkt_len:
                 # DLF lacks CRC16/other fancy stuff
                 pkt = buf[0:pkt_len]
-                pkt = b'\x10\x00' + pkt[0:2] + pkt
-                calculated_crc = util.dm_crc16(pkt)
-                pkt = pkt + struct.pack('<H', calculated_crc)
-
                 # remove DLF pkt header
-                pkt = pkt[16:]
+                pkt = pkt[12:]
                 parse_result = self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
 
                 if parse_result is not None:
