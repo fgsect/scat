@@ -63,8 +63,13 @@ class SamsungParser:
         self.icd_ver_maj = 0
         self.icd_ver_min = 0
         self.icd_ver = (0, 0)
+        self.trace = False
         self.combine_stdout = False
         self.layers = []
+
+        self.trace_group = None
+        self.ilm_group = None
+        self.trigger_group = None
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -121,6 +126,8 @@ class SamsungParser:
                 self.logger.setLevel(params[p])
             elif p == 'start-magic':
                 self.start_magic = int(params[p], base=16)
+            elif p == 'trace':
+                self.trace = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
             elif p == 'layer':

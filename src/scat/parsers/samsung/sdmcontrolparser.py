@@ -6,6 +6,20 @@ import binascii
 from collections import namedtuple
 
 import scat.parsers.samsung.sdmcmd as sdmcmd
+import re
+import math
+import bitstring
+from packaging import version
+
+bitstring_ver = version.parse(bitstring.__version__)
+if bitstring_ver >= version.parse('4.2.0'):
+    bitstring.options.lsb0 = True
+elif bitstring_ver >= version.parse('4.0.0'):
+    bitstring.lsb0 = True
+elif bitstring_ver >= version.parse('3.1.7'):
+    bitstring.set_lsb0(True)
+else:
+    raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
 
 class SdmControlParser:
     def __init__(self, parent, icd_ver=(0, 0)):
@@ -28,6 +42,7 @@ class SdmControlParser:
             g | c.HSPA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x40),
             g | c.CDMA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x44),
             g | c.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
+            g | c.TRACE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_dm_trace_item_select_response(x),
             g | c.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
             g | c.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
             g | c.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
@@ -141,6 +156,43 @@ class SdmControlParser:
             for x in self.trace_group:
                 stdout += 'Group ID {:#06x}, Items: {}\n'.format(x, ', '.join(self.trace_group[x]))
 
+            if self.parent:
+                self.parent.trace_group = self.trace_group
+
+        if self.parent:
+            if not self.parent.trace:
+                return None
+
+        return {'stdout': stdout}
+
+    def sdm_dm_trace_item_select_response(self, pkt):
+        pkt = pkt[15:-1]
+
+        item_struct = namedtuple('SdmDmTraceItemSelectReponse', 'unk num_items')
+        item = item_struct._make(struct.unpack('<BL', pkt[0:5]))
+        content = pkt[5:]
+
+        items = struct.unpack('<' + 'L' * item.num_items, content)
+        stdout = ''
+        stdout += 'SDM DM Trace Item Select Response: 0x{:02x}, Number of items: {}\n'.format(item.unk, item.num_items)
+        stdout += 'Enabled items:\n'
+        for i in range(item.num_items):
+            if i in self.trace_group:
+                stdout += 'Item {} ({}): {:08x} - '.format(i, self.trace_group[i][0], items[i])
+                enabled_bits = str(bitstring.Bits(uint=items[i], length=32).bin)[::-1]
+                for x in range(len(enabled_bits)):
+                    if x > (len(self.trace_group[i]) - 2):
+                        break
+                    if enabled_bits[x] == '1':
+                        stdout += '{}, '.format(self.trace_group[i][x+1])
+                stdout += '\n'
+            else:
+                stdout += 'Item {}: {:08x}\n'.format(i, items[i])
+
+        if self.parent:
+            if not self.parent.trace:
+                return None
+
         return {'stdout': stdout}
 
     def sdm_dm_ilm_table_get_response(self, pkt):
@@ -178,6 +230,9 @@ class SdmControlParser:
                     self.ilm_group[x][0], self.ilm_group[x][1], self.ilm_group[x][2],
                     self.ilm_group[x][3])
 
+            if self.parent:
+                self.parent.ilm_group = self.ilm_group
+
         return {'stdout': stdout}
 
     def sdm_control_tcpip_dump_response(self, pkt):
@@ -208,5 +263,8 @@ class SdmControlParser:
         stdout += 'SDM Trigger Table:\n'
         for x in self.trigger_group:
             stdout += 'Item ID {:#06x}, Text: {}\n'.format(x, self.trigger_group[x])
+
+        if self.parent:
+            self.parent.trigger_group = self.trigger_group
 
         return {'stdout': stdout}
