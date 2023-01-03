@@ -5,6 +5,7 @@ import util
 
 import struct
 import logging
+from collections import namedtuple
 
 class SdmHspaParser:
     def __init__(self, parent):

@@ -5,6 +5,7 @@ import util
 
 import struct
 import logging
+from collections import namedtuple
 
 class SdmEdgeParser:
     def __init__(self, parent):
