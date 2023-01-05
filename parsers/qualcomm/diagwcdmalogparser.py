@@ -204,6 +204,8 @@ class DiagWcdmaLogParser:
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
         item_struct = namedtuple('QcDiagWcdmaRrcCellId', 'ul_uarfcn dl_uarfcn cell_id ura_id flags access psc mcc mnc lac rac')
+        if len(pkt_body) < 32:
+            pkt_body += b'\x00' * (32 - len(pkt_body))
         item = item_struct._make(struct.unpack('<LL LH BB H 3s 3s LL', pkt_body[0:32]))
 
         psc = item.psc >> 4
