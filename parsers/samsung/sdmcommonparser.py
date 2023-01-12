@@ -101,16 +101,10 @@ class SdmCommonParser:
 
             return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x01: # UMTS NAS
-            if pkt_header.direction == 2:
-                if self.parent:
-                    arfcn = self.parent.umts_last_uarfcn_dl[0]
-                else:
-                    arfcn = 0
-            elif pkt_header.direction == 1:
-                if self.parent:
-                    arfcn = self.parent.umts_last_uarfcn_ul[0]
-                else:
-                    arfcn = 0
+            # direction: 1: UL, 2: DL
+            arfcn = 0
+            if pkt_header.direction == 1:
+                arfcn = arfcn | (1 << 14)
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
@@ -160,7 +154,7 @@ class SdmCommonParser:
             return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x21: # GSM RLC/MAC
             # direction: 1: UL, 2: DL
-            arfcn = 1
+            arfcn = 0
             if pkt_header.direction == 1:
                 arfcn = arfcn | (1 << 14)
 
