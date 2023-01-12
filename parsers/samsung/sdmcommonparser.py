@@ -61,7 +61,7 @@ class SdmCommonParser:
 
         header = namedtuple('SdmCommonSignalingHeader', 'type subtype direction length')
         pkt_header = header._make(struct.unpack('<BBBH', pkt[0:5]))
-        msg_content = pkt[9:]
+        msg_content = pkt[5:]
 
         if pkt_header.type == 0x30: # UMTS RRC
             chan_map_ul = {
@@ -119,45 +119,58 @@ class SdmCommonParser:
 
             return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x20: # GSM RR
-            # TODO: CCCH and SACCH are not distinguished by headers!
-            # Some values are RR message, some are RR_short_PD
-            if pkt_header.direction == 2: # RR DL w/ pseudo length
-                lapdm_address = b'\x01'
-                # Control field
-                lapdm_control = b'\x03'
-                # length field
-                if pkt_header.length > 63:
-                    if self.parent:
-                        self.parent.logger.log(logging.WARNING, 'message length longer than 63, got {}'.format(pkt_header.length))
-                    return None
-                lapdm_len = bytes([(pkt_header.length << 2) | 0x01])
+            # direction: 1: UL, 2: DL
+            arfcn = 0
+            if pkt_header.direction == 1:
+                arfcn = arfcn | (1 << 14)
 
-                #msg_content = lapdm_address + lapdm_control + lapdm_len + msg_content
-
+            if msg_content[0] == 0b0110:
+                # GSM RR, regardless of direction
                 gsmtap_hdr = util.create_gsmtap_header(
                     version = 2,
-                    payload_type = util.gsmtap_type.UM,
-                    sub_type = util.gsmtap_channel.CCCH) # Subtype (XXX: All CCCH)
-
-                return {'cp': [gsmtap_hdr + msg_content]}
-            elif pkt_header.direction == 1: # Only RR
-                gsmtap_hdr = util.create_gsmtap_header(
-                    version = 2,
+                    arfcn = arfcn,
                     payload_type = util.gsmtap_type.ABIS)
+            else:
+                # 3GPP TS 24.007, Section 11.3 Non standard L3 messages
+                if (msg_content[0] & 0b11 == 0b01) and (msg_content[1] == 0b0110):
+                    # RR with pseudo length
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 2,
+                        payload_type = util.gsmtap_type.UM,
+                        arfcn = arfcn,
+                        sub_type = util.gsmtap_channel.CCCH)
+                else:
+                    # 3GPP TS 44.018, Table 10.4.2:
+                    if (msg_content[0] & 0b10000000 == 0x0) and (((msg_content[0] & 0b01111100) >> 2) in (0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)):
+                        # RR with short PD
+                        # gsmtap_hdr = util.create_gsmtap_header(
+                        #     version = 2,
+                        #     payload_type = util.gsmtap_type.UM,
+                        #     arfcn = arfcn,
+                        #     sub_type = util.gsmtap_channel.SDCCH | 0x80)
+                        # msg_content = b'\x00\x00\x01\x03\xf1' + msg_content
+                        if self.parent:
+                            self.parent.logger.log(logging.WARNING, 'GSM RR with short PD, decode using "gsm_a_sacch": {}'.format(binascii.hexlify(msg_content).decode('utf-8')))
+                        return None
+                    else:
+                        if self.parent:
+                            self.parent.logger.log(logging.WARNING, 'Invalid GSM RR message')
+                        return None
 
-                return {'cp': [gsmtap_hdr + msg_content]}
+            return {'cp': [gsmtap_hdr + msg_content]}
         elif pkt_header.type == 0x21: # GSM RLC/MAC
+            # direction: 1: UL, 2: DL
             arfcn = 1
             if pkt_header.direction == 1:
                 arfcn = arfcn | (1 << 14)
+
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
                 payload_type = util.gsmtap_type.UM,
                 arfcn = arfcn,
                 sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
 
-            #return gsmtap_hdr + msg_content
-            return None
+            return {'cp': [gsmtap_hdr + msg_content]}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(pkt_header.type))

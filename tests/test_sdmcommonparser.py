@@ -56,5 +56,63 @@ class TestSdmCommonParser(unittest.TestCase):
         expected = {'stdout': 'Common Basic Info: RAT 32, MIMO 3, Frequency 954.30/909.30 MHz, Extra: 006f30c300ffffffffffffff'}
         self.assertDictEqual(result, expected)
 
+    def test_sdm_common_signaling(self):
+        # UMTS NAS
+        payload = binascii.unhexlify('01ff0225000512015abc10a19d3a136b8240e4b9795537c82010d2fea6dac1e87fff23883f052940131d')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('020402000000000000000000000000000512015abc10a19d3a136b8240e4b9795537c82010d2fea6dac1e87fff23883f052940131d')]}
+        self.assertDictEqual(result, expected)
+        payload = binascii.unhexlify('01ff0102000803')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('020402000000000000000000000000000803')]}
+        self.assertDictEqual(result, expected)
+
+        # GPRS MAC DL
+        payload = binascii.unhexlify('21ff02170047942b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('0204010000010000000000000b00000047942b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b')]}
+        self.assertDictEqual(result, expected)
+        # GPRS MAC UL
+        payload = binascii.unhexlify('21ff01170040212b771021ec118acacacacacacacacacacacacacaca')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('0204010040010000000000000b00000040212b771021ec118acacacacacacacacacacacacacaca')]}
+        self.assertDictEqual(result, expected)
+
+        # GSM RR
+        # RR short PD = SACCH
+        # payload = binascii.unhexlify('20ff0215001402580cc02a9441d0ec7931dba0c58c2b2b2b2b2b')
+        # packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        # result = self.parser.sdm_common_signaling(packet)
+        # expected = {'cp': [binascii.unhexlify('')]}
+        # self.assertDictEqual(result, expected)
+
+        # RR dl with pseudolength = CCCH
+        payload = binascii.unhexlify('20ff010300062900')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('02040200400000000000000000000000062900')]}
+        self.assertDictEqual(result, expected)
+        payload = binascii.unhexlify('20ff0217002d062200f5d97e6de1eae02d2b2b2b2b2b2b2b2b2b2b2b')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('020401000000000000000000020000002d062200f5d97e6de1eae02d2b2b2b2b2b2b2b2b2b2b2b')]}
+        self.assertDictEqual(result, expected)
+
+        # PD = RR
+        payload = binascii.unhexlify('20ff0217000615121200d55cc805d345e00000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('020402000000000000000000000000000615121200d55cc805d345e00000000000000000000000')]}
+        self.assertDictEqual(result, expected)
+        payload = binascii.unhexlify('20ff011300061603535986200b611401eca4477140049080')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_DATA_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('02040200400000000000000000000000061603535986200b611401eca4477140049080')]}
+        self.assertDictEqual(result, expected)
+
 if __name__ == '__main__':
     unittest.main()
