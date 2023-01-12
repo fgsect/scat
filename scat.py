@@ -22,7 +22,7 @@ if os.name != 'nt':
     faulthandler.register(signal.SIGUSR1)
 
 def sigint_handler(signal, frame):
-    global current_parser 
+    global current_parser
     current_parser.stop_diag()
     sys.exit(0)
 
