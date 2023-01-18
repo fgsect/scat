@@ -69,7 +69,6 @@ class SdmLteParser:
             return None
 
         cell_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
-        print(cell_info)
         extra = pkt[expected_len:]
 
         if self.parent:
@@ -86,8 +85,18 @@ class SdmLteParser:
             if len(extra) == ncell_len * cell_info.num_ncell:
                 for i in range(cell_info.num_ncell):
                     ncell = ncell_header._make(struct.unpack(ncell_header_format, extra[i*ncell_len:(i+1)*ncell_len]))
-                    stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
-                        ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                    if ncell.type == 0:
+                        stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                    elif ncell.type == 1:
+                        stdout += 'LTE PHY Cell Info: NCell {} (WCDMA): UARFCN {}, PSC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                    elif ncell.type == 3:
+                        stdout += 'LTE PHY Cell Info: NCell {} (GSM): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                    else:
+                        stdout += 'LTE PHY Cell Info: NCell {} (Type {}): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.type, ncell.earfcn,
+                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
             else:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
