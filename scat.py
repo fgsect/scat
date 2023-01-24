@@ -80,6 +80,7 @@ if __name__ == '__main__':
     if 'sec' in parser_dict.keys():
         sec_group = parser.add_argument_group('Samsung specific settings')
         sec_group.add_argument('-m', '--model', help='Device model for analyzing diagnostic messages', type=str)
+        sec_group.add_argument('--start-magic', help='Magic value provided for starting DM session. Default: 0x41414141', type=str)
 
     ip_group = parser.add_argument_group('GSMTAP IP settings')
     ip_group.add_argument('-P', '--port', help='Change UDP port to emit GSMTAP packets', type=int, default=4729)
@@ -151,7 +152,9 @@ if __name__ == '__main__':
             'events': args.events,
             'msgs': args.msgs})
     elif args.type == 'sec':
-        current_parser.set_parameter({'model': args.model})
+        current_parser.set_parameter({
+            'model': args.model,
+            'start-magic': args.start_magic})
 
     # Run process
     if args.serial or args.usb:

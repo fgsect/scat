@@ -51,6 +51,7 @@ class SamsungParser:
 
         self.name = 'samsung'
         self.shortname = 'sec'
+        self.start_magic = 0x41414141
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -83,9 +84,11 @@ class SamsungParser:
                     p.model = self.model
             elif p == 'log_level':
                 self.logger.setLevel(params[p])
+            elif p == 'start-magic':
+                self.start_magic = int(params[p], base=16)
 
     def init_diag_e333(self):
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, b'AAAA'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)), 0x1000, False)
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x90, b'\xdc\x05\xdc\x05'), 0x1000, False)
 
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x01'), 0x1000, False)
@@ -109,7 +112,7 @@ class SamsungParser:
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
 
     def init_diag_e303(self):
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, b'AAAA'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)), 0x1000, False)
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x90, b'\xc8\x00\xc8\x00'), 0x1000, False)
 
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x01'), 0x1000, False)
