@@ -81,6 +81,7 @@ if __name__ == '__main__':
         sec_group = parser.add_argument_group('Samsung specific settings')
         sec_group.add_argument('-m', '--model', help='Device model for analyzing diagnostic messages', type=str)
         sec_group.add_argument('--start-magic', help='Magic value provided for starting DM session. Default: 0x41414141', type=str)
+        sec_group.add_argument('--sdmraw', help='Store log as raw SDM file (Samsung only)')
 
     ip_group = parser.add_argument_group('GSMTAP IP settings')
     ip_group.add_argument('-P', '--port', help='Change UDP port to emit GSMTAP packets', type=int, default=4729)
@@ -166,6 +167,8 @@ if __name__ == '__main__':
 
         if not (args.qmdl == None) and args.type == 'qc':
             current_parser.run_diag(writers.RawWriter(args.qmdl))
+        if not (args.sdmraw == None) and args.type == 'sec':
+            current_parser.run_diag(writers.RawWriter(args.sdmraw))
         else:
             current_parser.run_diag()
 
