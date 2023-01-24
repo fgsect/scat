@@ -16,8 +16,8 @@ class SdmHspaParser:
             self.model = self.parent.model
 
         self.process = {
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_WCDMA_RRC_STATUS: lambda x: self.sdm_hspa_wcdma_rrc_status(x),
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_WCDMA_SERVING_CELL: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
+            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_RRC_STATUS: lambda x: self.sdm_hspa_wcdma_rrc_status(x),
+            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
         }
 
     def sdm_hspa_wcdma_rrc_status(self, pkt):

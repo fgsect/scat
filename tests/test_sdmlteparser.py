@@ -28,12 +28,12 @@ class TestSdmLteParser(unittest.TestCase):
 
         self.parser.model = 'e5123'
         payload = binascii.unhexlify('ceaf000000000000640000000b00000050e21405d8270000e803000000')
-        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_CELL_INFO, payload, timestamp=0x0)
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_lte_phy_cell_info(packet)
         expected = 'LTE PHY Cell Info: EARFCN 100, PCI 11, PLMN 45006, RSRP: -102.00, RSRQ: -10.00'
         self.assertEqual(result['stdout'], expected)
         payload = binascii.unhexlify('ceaf000000000000640000000b00000018e37805d8270000e80300000102ea0b00000b0000007017c4220000840300000000')
-        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_CELL_INFO, payload, timestamp=0x0)
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_lte_phy_cell_info(packet)
         expected = 'LTE PHY Cell Info: EARFCN 100, PCI 11, PLMN 45006, RSRP: -102.00, RSRQ: -10.00\nLTE PHY Cell Info: NCell 0 (Type 2): ARFCN 3050, PCI 11, RSRP: -89.00, RSRQ: -9.00'
         self.assertEqual(result['stdout'], expected)

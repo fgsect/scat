@@ -52,6 +52,8 @@ class SamsungParser:
         self.name = 'samsung'
         self.shortname = 'sec'
         self.start_magic = 0x41414141
+        self.tcpip_mtu_rx = 1500
+        self.tcpip_mtu_tx = 1500
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -87,61 +89,31 @@ class SamsungParser:
             elif p == 'start-magic':
                 self.start_magic = int(params[p], base=16)
 
-    def init_diag_e333(self):
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x90, b'\xdc\x05\xdc\x05'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x02'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x02'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x72, b''), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CHANGE_UPDATE_PERIOD_REQUEST, b'\x05'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, b'\x04\x00\x01\x01\x01\x02\x01\x03\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, b'\x4a\x00\x01\x01\x01\x02\x01\x04\x01\x05\x01\x06\x01\x07\x01\x10\x01\x11\x01\x12\x01\x13\x01\x14\x01\x15\x01\x16\x00\x17\x00\x18\x01\x19\x01\x1a\x00\x1b\x00\x1c\x00\x1d\x00\x1e\x00\x1f\x00\x30\x01\x31\x01\x32\x01\x33\x01\x34\x01\x35\x01\x36\x01\x37\x01\x38\x01\x39\x01\x3a\x01\x3b\x00\x3c\x00\x3d\x00\x3e\x00\x3f\x00\x40\x01\x41\x00\x42\x01\x43\x01\x44\x01\x45\x01\x46\x01\x50\x01\x51\x01\x52\x01\x53\x01\x54\x01\x55\x01\x58\x01\x59\x01\x5a\x01\x5b\x01\x5c\x01\x5d\x01\x5e\x01\x5f\x01\x60\x01\x61\x01\x62\x01\x63\x01\x70\x01\x71\x01\x72\x01\x73\x01\x74\x01\x75\x01\x80\x01\x81\x01\x82\x01\x83\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, b'\x0f\x00\x01\x01\x01\x03\x01\x04\x01\x05\x01\x06\x01\x07\x01\x08\x01\x09\x01\x0a\x01\x0b\x01\x0c\x01\x0d\x01\x10\x01\x11\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, b'\x24\x00\x01\x01\x01\x02\x01\x03\x01\x04\x00\x05\x01\x10\x01\x11\x01\x12\x01\x13\x01\x14\x01\x16\x01\x17\x01\x18\x01\x19\x01\x1a\x01\x1b\x01\x1c\x01\x1d\x01\x20\x01\x21\x01\x22\x01\x28\x01\x29\x01\x2a\x01\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x3a\x00'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x90, b'\xdc\x05\xdc\x05'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-
-    def init_diag_e303(self):
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x90, b'\xc8\x00\xc8\x00'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x02'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x52, b'\x02'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x72, b''), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CHANGE_UPDATE_PERIOD_REQUEST, b'\x05'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, b'\x05\x00\x01\x01\x01\x02\x01\x03\x01\x04\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, b'\x52\x00\x01\x01\x01\x02\x01\x04\x01\x05\x01\x06\x01\x07\x01\x08\x01\x09\x01\x10\x01\x11\x01\x12\x01\x13\x01\x14\x01\x15\x01\x16\x00\x17\x00\x18\x01\x19\x01\x1a\x00\x1b\x00\x1c\x00\x1d\x00\x1e\x00\x1f\x00\x30\x01\x31\x01\x32\x01\x33\x01\x34\x01\x35\x01\x36\x01\x37\x01\x38\x01\x39\x01\x3a\x01\x3b\x00\x3c\x00\x3d\x00\x3e\x00\x3f\x00\x40\x01\x42\x01\x43\x01\x44\x01\x45\x01\x46\x01\x47\x01\x48\x01\x49\x01\x4a\x01\x4b\x01\x4c\x01\x50\x01\x51\x01\x52\x01\x53\x01\x55\x01\x56\x01\x57\x01\x58\x01\x59\x01\x5a\x01\x5b\x01\x5c\x01\x5d\x01\x5e\x01\x5f\x01\x60\x01\x61\x01\x62\x01\x63\x01\x64\x01\x65\x01\x66\x01\x67\x01\x70\x01\x71\x01\x72\x01\x73\x01\x74\x01\x75\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, b'\x0f\x00\x01\x01\x01\x03\x01\x04\x01\x05\x01\x06\x01\x07\x01\x08\x01\x09\x01\x0a\x01\x0b\x01\x0c\x01\x0d\x01\x10\x01\x11\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, b'\x30\x00\x01\x01\x01\x02\x01\x03\x01\x04\x00\x05\x01\x0d\x01\x0e\x01\x0f\x01\x10\x01\x11\x01\x12\x01\x13\x01\x14\x01\x15\x01\x16\x01\x17\x01\x18\x01\x19\x01\x1a\x01\x1b\x01\x1c\x01\x1d\x01\x20\x01\x21\x01\x22\x01\x23\x01\x28\x01\x29\x01\x2a\x01\x30\x00\x31\x00\x32\x00\x33\x00\x34\x00\x35\x00\x36\x00\x37\x00\x38\x00\x39\x00\x3a\x00\x3b\x01\x3c\x01\x50\x01\x51\x01\x52\x01\x60\x01\x61\x01'), 0x1000, False)
-
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, 0x90, b'\xc8\x00\xc8\x00'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-
     def init_diag(self):
-        self.logger.log(logging.INFO, 'Initialize diag')
-        if self.model == 'e333' or self.model == 'e5123':
-            self.init_diag_e333()
-        elif self.model == 'e303' or self.model == 'cmc221s':
-            self.init_diag_e303()
-        else:
-            assert False, "Invalid model."
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CHANGE_UPDATE_PERIOD_REQUEST, b'\x05'), 0x1000, False)
+
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, scat_sdm_common_selection()), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, scat_sdm_lte_selection()), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, scat_sdm_edge_selection()), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, scat_sdm_hspa_selection()), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)), 0x1000, False)
+
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
+
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'), 0x1000, False)
+
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_STOP_REQUEST, b''), 0x1000, False)
+
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)), 0x1000, False)
+
 
     def prepare_diag(self):
         pass

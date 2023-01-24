@@ -18,8 +18,8 @@ class SdmCommonParser:
 
         self.process = {
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | 0x02: lambda x: self.sdm_common_0x02(x),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_INFO: lambda x: self.sdm_common_0x02(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
             (sdm_command_group.CMD_COMMON_DATA << 8) | 0x04: lambda x: self.sdm_common_0x04(x),
         }
 

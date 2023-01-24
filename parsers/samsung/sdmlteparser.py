@@ -18,7 +18,7 @@ class SdmLteParser:
 
         self.process = {
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_CELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
 
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_L2_RNTI_INFO: lambda x: self.sdm_lte_l2_rnti_info(x),
