@@ -88,10 +88,10 @@ class DiagWcdmaLogParser:
         for i in range(num_gsm_cells):
             if pkt_version == 0:
                 cell_2g = cell_search_v0_2g._make(struct.unpack('<HHbh', pkt_body[pos:pos+7]))
-                pos += 8
+                pos += 7
             elif pkt_version == 1:
                 cell_2g = cell_search_v1_2g._make(struct.unpack('<HHbhb', pkt_body[pos:pos+8]))
-                pos += 11
+                pos += 8
             elif pkt_version == 2:
                 cell_2g = cell_search_v2_2g._make(struct.unpack('<HHbhbhhb', pkt_body[pos:pos+13]))
                 pos += 13
