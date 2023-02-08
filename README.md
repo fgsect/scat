@@ -69,7 +69,7 @@ Available model types are following:
 * `-m e333`: Exynos modem 333.
 * Newer Exynos modems might work with `-m e333` option, YMMV.
 
-`-u` specifies that we are accessing the diagnostic device via USB. 
+`-u` specifies that we are accessing the diagnostic device via USB.
 
 Although there are small heuristic to determine the connected device, it is
 recommended to explicitly specify the USB device address and interface number of
@@ -104,7 +104,7 @@ sudo route add -net 127.0.0.0 netmask 255.255.255.0 gw 127.0.0.1
 ```
 
 It is possible to automatically determine the USB bus address by using other
-command's outputs.  Following example is for Samsung Galaxy S5 Mini: 
+command's outputs.  Following example is for Samsung Galaxy S5 Mini:
 
 ```
     val=$(lsusb | awk '/Samsung/ {print substr($4, 1, length($4)-1)}')
@@ -141,3 +141,5 @@ software to cite one of these references listed below:
   Cellular Walled Gardens - A Method for Closed Network Diagnosis -**. IEEE
   Transactions on Mobile Computing, February 2018.
 
+Thanks to Christian Oschwald and Willem Hengeveld from GSMK for their support
+on Samsung SDM parser.
