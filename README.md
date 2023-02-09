@@ -67,7 +67,9 @@ Available model types are following:
 * `-m cmc221s`: CMC221S, used in very early Samsung LTE modem/smartphone.
 * `-m e303`: Exynos modem 303.
 * `-m e333`: Exynos modem 333.
-* Newer Exynos modems might work with `-m e333` option, YMMV.
+* `-m e5123`: Exynos modem 5123.
+* For modems not listed in here, try `-m e333` or `-m e5123` based on the
+  relative age of the device.
 
 `-u` specifies that we are accessing the diagnostic device via USB.
 
@@ -76,6 +78,9 @@ recommended to explicitly specify the USB device address and interface number of
 diagnostics node. `-a 001:010` specifies the address, which follows the same
 syntax visible in `lsusb` command. `-i 2` specifies the interface number of the
 diagnostic node, which is again device specific.
+
+Newer Samsung devices require a correct magic number to be supplied to start
+the diagnostic session. This could be specified by `--start-magic` option.
 
 Accessing the baseband diagnostics via serial port:
 
