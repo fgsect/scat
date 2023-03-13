@@ -8,6 +8,7 @@ import datetime
 from inspect import currentframe, getframeinfo
 from pathlib import Path
 import os, sys
+import binascii
 
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser
@@ -418,9 +419,13 @@ class SamsungParser:
         if cmd_sig in self.process.keys():
             parse_result = self.process[cmd_sig](pkt)
         elif cmd_sig in self.no_process.keys():
-            print("Not handling group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, "Not handling group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
             parse_result = None
         else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, "Skipping group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
+                self.parent.logger.log(logging.DEBUG, util.xxd(binascii.hexlify(pkt[15:-1]).decode()))
             parse_result = None
 
         if type(parse_result) == dict:
