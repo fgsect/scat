@@ -159,6 +159,7 @@ class sdm_edge_data(IntEnum):
     EDGE_LLC_THROUGHPUT_INFO      = 0x0f
     EDGE_QOS_INFO                 = 0x10
     EDGE_MM_GMM_INFO              = 0x11
+    EDGE_RLC_STATS                = 0x12
 
 @unique
 class sdm_hspa_data(IntEnum):
