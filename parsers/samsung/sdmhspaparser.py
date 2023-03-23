@@ -20,6 +20,9 @@ class SdmHspaParser:
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
         }
 
+    def set_model(self, model):
+        self.model = model
+
     def sdm_hspa_wcdma_rrc_status(self, pkt):
         # uint8: channel
         # 0x00 - DISCONNECTED, 0x01: CELL_DCH, 0x02: CELL_FACH, 0x03: CELL_PCH, 0x04: URA_PCH

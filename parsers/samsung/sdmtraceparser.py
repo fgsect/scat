@@ -17,3 +17,6 @@ class SdmTraceParser:
         self.process = {
             # 0x0103: lambda x, y: self.process_common_signaling(x, y)
         }
+
+    def set_model(self, model):
+        self.model = model

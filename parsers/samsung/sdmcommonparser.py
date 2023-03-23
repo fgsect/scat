@@ -23,6 +23,9 @@ class SdmCommonParser:
             (sdm_command_group.CMD_COMMON_DATA << 8) | 0x04: lambda x: self.sdm_common_0x04(x),
         }
 
+    def set_model(self, model):
+        self.model = model
+
     def sdm_common_basic_info(self, pkt):
         pkt = pkt[15:-1]
         if len(pkt) < 11:

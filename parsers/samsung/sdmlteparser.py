@@ -40,6 +40,9 @@ class SdmLteParser:
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
         }
 
+    def set_model(self, model):
+        self.model = model
+
     def sdm_lte_phy_status(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
@@ -59,7 +62,7 @@ class SdmLteParser:
         header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2 reserved1 reserved2 rsrp rsrq num_ncell')
         ncell_header = namedtuple('SdmLtePhyCellInfoNCellMeas', 'type earfcn pci zero1 reserved1 rsrp rsrq reserved2')
 
-        if self.model == 'e5123':
+        if self.model == 'e5123' or self.model == 'e5300':
             struct_format = '<IIIHHHHLLB'
         else:
             struct_format = '<IIHHHHHLLB'
@@ -77,7 +80,7 @@ class SdmLteParser:
         stdout = 'LTE PHY Cell Info: EARFCN {}, PCI {}, PLMN {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(cell_info.arfcn, cell_info.pci, cell_info.plmn, cell_info.rsrp / -100.0, cell_info.rsrq / -100.0)
 
         if cell_info.num_ncell > 0:
-            if self.model == 'e5123':
+            if self.model == 'e5123' or self.model == 'e5300':
                 ncell_header_format = '<BLHHHLLH'
             else:
                 ncell_header_format = '<BHHHHLLH'
@@ -136,7 +139,7 @@ class SdmLteParser:
             "tac", '>H',  2 bytes, pos:20
         '''
         pkt = pkt[15:-1]
-        if self.model == 'e5123':
+        if self.model == 'e5123' or self.model == 'e5300':
             struct_format = '<IIIIHH'
         else:
             struct_format = '<IIIIH'
@@ -147,7 +150,7 @@ class SdmLteParser:
 
         header = namedtuple('SdmLteRrcServingCell', 'cid zero1 zero2 plmn tac')
         header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid zero1 zero2 plmn tac band_indicator')
-        if self.model == 'e5123':
+        if self.model == 'e5123' or self.model == 'e5300':
             cell_info = header_e5123._make(struct.unpack(struct_format, pkt[0:expected_len]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}, Band {}'.format(tac_real, cell_info.cid, cell_info.plmn, cell_info.band_indicator)

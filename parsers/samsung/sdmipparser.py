@@ -21,6 +21,9 @@ class SdmIpParser:
             (sdm_command_group.CMD_IP_DATA << 8) | 0x10: lambda x: self.sdm_0x0710(x),
         }
 
+    def set_model(self, model):
+        self.model = model
+
     def sdm_ip_data(self, pkt):
         # Unknown: 0x0800, 0x150D
         pkt = pkt[15:-1]

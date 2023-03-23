@@ -83,7 +83,7 @@ class SamsungParser:
                 if self.model == 'e5123':
                     SamsungParser.pkg_header_len = 11
                 for p in self.sdm_parsers:
-                    p.model = self.model
+                    p.set_model(self.model)
             elif p == 'log_level':
                 self.logger.setLevel(params[p])
             elif p == 'start-magic':

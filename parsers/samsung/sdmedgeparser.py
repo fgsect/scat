@@ -37,6 +37,9 @@ class SdmEdgeParser:
             (sdm_command_group.CMD_EDGE_DATA << 8) | 0x11: lambda x: self.sdm_edge_dummy(x, 0x11),
         }
 
+    def set_model(self, model):
+        self.model = model
+
     def sdm_edge_dummy(self, pkt, num):
         pkt = pkt[15:-1]
         print("GSM {:#x}: {}".format(num, binascii.hexlify(pkt).decode('utf-8')))
