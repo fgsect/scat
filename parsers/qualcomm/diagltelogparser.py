@@ -636,7 +636,7 @@ class DiagLteLogParser:
 
             if subpkt_mac.id == 0x08: # UL Transport Block
                 n_samples = subpkt_body[0]
-                subpkt_mac_ul_tb_struct = namedtuple('QcDiagLteMacSubpktUlTransportBlock', 'sfn_subfn rnti_type harq_id grant rlc_pdus bsr_event bsr_trig header_len')
+                subpkt_mac_ul_tb_struct = namedtuple('QcDiagLteMacSubpktUlTransportBlock', 'sfn_subfn rnti_type harq_id grant rlc_pdus padding bsr_event bsr_trig header_len')
                 subpkt_mac_ul_tb_struct_v2 = namedtuple('QcDiagLteMacSubpktUlTransportBlockV4', 'subid cellid harq_id rnti_type sfn_subfn grant rlc_pdus padding bsr_event bsr_trig header_len')
                 subpkt_mac_ul_tb = None
                 mac_hdr = b''
@@ -644,7 +644,7 @@ class DiagLteLogParser:
                 subpkt_pos = 1
                 for j in range(n_samples):
                     if subpkt_mac.version == 0x01:
-                        subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct._make(struct.unpack('<BBHHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+12]))
+                        subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct._make(struct.unpack('<HBBHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+12]))
                         mac_hdr = subpkt_body[subpkt_pos+12:subpkt_pos+12+subpkt_mac_ul_tb.header_len]
                         subpkt_pos += (12 + subpkt_mac_ul_tb.header_len)
                     elif subpkt_mac.version == 0x02:
