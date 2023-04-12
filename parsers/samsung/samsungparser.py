@@ -266,7 +266,7 @@ class SamsungParser:
                         print('Skipping packet as shorter than expected')
                         continue
                     logger_header = logger_header_struct._make(struct.unpack('<HLHHBBBL', pkt[0:17]))
-                    known_magic = [0x017f, 0x0180, 0x0185, 0x0186, 0x0187]
+                    known_magic = [0x0174, 0x017f, 0x0180, 0x0185, 0x0186, 0x0187]
                     if not (logger_header.magic1 == 0x7f39 and logger_header.magic2 in known_magic):
                         print('Skipping packet as magic does not match')
                         continue
