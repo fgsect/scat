@@ -5,13 +5,13 @@ import util
 import struct
 import logging
 from .sdmcmd import *
+from .sdmcontrolparser import SdmControlParser
 from .sdmcommonparser import SdmCommonParser
 from .sdmlteparser import SdmLteParser
 from .sdmedgeparser import SdmEdgeParser
 from .sdmhspaparser import SdmHspaParser
 from .sdmtraceparser import SdmTraceParser
 from .sdmipparser import SdmIpParser
-
 
 def content(pkt):
     return pkt[11:-1]
@@ -57,7 +57,7 @@ class SamsungParser:
 
         self.logger = logging.getLogger('scat.samsungparser')
 
-        self.sdm_parsers = [SdmCommonParser(self),
+        self.sdm_parsers = [SdmControlParser(self), SdmCommonParser(self),
             SdmLteParser(self), SdmEdgeParser(self),
             SdmHspaParser(self), SdmTraceParser(self), SdmIpParser(self)]
         self.process = { }
