@@ -15,9 +15,18 @@ class SdmControlParser:
         else:
             self.model = self.parent.model
 
+        self.trace_group = {}
+
         self.process = {
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CONTROL_START_RESPONSE: lambda x: self.sdm_control_start_response(x),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | 0x57: lambda x: self.sdm_dm_trace_table_get_response(x),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CHANGE_UPDATE_PERIOD_RESPONSE: lambda x: self.sdm_control_change_update_period_response(x),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.COMMON_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x10),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.LTE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x20),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.EDGE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x30),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.HSPA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x40),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CDMA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x44),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
         }
 
     def set_model(self, model):
@@ -49,22 +58,71 @@ class SdmControlParser:
         )
         return {'stdout': stdout}
 
-    def sdm_dm_trace_table_get_response(self, pkt):
-        pkt = pkt[11:-1]
+    def sdm_control_change_update_period_response(self, pkt):
+        pkt = pkt[15:-1]
+        if len(pkt) < 2:
+            return None
+        item_struct = namedtuple('SdmControlChangeUpdatePeriodResponse', 'val1 val2')
+        item = item_struct._make(struct.unpack('<BB', pkt[0:2]))
 
-        item_struct = namedtuple('SdmDmTraceTableGetResponse', 'timestamp trace_item_id')
-        item = item_struct._make(struct.unpack('<LL', pkt[0:8]))
-        content = pkt[8:]
-        trace_items = {'item_id': item.trace_item_id, 'string': []}
+        stdout = 'Change Update Period Response: {} {}'.format(item.val1, item.val2)
+        return {'stdout': stdout}
+
+    def sdm_control_item_select_response(self, pkt, group):
+        pkt = pkt[15:-1]
+        group_name_map = {0x10: 'Common', 0x20: 'LTE', 0x30: 'EDGE', 0x40: 'HSPA', 0x44: 'CDMA'}
+        group_text = group_name_map[group] if group in group_name_map else 'Unknown'
+
+        stdout = 'Item Select Response for {}{}:\n'.format(group_text, '' if len(pkt) == (pkt[0]+1) else ' (length mismatch)')
+
+        index = 0
+        for i in pkt[1:]:
+            item_name = ''
+            try:
+                if group == 0x10:
+                    item_name = '{:#04x} {}'.format(index, sdm_common_data(index).name)
+                elif group == 0x20:
+                    item_name = '{:#04x} {}'.format(index, sdm_lte_data(index).name)
+                elif group == 0x30:
+                    item_name = '{:#04x} {}'.format(index, sdm_edge_data(index).name)
+                elif group == 0x40:
+                    item_name = '{:#04x} {}'.format(index, sdm_hspa_data(index).name)
+            except ValueError:
+                item_name = '{:#04x} ITEM_{:02x}'.format(index, index)
+            if i == 1:
+                stdout += ' * {}: set\n'.format(item_name)
+            index += 1
+
+        return {'stdout': stdout.rstrip()}
+
+    def sdm_dm_trace_table_get_response(self, pkt):
+        pkt = pkt[15:-1]
+
+        item_struct = namedtuple('SdmDmTraceTableGetResponse', 'is_end two trace_group_id')
+        item = item_struct._make(struct.unpack('<BBH', pkt[0:4]))
+        content = pkt[4:]
+        trace_items_list = []
+        stdout = ''
 
         pos = 0
         while pos < len(content) and content[pos] != 0x00:
             strlen = content[pos]
             itemstr = content[pos+1:pos+1+strlen]
-            trace_items['string'].append(itemstr.decode('utf-8'))
+            trace_items_list.append(itemstr.decode('utf-8'))
             pos += (1+strlen)
+        self.trace_group[item.trace_group_id] = trace_items_list
 
-        stdout = "SDM Trace Table Get Response: ID {:#08x}, Items: {}".format(trace_items['item_id'],
-            ', '.join(trace_items['string']))
+        if item.is_end == 1:
+            stdout += 'SDM Trace Table:\n'
+            for x in self.trace_group:
+                stdout += 'Group ID {:#06x}, Items: {}\n'.format(x, ', '.join(self.trace_group[x]))
 
+        return {'stdout': stdout}
+
+    def sdm_control_tcpip_dump_response(self, pkt):
+        pkt = pkt[15:-1]
+        item_struct = namedtuple('SdmControlTcpipDumpResponse', 'dl_size ul_size')
+        item = item_struct._make(struct.unpack('<HH', pkt[0:4]))
+
+        stdout = 'TCP/IP Dump Response: DL max {} bytes, UL max {} bytes'.format(item.dl_size, item.ul_size)
         return {'stdout': stdout}
