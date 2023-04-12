@@ -16,6 +16,8 @@ class SdmLteParser:
         else:
             self.model = self.parent.model
 
+        self.multi_message_chunk = {}
+
         self.process = {
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
@@ -180,20 +182,7 @@ class SdmLteParser:
         stdout = 'LTE RRC State: {}'.format(rrc_state_map[rrc_state.state] if rrc_state.state in rrc_state_map else 'UNKNOWN')
         return {'stdout': stdout}
 
-    def sdm_lte_rrc_ota_packet(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
-        pkt = pkt[15:-1]
-
-        if len(pkt) < 4:
-            if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (4)'.format(len(pkt)))
-            return None
-
-        # direction - 0: DL, 1: UL
-        header = namedtuple('SdmLteRrcOtaPacket', 'channel direction length')
-        rrc_header = header._make(struct.unpack('<BBH', pkt[0:4]))
-        rrc_msg = pkt[4:]
-
+    def _parse_sdm_lte_rrc_message(self, sdm_pkt_hdr, channel, direction, length, msg):
         rrc_subtype_dl = {
             0: util.gsmtap_lte_rrc_types.DL_CCCH,
             1: util.gsmtap_lte_rrc_types.PCCH,
@@ -208,16 +197,16 @@ class SdmLteParser:
 
         subtype = 0
         try:
-            if rrc_header.direction == 0:
-                subtype = rrc_subtype_dl[rrc_header.channel]
+            if direction == 0:
+                subtype = rrc_subtype_dl[channel]
             else:
-                subtype = rrc_subtype_ul[rrc_header.channel]
+                subtype = rrc_subtype_ul[channel]
         except KeyError:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, "Unknown LTE RRC channel type 0x{:x}".format(rrc_header.channel))
-                self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
+                self.parent.logger.log(logging.WARNING, "Unknown LTE RRC channel type 0x{:x}".format(channel))
+                self.parent.logger.log(logging.DEBUG, util.xxd(msg))
 
-        if rrc_header.direction == 0:
+        if direction == 0:
             if self.parent:
                 arfcn = self.parent.lte_last_earfcn_dl[sdm_pkt_hdr.radio_id]
             else:
@@ -233,7 +222,24 @@ class SdmLteParser:
             payload_type = util.gsmtap_type.LTE_RRC,
             arfcn = arfcn,
             sub_type = subtype)
-        return {'cp': [gsmtap_hdr + rrc_msg]}
+        return {'cp': [gsmtap_hdr + msg]}
+
+
+    def sdm_lte_rrc_ota_packet(self, pkt):
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+
+        if len(pkt) < 4:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (4)'.format(len(pkt)))
+            return None
+
+        # direction - 0: DL, 1: UL
+        header = namedtuple('SdmLteRrcOtaPacket', 'channel direction length')
+        rrc_header = header._make(struct.unpack('<BBH', pkt[0:4]))
+        rrc_msg = pkt[4:]
+
+        return self._parse_sdm_lte_rrc_message(sdm_pkt_hdr, rrc_header.channel, rrc_header.direction, rrc_header.length, rrc_msg)
 
     def sdm_lte_rrc_timer(self, pkt):
         # [02, 04, 10] 00000000
@@ -242,9 +248,42 @@ class SdmLteParser:
         return {'stdout': 'LTE RRC Timer: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
 
     def sdm_lte_rrc_asn_version(self, pkt):
-        # Always 01? 1b
+        # Always 01? 1b - only for old revision
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE RRC ASN Version: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        if len(pkt) < 5:
+            return {'stdout': 'LTE RRC ASN Version: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+        # num_chunk is base 1, should be <= total_chunks
+        header = namedtuple('SdmLteRrcMultipleMessage', 'total_chunks num_chunk msgid channel direction length')
+        rrc_header = header._make(struct.unpack('<BBBBBH', pkt[0:7]))
+        rrc_msg = pkt[7:]
+        print(rrc_header)
+
+        if rrc_header.msgid not in self.multi_message_chunk:
+            # New msgid
+            self.multi_message_chunk[rrc_header.msgid] = {'total_chunks': rrc_header.total_chunks}
+
+        if rrc_header.num_chunk in self.multi_message_chunk[rrc_header.msgid]:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, "Message chunk {} already exists for message id {}".format(
+                    rrc_header.num_chunk, rrc_header.msgid))
+        self.multi_message_chunk[rrc_header.msgid][rrc_header.num_chunk] = rrc_msg
+
+        is_not_full = False
+        for i in range(1, rrc_header.total_chunks+1):
+            if not i in self.multi_message_chunk[rrc_header.msgid]:
+                is_not_full = True
+
+        if not is_not_full:
+            newpkt_body = b''
+            for i in range(1, rrc_header.total_chunks+1):
+                newpkt_body += self.multi_message_chunk[rrc_header.msgid][i]
+
+            del self.multi_message_chunk[rrc_header.msgid]
+            return self._parse_sdm_lte_rrc_message(sdm_pkt_hdr, rrc_header.channel, rrc_header.direction,
+                len(newpkt_body), newpkt_body)
+
 
     def sdm_lte_0x55(self, pkt):
         pkt = pkt[15:-1]
