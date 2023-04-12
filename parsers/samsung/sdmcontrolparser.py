@@ -87,6 +87,8 @@ class SdmControlParser:
                     item_name = '{:#04x} {}'.format(index, sdm_edge_data(index).name)
                 elif group == 0x40:
                     item_name = '{:#04x} {}'.format(index, sdm_hspa_data(index).name)
+                elif group == 0x44:
+                    item_name = '{:#04x} ITEM_{:02x}'.format(index, index)
             except ValueError:
                 item_name = '{:#04x} ITEM_{:02x}'.format(index, index)
             if i == 1:
