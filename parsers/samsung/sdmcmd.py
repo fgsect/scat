@@ -200,6 +200,235 @@ class sdm_hspa_data(IntEnum):
     HSPA_UL2_EUL_MAC_STAT     = 0x39
     HSPA_MM_GMM_INFO          = 0x3a
 
+def create_sdm_item_selection(item_count, *items):
+    ret = b''
+    if item_count == 0xff:
+        # Select all
+        return b'\xff'
+    elif item_count == 0x00:
+        # Deselect all
+        return b'\x00'
+
+    ret += struct.pack('<B', item_count)
+    for item in items:
+        ret += struct.pack('<BB', item[0], 1 if item[1] else 0)
+
+    return ret
+
+def scat_sdm_common_selection():
+    return create_sdm_item_selection(0xff)
+    # return create_sdm_item_selection(4,
+    #     (sdm_common_data.COMMON_BASIC_INFO, True),
+    #     (0x01, True),
+    #     (sdm_common_data.COMMON_DATA_INFO, True),
+    #     (sdm_common_data.COMMON_SIGNALING_INFO, True)
+    #     (0x04, True),
+    # )
+
+def scat_sdm_lte_selection():
+    return create_sdm_item_selection(0x14,
+        (sdm_lte_data.LTE_PHY_STATUS, True),
+        (sdm_lte_data.LTE_PHY_CELL_SEARCH_MEAS, True),
+        (sdm_lte_data.LTE_PHY_NCELL_INFO, True),
+        (sdm_lte_data.LTE_L2_RACH_INFO, True),
+        (sdm_lte_data.LTE_L2_RNTI_INFO, True),
+        (sdm_lte_data.LTE_RRC_SERVING_CELL, True),
+        (sdm_lte_data.LTE_RRC_STATUS, True),
+        (sdm_lte_data.LTE_RRC_OTA_PACKET, True),
+        (sdm_lte_data.LTE_RRC_TIMER, True),
+        (sdm_lte_data.LTE_RRC_ASN_VERSION, True),
+        (sdm_lte_data.LTE_RRC_RACH_MSG, True),
+        (0x57, True),
+        (sdm_lte_data.LTE_NAS_SIM_DATA, True),
+        (sdm_lte_data.LTE_NAS_STATUS_VARIABLE, True),
+        (sdm_lte_data.LTE_NAS_EMM_MESSAGE, True),
+        (sdm_lte_data.LTE_NAS_PLMN_SELECTION, True),
+        (sdm_lte_data.LTE_NAS_SECURITY, True),
+        (sdm_lte_data.LTE_NAS_PDP, True),
+        (sdm_lte_data.LTE_NAS_IP, True),
+        (sdm_lte_data.LTE_NAS_ESM_MESSAGE, True),
+    )
+
+def scat_sdm_lte_selection_ext():
+    return create_sdm_item_selection(0x58,
+        (sdm_lte_data.LTE_PHY_STATUS, True),
+        (sdm_lte_data.LTE_PHY_CELL_SEARCH_MEAS, True),
+        (sdm_lte_data.LTE_PHY_NCELL_INFO, True),
+        (sdm_lte_data.LTE_PHY_SYSTEM_INFO, True),
+        (sdm_lte_data.LTE_PHY_CHANNEL_QUALITY_INFO, True),
+        (sdm_lte_data.LTE_PHY_PARAMETER, True),
+        (sdm_lte_data.LTE_PHY_PHICH_INFO, True),
+        (0x08, True),
+        (0x09, True),
+
+        (sdm_lte_data.LTE_L1_RF, True),
+        (sdm_lte_data.LTE_L1_SYNC, True),
+        (sdm_lte_data.LTE_L1_DOWNLINK, True),
+        (sdm_lte_data.LTE_L1_UPLINK, True),
+        (0x14, True),
+        (0x15, True),
+        (0x16, False),
+        (0x17, False),
+        (sdm_lte_data.LTE_L1_MEAS_CONFIG, True),
+        (0x19, True),
+        (0x1a, False),
+        (0x1b, False),
+        (0x1c, False),
+        (0x1d, False),
+        (0x1e, False),
+        (0x1f, False),
+
+        (sdm_lte_data.LTE_L2_UL_SPECIFIC_PARAM, True),
+        (sdm_lte_data.LTE_L2_DL_SCH_CONFIG, True),
+        (sdm_lte_data.LTE_L2_UL_SCH_CONFIG, True),
+        (sdm_lte_data.LTE_L2_TIME_ALIGNMENT_TIMER, True),
+        (sdm_lte_data.LTE_L2_PHR_CONFIG, True),
+        (sdm_lte_data.LTE_L2_PREAMBLE_INFO, True),
+        (sdm_lte_data.LTE_L2_POWER_RAMPING_STEP, True),
+        (sdm_lte_data.LTE_L2_RA_SUPERVISION_INFO, True),
+        (sdm_lte_data.LTE_L2_MAX_HARQ_MSG3_TX, True),
+        (sdm_lte_data.LTE_L2_RACH_INFO, True),
+        (sdm_lte_data.LTE_L2_RNTI_INFO, True),
+        (0x3b, False),
+        (sdm_lte_data.LTE_L2_UL_SYNC_STAT_INFO, False),
+        (0x3d, False),
+        (0x3e, False),
+        (0x3f, False),
+        (sdm_lte_data.LTE_L2_RB_INFO, True),
+        (sdm_lte_data.LTE_L2_RLC_STATUS_INFO, False),
+        (sdm_lte_data.LTE_L2_PDCP_UL_INFO, True),
+        (sdm_lte_data.LTE_L2_PDCP_DL_INFO, True),
+        (0x44, True),
+        (0x45, True),
+        (0x46, True),
+        (0x47, True),
+        (0x48, True),
+        (0x49, True),
+        (sdm_lte_data.LTE_L2_BSR_STATISTICS, True),
+        (sdm_lte_data.LTE_L2_RLC_STATISTICS, True),
+        (sdm_lte_data.LTE_L2_PDCP_STATISTICS, True),
+
+        (sdm_lte_data.LTE_RRC_SERVING_CELL, True),
+        (sdm_lte_data.LTE_RRC_STATUS, True),
+        (sdm_lte_data.LTE_RRC_OTA_PACKET, True),
+        (sdm_lte_data.LTE_RRC_TIMER, True),
+        (sdm_lte_data.LTE_RRC_ASN_VERSION, True),
+        (sdm_lte_data.LTE_RRC_RACH_MSG, True),
+        (0x56, True),
+        (0x57, True),
+        (sdm_lte_data.LTE_NAS_SIM_DATA, True),
+        (sdm_lte_data.LTE_NAS_STATUS_VARIABLE, True),
+        (sdm_lte_data.LTE_NAS_EMM_MESSAGE, True),
+        (sdm_lte_data.LTE_NAS_PLMN_SELECTION, True),
+        (sdm_lte_data.LTE_NAS_SECURITY, True),
+        (sdm_lte_data.LTE_NAS_PDP, True),
+        (sdm_lte_data.LTE_NAS_IP, True),
+        (sdm_lte_data.LTE_NAS_ESM_MESSAGE, True),
+        (sdm_lte_data.LTE_DATA_THROUGHPUT_INFO, True),
+        (sdm_lte_data.LTE_DATA_TIMING_INFO, True),
+        (sdm_lte_data.LTE_DATA_HANDOVER_STAT, True),
+        (sdm_lte_data.LTE_DATA_CALL_DROP, True),
+
+        (0x64, True),
+        (0x65, True),
+        (0x66, True),
+        (0x67, True),
+
+        (0x70, True),
+        (0x71, True),
+        (0x72, True),
+        (0x73, True),
+        (0x74, True),
+        (0x75, True),
+
+        (0x80, True),
+        (0x81, True),
+        (0x82, True),
+        (0x83, True)
+    )
+
+def scat_sdm_edge_selection():
+    return create_sdm_item_selection(0x01,
+        (sdm_edge_data.EDGE_3G_NCELL_INFO, True),
+    )
+
+def scat_sdm_edge_selection_ext():
+    return create_sdm_item_selection(0x0f,
+        (sdm_edge_data.EDGE_TIME_SLOT_INFO, True),
+        (sdm_edge_data.EDGE_RLC_INFO, True),
+        (sdm_edge_data.EDGE_SCELL_MEAS_REPORT, True),
+        (sdm_edge_data.EDGE_PHY_DEDICATED_STATE_INFO, True),
+        (sdm_edge_data.EDGE_SCELL_INFO, True),
+        (sdm_edge_data.EDGE_NCELL_INFO, True),
+        (sdm_edge_data.EDGE_3G_NCELL_INFO, True),
+        (sdm_edge_data.EDGE_HANDOVER_INFO, True),
+        (sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO, True),
+        (sdm_edge_data.EDGE_BASIC_INFO, True),
+        (sdm_edge_data.EDGE_MEAS_INFO, True),
+        (sdm_edge_data.EDGE_POWER_CONTROL_INFO, True),
+        (sdm_edge_data.EDGE_THROUGHPUT_INFO, True),
+        (sdm_edge_data.EDGE_QOS_INFO, True),
+        (sdm_edge_data.EDGE_MM_GMM_INFO, True)
+    )
+
+def scat_sdm_hspa_selection():
+    return create_sdm_item_selection(0x02,
+        (sdm_hspa_data.HSPA_URRC_RRC_STATUS, True),
+        (sdm_hspa_data.HSPA_URRC_NETWORK_INFO, True),
+    )
+
+def scat_sdm_hspa_selection_ext():
+    return create_sdm_item_selection(0x30,
+        (sdm_hspa_data.HSPA_GP_POWER_CONTROL, True),
+        (sdm_hspa_data.HSPA_GP_TRCH_BLE_INFO, True),
+        (sdm_hspa_data.HSPA_GP_FINGER_INFO, True),
+        (sdm_hspa_data.HSPA_GD_DPA_INFO, True),
+        (0x04, False),
+        (sdm_hspa_data.HSPA_GD_DAP_TX_INFO, True),
+        (0x0d, True),
+        (0x0e, True),
+        (0x0f, True),
+        (sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, True),
+        (sdm_hspa_data.HSPA_UL1_SEARCH_INFO, True),
+        (sdm_hspa_data.HSPA_UL1_FREQ_SEARCH, True),
+        (sdm_hspa_data.HSPA_UL1_POWER_CONTROL, True),
+        (sdm_hspa_data.HSPA_UL1_OLPC, True),
+        (0x15, True),
+        (sdm_hspa_data.HSPA_UL1_MID_TYPE, True),
+        (sdm_hspa_data.HSPA_UL1_CELL_MEAS, True),
+        (sdm_hspa_data.HSPA_UL1_INTER_FREQ_MEAS, True),
+        (sdm_hspa_data.HSPA_UL1_INTER_RAT_MEAS, True),
+        (sdm_hspa_data.HSPA_UL1_INTERNAL_MEAS, True),
+        (sdm_hspa_data.HSPA_UL1_SERV_CELL, True),
+        (sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL, True),
+        (0x1d, True),
+        (sdm_hspa_data.HSPA_URRC_RRC_STATUS, True),
+        (sdm_hspa_data.HSPA_URRC_RB_MAPPING, True),
+        (sdm_hspa_data.HSPA_URRC_NETWORK_INFO, True),
+        (0x23, True),
+        (sdm_hspa_data.HSPA_UUL_RACH_CONFIG, True),
+        (sdm_hspa_data.HSPA_UUL_UDPCH_CONFIG, True),
+        (sdm_hspa_data.HSPA_UUL_POWER_INFO, True),
+        (sdm_hspa_data.HSPA_UL2_UPDCP_CHAN_CONF, False),
+        (sdm_hspa_data.HSPA_UL2_RLC_AM_CHAN_STAT, False),
+        (sdm_hspa_data.HSPA_UL2_URLC_AM_CONFIG, False),
+        (sdm_hspa_data.HSPA_UL2_RLC_UM_CHAN_STAT, False),
+        (sdm_hspa_data.HSPA_UL2_URLC_UM_CONFIG, False),
+        (sdm_hspa_data.HSPA_UL2_URLC_TM_CONFIG, False),
+        (sdm_hspa_data.HSPA_UL2_WCDMA_MAC, False),
+        (sdm_hspa_data.HSPA_UL2_HS_MAC, False),
+        (sdm_hspa_data.HSPA_UL2_EUL_MAC, False),
+        (sdm_hspa_data.HSPA_UL2_EUL_MAC_STAT, False),
+        (sdm_hspa_data.HSPA_MM_GMM_INFO, False),
+        (0x3b, True),
+        (0x3c, True),
+        (0x50, True),
+        (0x51, True),
+        (0x52, True),
+        (0x60, True),
+        (0x61, True),
+    )
+
 sdmheader = namedtuple('SdmHeader', 'length1 zero length2 stamp direction group command timestamp')
 sdmheader_ext = namedtuple('SdmHeaderExt', 'length1 zero length2 stamp direction radio_id group command timestamp')
 

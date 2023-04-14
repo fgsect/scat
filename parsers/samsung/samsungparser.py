@@ -90,30 +90,35 @@ class SamsungParser:
                 self.start_magic = int(params[p], base=16)
 
     def init_diag(self):
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CHANGE_UPDATE_PERIOD_REQUEST, b'\x05'), 0x1000, False)
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CHANGE_UPDATE_PERIOD_REQUEST, b'\x05'))
 
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, scat_sdm_common_selection()), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, scat_sdm_lte_selection()), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, scat_sdm_edge_selection()), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, scat_sdm_hspa_selection()), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)), 0x1000, False)
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
 
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_REFRESH_REQUEST, b'\xff'), 0x1000, False)
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, scat_sdm_common_selection()))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, scat_sdm_lte_selection()))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, scat_sdm_edge_selection()))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, scat_sdm_hspa_selection()))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
 
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'), 0x1000, False)
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'), 0x1000, False)
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_REFRESH_REQUEST, b'\xff'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_REFRESH_REQUEST, b'\xff'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_REFRESH_REQUEST, b'\xff'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_REFRESH_REQUEST, b'\xff'))
 
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_STOP_REQUEST, b''), 0x1000, False)
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'))
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
 
-        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)), 0x1000, False)
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_STOP_REQUEST, b''))
 
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)))
 
     def prepare_diag(self):
         pass
@@ -188,7 +193,7 @@ class SamsungParser:
     def stop_diag(self):
         self.logger.log(logging.INFO, 'Stopping diag')
         # DIAG Disable
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_STOP, b'\x00\x00\x00\x00'))
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_STOP, b'\x00\x00\x00\x00'), 0x1000, False)
 
     def run_dump(self):
         self.logger.log(logging.INFO, 'Starting diag from dump')
