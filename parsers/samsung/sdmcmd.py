@@ -216,14 +216,15 @@ def create_sdm_item_selection(item_count, *items):
     return ret
 
 def scat_sdm_common_selection():
-    return create_sdm_item_selection(0xff)
-    # return create_sdm_item_selection(4,
-    #     (sdm_common_data.COMMON_BASIC_INFO, True),
-    #     (0x01, True),
-    #     (sdm_common_data.COMMON_DATA_INFO, True),
-    #     (sdm_common_data.COMMON_SIGNALING_INFO, True)
-    #     (0x04, True),
-    # )
+    return create_sdm_item_selection(0x07,
+        (sdm_common_data.COMMON_BASIC_INFO, True),
+        (0x01, True),
+        (sdm_common_data.COMMON_DATA_INFO, True),
+        (sdm_common_data.COMMON_SIGNALING_INFO, True),
+        (0x04, True),
+        (0x05, True),
+        (0x06, True),
+    )
 
 def scat_sdm_lte_selection():
     return create_sdm_item_selection(0x14,
@@ -349,30 +350,21 @@ def scat_sdm_lte_selection_ext():
 
 def scat_sdm_edge_selection():
     return create_sdm_item_selection(0x01,
-        (sdm_edge_data.EDGE_3G_NCELL_INFO, True),
-    )
-
-def scat_sdm_edge_selection_ext():
-    return create_sdm_item_selection(0x0f,
-        (sdm_edge_data.EDGE_TIME_SLOT_INFO, True),
-        (sdm_edge_data.EDGE_RLC_INFO, True),
-        (sdm_edge_data.EDGE_SCELL_MEAS_REPORT, True),
-        (sdm_edge_data.EDGE_PHY_DEDICATED_STATE_INFO, True),
         (sdm_edge_data.EDGE_SCELL_INFO, True),
         (sdm_edge_data.EDGE_NCELL_INFO, True),
         (sdm_edge_data.EDGE_3G_NCELL_INFO, True),
         (sdm_edge_data.EDGE_HANDOVER_INFO, True),
         (sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO, True),
-        (sdm_edge_data.EDGE_BASIC_INFO, True),
         (sdm_edge_data.EDGE_MEAS_INFO, True),
-        (sdm_edge_data.EDGE_POWER_CONTROL_INFO, True),
-        (sdm_edge_data.EDGE_THROUGHPUT_INFO, True),
-        (sdm_edge_data.EDGE_QOS_INFO, True),
-        (sdm_edge_data.EDGE_MM_GMM_INFO, True)
     )
 
+def scat_sdm_edge_selection_ext():
+    return create_sdm_item_selection(0xff)
+
 def scat_sdm_hspa_selection():
-    return create_sdm_item_selection(0x02,
+    return create_sdm_item_selection(0x04,
+        (sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, True),
+        (sdm_hspa_data.HSPA_UL1_SERV_CELL, True),
         (sdm_hspa_data.HSPA_URRC_RRC_STATUS, True),
         (sdm_hspa_data.HSPA_URRC_NETWORK_INFO, True),
     )
