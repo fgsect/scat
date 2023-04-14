@@ -17,24 +17,12 @@ class SdmEdgeParser:
             self.model = self.parent.model
 
         self.process = {
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x00: lambda x: self.sdm_edge_dummy(x, 0x00),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x01: lambda x: self.sdm_edge_dummy(x, 0x01),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x02: lambda x: self.sdm_edge_dummy(x, 0x02),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x03: lambda x: self.sdm_edge_dummy(x, 0x03),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x04: lambda x: self.sdm_edge_dummy(x, 0x04),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x05: lambda x: self.sdm_edge_dummy(x, 0x05),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x06: lambda x: self.sdm_edge_dummy(x, 0x06),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_gsm_serving_cell(x),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x08: lambda x: self.sdm_edge_dummy(x, 0x08),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x09: lambda x: self.sdm_edge_dummy(x, 0x09),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x0a: lambda x: self.sdm_edge_dummy(x, 0x0a),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x0b: lambda x: self.sdm_edge_dummy(x, 0x0b),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x0c: lambda x: self.sdm_edge_dummy(x, 0x0c),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x0d: lambda x: self.sdm_edge_dummy(x, 0x0d),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x0e: lambda x: self.sdm_edge_dummy(x, 0x0e),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x0f: lambda x: self.sdm_edge_dummy(x, 0x0f),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x10: lambda x: self.sdm_edge_dummy(x, 0x10),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | 0x11: lambda x: self.sdm_edge_dummy(x, 0x11),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_NCELL_INFO: lambda x: self.sdm_edge_dummy(x, 0x06),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_dummy(x, 0x07),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_dummy(x, 0x09),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_MEAS_INFO: lambda x: self.sdm_edge_dummy(x, 0x0b),
         }
 
     def set_model(self, model):
@@ -43,14 +31,29 @@ class SdmEdgeParser:
     def sdm_edge_dummy(self, pkt, num):
         pkt = pkt[15:-1]
         print("GSM {:#x}: {}".format(num, binascii.hexlify(pkt).decode('utf-8')))
-        # 2c00 | 3d | 22 | 00 | 08 | 01 | 62f220 | 01 | 3401 | 2e06 | 0001 0001 01 000000000000000021011c1cffffffffc202
 
-    def sdm_edge_0x05(self, pkt):
+    def sdm_edge_scell_info(self, pkt):
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
-        print("GSM 0x05: {}".format(binascii.hexlify(pkt).decode('utf-8')))
-        # 2c00 | 3d | 22 | 00 | 08 | 01 | 62f220 | 01 | 3401 | 2e06 | 0001 0001 01 000000000000000021011c1cffffffffc202
+        header = namedtuple('SdmEdgeSCellInfo', '''arfcn bsic rxlev nco crh nmo
+        lai rac cid''')
+        struct_str = '<HBBBBB 5s BH'
 
-    def sdm_edge_gsm_serving_cell(self, pkt):
+        scell_info = header._make(struct.unpack(struct_str, pkt[0:struct.calcsize(struct_str)]))
+        plmn_str = util.unpack_mcc_mnc(scell_info.lai[0:3])
+        lac = struct.unpack('>H', scell_info.lai[3:5])[0]
+        cid = struct.unpack('>H', struct.pack('<H',scell_info.cid))[0]
+
+        stdout = 'EDGE Serving Cell Info: ARFCN: {}, BSIC: {:#x}, RxLev: {}, PLMN: MCC {:x}/MNC {:x}, LAC: {:#x}, RAC: {:#x}, CID: {:#x}\n'.format(
+            scell_info.arfcn, scell_info.bsic, scell_info.rxlev - 110, plmn_str[0], plmn_str[1], lac, scell_info.rac, cid
+        )
+
+        return {'stdout': stdout.rstrip()}
+
+    def sdm_edge_ncell_info(self, pkt):
+        return {'stdout': ''}
+
+    def sdm_edge_3g_ncell_info(self, pkt):
         '''
         0x07: 'GsmServ',
             "bsic",  '>B',  1 bytes, pos:20, # 7bit
@@ -62,17 +65,13 @@ class SdmEdgeParser:
         ], []),
         if pkt[0] == 0x07:
         '''
-        pkt = pkt[15:-1]
-        print("GSM 0x07: {}".format(binascii.hexlify(pkt).decode('utf-8')))
-        # 00000000a843c745989153645c99d5420f0000000200000054b6c5455003c8427918164200000000 | 2c003d2200080162f2200134989153647d02000000000000420000004838e4
+        return {'stdout': ''}
 
-    def sdm_edge_0x10(self, pkt):
-        pkt = pkt[15:-1]
-        print("GSM 0x10: {}".format(binascii.hexlify(pkt).decode('utf-8')))
+    def sdm_edge_handover_info(self, pkt):
+        return {'stdout': ''}
 
-    def sdm_edge_0x11(self, pkt):
-        pkt = pkt[15:-1]
-        print("GSM 0x11: {}".format(binascii.hexlify(pkt).decode('utf-8')))
-        #                          | P-TMSI   |        | RAC  | LAC  | TMSI
-        # 022f2600 00000000 000301 | f1dd934d | 000134 | 0100 | 3401 | 0c43177d |000001010000020000010000000000000000000000000000000000000000000000000000
-        # 022f2600 00000000 000201 | f6dd9361 | 000134 | 0100 | 3401 | 0c43177d |000001010000040000010000000000000000000000000000000000000000000000000000
+    def sdm_edge_handover_history_info(self, pkt):
+        return {'stdout': ''}
+
+    def sdm_edge_meas_info(self, pkt):
+        return {'stdout': ''}
