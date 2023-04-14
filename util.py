@@ -488,3 +488,12 @@ def unpack_mcc_mnc(mcc_mnc_bin):
         mnc = (mnc >> 4)
 
     return (mcc, mnc)
+
+def map_lookup_value(_map, _val, include_val_in_true=False):
+    if _val in _map:
+        if include_val_in_true:
+            return '{} ({:#x})'.format(_map[_val], _val)
+        else:
+            return _map[_val]
+    else:
+        return 'UNKNOWN ({:#x})'.format(_val)
