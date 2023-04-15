@@ -7,11 +7,9 @@ import iodevices
 import writers
 import parsers
 
-import os, sys, re, importlib
+import os, sys
 import argparse
 import signal
-import struct
-import util
 import faulthandler
 import logging
 
@@ -60,7 +58,7 @@ if __name__ == '__main__':
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
     input_group.add_argument('-u', '--usb', action='store_true', help='Use USB diagnostics port')
-    input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL)', nargs='*')
+    input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL, SDM, LPD)', nargs='*')
 
     usb_group = parser.add_argument_group('USB device settings')
     usb_group.add_argument('-v', '--vendor', help='Specify USB vendor ID', type=hexint)
