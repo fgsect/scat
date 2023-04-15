@@ -24,13 +24,13 @@ libosmocore 0.11.0. Note that SCAT itself is not depending on the libosmocore.
 Cellular device must expost the diagnostic port via USB. This is largely
 device-dependent and we can not give generic solution for all devices. Search
 the Internet with keyword `(your device name) qpst` to get the method of
-exposing the diagnostic port for Qualcomm-based smartphones.
+exposing the diagnostic port for Qualcomm-based smartphones. You may refer to
+the [wiki page](https://github.com/fgsect/scat/wiki/Devices) for instructions on
+how to opening the diagnostic port through USB on some devices.
 
-Please see [the wiki article](Devices) for details.
-
-If your smartphone does not expose the diagnostic port via USB, you may want to
-use the baseband dump features existing in some smartphones. Follow [the wiki
-article](Baseband-Dumps) for details.
+If your smartphone does not expose the diagnostic port via USB, you can try
+using the baseband dump features existing in some smartphones. Follow [the wiki
+page](https://github.com/fgsect/scat/wiki/Baseband-Dumps) for details.
 
 ## Usage
 
@@ -40,15 +40,24 @@ using it is also possible. The `qcserial` and `option` kernel module do not have
 the information of diagnostic port of all Qualcomm-based smartphones and
 cellular modules, and no such module exist for Samsung-based smartphones.
 
-Accessing the baseband diagnostics via USB:
+By default, SCAT will send packets to 127.0.0.1, control plane packets to UDP
+port 4729 as GSMTAP, user plane packets to UDP port 47290 as IP.
 
-`$ scat.py -t qc -u -a 001:010 -i 2`
+Exit the application with Ctrl+C.
 
-The first `-t qc` defines that we are parsing a Qualcomm baseband. For Samsung
-baseband, use `sec` instead of `qc` and you need to supply the model manually
-like this example:
+Please see the [wiki page for advanced options](https://github.com/fgsect/scat/wiki/Advanced-Options).
 
-`$ scat.py -t sec -m e333 -u -a 001:006 -i 2`
+### Common Options
+`-t` option specifies the type of baseband. Following options are available:
+
+* `-t qc`: Qualcomm
+* `-t sec`: Samsung
+* `-t hisi`: HiSilicon (experimental, only baseband dump is supported)
+
+For Samsung devices, you need to manually supply the baseband model through `-m`
+option like this example:
+
+`$ scat.py -t sec -m e333`
 
 Available model types are following:
 
@@ -56,10 +65,17 @@ Available model types are following:
 * `-m e303`: Exynos modem 303.
 * `-m e333`: Exynos modem 333.
 * `-m e5123`: Exynos modem 5123.
+* `-m e5300`: Exynos modem 5300.
 * For modems not listed in here, try `-m e333` or `-m e5123` based on the
   relative age of the device.
 
-`-u` specifies that we are accessing the diagnostic device via USB.
+### USB
+Accessing the baseband diagnostics via USB:
+
+```
+$ scat.py -t qc -u -a 001:010 -i 2
+$ scat.py -t sec -u -a 001:010 -i 2
+```
 
 Although there are small heuristic to determine the connected device, it is
 recommended to explicitly specify the USB device address and interface number of
@@ -67,41 +83,24 @@ diagnostics node. `-a 001:010` specifies the address, which follows the same
 syntax visible in `lsusb` command. `-i 2` specifies the interface number of the
 diagnostic node, which is again device specific.
 
-Newer Samsung devices require a correct magic number to be supplied to start
-the diagnostic session. This could be specified by `--start-magic` option.
+Newer Samsung devices require a correct magic number to be supplied to start the
+diagnostic session through USB. This could be specified by `--start-magic`
+option.
 
+### Serial
 Accessing the baseband diagnostics via serial port:
 
 `$ scat.py -t qc -s /dev/ttyUSB0`
 
 Replace `/dev/ttyUSB0` to what is your diagnostic device.
 
-By default, SCAT will send packets to 127.0.0.1, control plane packets to UDP
-port 4729 as GSMTAP, user plane packets to UDP port 47290 as IP.
-
-Exit the application with Ctrl+C.
-
-### Advanced Options
-
-Destination to send the GSMTAP packet could be changed using `-H 127.0.0.2`
-switch. For example, this command will send all packets to 127.0.0.2:
-
-`$ scat.py -t sec -m e333 -u -a 001:006 -i 2 -H 127.0.0.2`
-
-You may want to use the following command to be able to easily sort it with
-Wireshark:
+### Dump
+Parsing the baseband dump file:
 
 ```
-ifconfig ethUSB 127.0.0.2 netmask 255.255.255.0 up
-sudo route add -net 127.0.0.0 netmask 255.255.255.0 gw 127.0.0.1
-```
-
-It is possible to automatically determine the USB bus address by using other
-command's outputs.  Following example is for Samsung Galaxy S5 Mini:
-
-```
-    val=$(lsusb | awk '/Samsung/ {print substr($4, 1, length($4)-1)}')
-    sudo ./scat.py -t sec -m e303 -u -a 001:$val -i 4 -H 127.0.0.2
+$ scat.py -t qc -d test.qmdl
+$ scat.py -t sec -d test.sdm
+$ scat.py -t hisi -s test.lpd
 ```
 
 ### Tested Devices
@@ -115,15 +114,16 @@ Issues related to exposing the diagnostics port via USB is out of scope.
 * On certain Qualcomm devices, after exiting and launching the application for
   more than once, initialization eventually hangs and no messages are appearing.
   Root cause still in investigation. Solution: reboot the smartphone.
-* On certain Samsung devices, metadata information like EARFCN is missing or
-  control plane messages are not appearing. We are aware of issues and please
-  notify us about your environment to fix this.
 
 ## License
 
 SCAT is free software; you can redistribute it and/or modify it under the terms
 of the GNU General Public License as published by the Free Software Foundation;
 either version 2 of the License, or (at your option) any later version.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
+FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
 
 ## References
 We are kindly asking any academic works utilizing and/or incorporating this
