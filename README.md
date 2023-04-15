@@ -26,23 +26,11 @@ device-dependent and we can not give generic solution for all devices. Search
 the Internet with keyword `(your device name) qpst` to get the method of
 exposing the diagnostic port for Qualcomm-based smartphones.
 
-* Samsung: Enter `*#0808#` in dialer, select any USB mode entry containing `DM`.
-  * Korean models: Enter `3197123580` in dialer, password is either `996412`,
-    `776432`, `0821`.
-  * Certain version of firmwares after 2018 are blocking the access to the
-    hidden menu with the abovementioned code. Currently no solution is known
-    without rooting the phone (correction wanted).
-* LG: Enter `277634#*#` in dialer (TODO: exact location of USB test menu)
-  * On some LG devices, diagnostic ports are not exposed in Linux even after
-    enabling the USB testing mode. This is due to multiple USB device
-    configuration used; udev rules changing the current USB configuration is
-    recommended in such devices.
-* Sony: Rooting required. Get a rooted adb shell and enter the command `setprop
-  persist.usb.eng 1`.
-* Nexus: Rooting required. Get a rooted adb shell and enter the command
-  `setprop sys.usb.config diag,adb`.
-  * Not working for Pixel devices!
-* Sailfish OS: (TODO: how to modify usb-moded settings)
+Please see [the wiki article](Devices) for details.
+
+If your smartphone does not expose the diagnostic port via USB, you may want to
+use the baseband dump features existing in some smartphones. Follow [the wiki
+article](Baseband-Dumps) for details.
 
 ## Usage
 
