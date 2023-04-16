@@ -14,6 +14,8 @@ class HisiLogParser:
         self.process = {
             0x10051082: lambda x, y, z: self.hisi_lte_current_cell_info(x, y, z),
             0x20010000: lambda x, y, z: self.hisi_lte_ota_msg(x, y, z),
+            0x30940001: lambda x, y, z: self.hisi_debug_msg(x, y, z),
+            0x20030000: lambda x, y, z: self.hisi_debug_msg(x, y, z),
         }
 
     def hisi_lte_ota_msg(self, pkt_header, pkt_data, args):
@@ -116,3 +118,35 @@ class HisiLogParser:
             nrb_to_bw[cell_info.dl_bw], nrb_to_bw[cell_info.ul_bw], cell_info.band_ind
         )
         return {'stdout': stdout}
+
+    def hisi_debug_msg(self, pkt_header, pkt_data, args):
+        # TODO decode hisi ts
+        if not self.parent.msgs:
+            return None
+
+        if pkt_header.cmd == 0x30940001:
+            log_prefix = b'[NORM] '
+            app_name = '[NORM]'
+        elif pkt_header.cmd == 0x20030000:
+            log_prefix = b'[SSRC] '
+            app_name = '[SSRC]'
+            # ?, ?, seq_nr
+            # pkt_info = struct.unpack('<LLL', pkt_data[:12])
+            # print(pkt_info)
+            pkt_data = pkt_data[12:]
+        else:
+            log_prefix = b''
+            app_name = ''
+
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            process_name = app_name,
+            subsys_name = '',
+            filename = '',
+            line_number = 0
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_prefix + pkt_data]}

@@ -81,6 +81,13 @@ if __name__ == '__main__':
         sec_group.add_argument('--start-magic', help='Magic value provided for starting DM session. Default: 0x41414141', type=str, default='0x41414141')
         sec_group.add_argument('--sdmraw', help='Store log as raw SDM file (Samsung only)')
 
+    if 'hisi' in parser_dict.keys():
+        hisi_group = parser.add_argument_group('HiSilicon specific settings')
+        try:
+            hisi_group.add_argument('--msgs', action='store_true', help='Decode debug messages GSMTAP logging')
+        except argparse.ArgumentError:
+            pass
+
     ip_group = parser.add_argument_group('GSMTAP IP settings')
     ip_group.add_argument('-P', '--port', help='Change UDP port to emit GSMTAP packets', type=int, default=4729)
     ip_group.add_argument('--port-up', help='Change UDP port to emit user plane packets', type=int, default=47290)
@@ -154,6 +161,9 @@ if __name__ == '__main__':
         current_parser.set_parameter({
             'model': args.model,
             'start-magic': args.start_magic})
+    elif args.type == 'hisi':
+        current_parser.set_parameter({
+            'msgs': args.msgs})
 
     # Run process
     if args.serial or args.usb:

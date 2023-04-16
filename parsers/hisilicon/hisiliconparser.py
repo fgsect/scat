@@ -62,6 +62,8 @@ class HisiliconParser:
             except AttributeError:
                 pass
 
+        self.msgs = False
+
     def set_io_device(self, io_device):
         self.io_device = io_device
 
@@ -72,6 +74,8 @@ class HisiliconParser:
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
+            elif p == 'msgs':
+                self.msgs = params[p]
 
     def init_diag(self):
         pass
