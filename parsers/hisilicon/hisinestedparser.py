@@ -68,10 +68,67 @@ class HisiNestedParser:
                 sub_type = channel_type_map[wcdma_rrc_header.type])
 
             return {'cp': [gsmtap_hdr + wcdma_rrc_content]}
+        elif pkt_data[0] == 0x03:
+            # Abis/L3
+            header = namedtuple('HisiL3OtaAbis', 'unk1 unk2 seq unk3 unk4 unk5 len1 len2')
+            abis_header = header._make(struct.unpack('<HBBBBBLL', pkt_data[1:16]))
+            abis_data = pkt_data[16:]
 
-        # elif pkt_data[0] == 0x25:
-            # GSM?
-            # return None
+            if abis_header.len2 + 4 != abis_header.len1:
+                if self.parent.logger:
+                    self.parent.logger.log(logging.WARNING, "Length mismatch: len1={}, len2={}, diff should be 4".format(abis_header.len1, abis_header.len2))
+
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.ABIS,
+                arfcn = 0,
+                sub_type = 0)
+
+            return {'cp': [gsmtap_hdr + abis_data[:abis_header.len2]]}
+
+        elif pkt_data[0] == 0x25:
+            # GSM
+            header = namedtuple('HisiL3OtaGsm', 'unk1 unk2 msg_type channel direction unk6 len')
+            ota_header = header._make(struct.unpack('<HBBBBBL', pkt_data[1:12]))
+            ota_data = pkt_data[12:]
+            subtype = 0
+
+            if ota_data[0] == 0b0110:
+                # GSM RR, regardless of direction
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.ABIS,
+                    arfcn = 0)
+
+                return {'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
+            else:
+                # 3GPP TS 24.007, Section 11.3 Non standard L3 messages
+                if (ota_data[0] & 0b11 == 0b01) and (ota_data[1] == 0b0110):
+                    # RR with pseudo length
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 2,
+                        payload_type = util.gsmtap_type.UM,
+                        arfcn = 0,
+                        sub_type = util.gsmtap_channel.CCCH)
+                else:
+                    # 3GPP TS 44.018, Table 10.4.2:
+                    if (ota_data[0] & 0b10000000 == 0x0) and (((ota_data[0] & 0b01111100) >> 2) in (0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)):
+                        # RR with short PD
+                        # gsmtap_hdr = util.create_gsmtap_header(
+                        #     version = 2,
+                        #     payload_type = util.gsmtap_type.UM,
+                        #     arfcn = arfcn,
+                        #     sub_type = util.gsmtap_channel.SDCCH | 0x80)
+                        # ota_data = b'\x00\x00\x01\x03\xf1' + ota_data
+                        if self.parent:
+                            self.parent.logger.log(logging.WARNING, 'GSM RR with short PD, decode using "gsm_a_sacch": {}'.format(binascii.hexlify(ota_data).decode('utf-8')))
+                        return None
+                    else:
+                        if self.parent:
+                            self.parent.logger.log(logging.WARNING, 'Invalid GSM RR message')
+                        return None
+                return {'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
         else:
-            # print(binascii.hexlify(pkt_data))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown L3 OTA message type {:#04x}'.format(pkt_data[0]))
             return None
