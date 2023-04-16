@@ -100,7 +100,7 @@ Parsing the baseband dump file:
 ```
 $ scat.py -t qc -d test.qmdl
 $ scat.py -t sec -d test.sdm
-$ scat.py -t hisi -s test.lpd
+$ scat.py -t hisi -d test.lpd
 ```
 
 ### Tested Devices
