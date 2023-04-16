@@ -8,6 +8,7 @@ import binascii
 from collections import namedtuple
 
 from .hisilogparser import HisiLogParser
+from .hisinestedparser import HisiNestedParser
 
 class HisiliconParser:
 
@@ -47,6 +48,17 @@ class HisiliconParser:
             self.process.update(p.process)
             try:
                 self.no_process.update(p.no_process)
+            except AttributeError:
+                pass
+
+        self.diag_nested_parsers = [HisiNestedParser(self)]
+        self.process_nested = { }
+        self.no_process_nested = { }
+
+        for p in self.diag_nested_parsers:
+            self.process_nested.update(p.process)
+            try:
+                self.no_process_nested.update(p.no_process)
             except AttributeError:
                 pass
 
@@ -161,6 +173,7 @@ class HisiliconParser:
                     print('Radio {}: {}'.format(radio_id, l))
 
     log_header = namedtuple('HisiLogHeader', 'unk2 ts unk3 cmd len')
+    type_0x01_header = namedtuple('Hisi0x01Header', 'unk1 unk2 magic nested_len1 cmd nested_len2 ts')
 
     def parse_diag_log(self, pkt, args=None):
         if pkt[0] == 0x00:
@@ -178,10 +191,30 @@ class HisiliconParser:
             else:
                 # print(binascii.hexlify(pkt_data))
                 return None
+        elif pkt[0] == 0x01:
+            if len(pkt) < 29:
+                return
+            pkt_header = self.type_0x01_header._make(struct.unpack('<LLLHLHQ', pkt[1:29]))
+            pkt_data = pkt[29:-4]
+            magic_2 = struct.unpack('<L', pkt[-4:])[0]
+
+            if not (pkt_header.magic == 0xaaaa5555 and magic_2 == 0x5555aaaa):
+                if self.logger:
+                    self.logger.log(logging.WARNING, "Packet magic mismatch: expected wrapping of 0x5555aaaa and aaaa5555")
+
+            if pkt_header.nested_len1 != pkt_header.nested_len2 + 8:
+                if self.logger:
+                    self.logger.log(logging.WARNING, "Packet length mismatch: {} and {}".format(pkt_header.nested_len1, pkt_header.nested_len2))
+
+            if pkt_header.cmd in self.process_nested.keys():
+                return self.process_nested[pkt_header.cmd](pkt_header, pkt_data, args)
+            else:
+                # print(binascii.hexlify(pkt_data))
+                return None
         else:
-            return None
-            # self.logger.log(logging.INFO, 'Unknown packet type {:#04x}'.format(pkt[0]))
+            self.logger.log(logging.INFO, 'Unknown packet type {:#04x}'.format(pkt[0]))
             # print(binascii.hexlify(pkt))
+            return None
 
 __entry__ = HisiliconParser
 
