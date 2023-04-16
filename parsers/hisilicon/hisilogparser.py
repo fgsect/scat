@@ -46,19 +46,19 @@ class HisiLogParser:
             }
 
             if rrc_chan_type == 8:
-                if self.parent.logger:
+                if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Ignoring EUTRA UECapability as GSMTAP cannot encapsulate it')
                 return None
 
             if not (rrc_chan_type in rrc_subtype_map):
-                if self.parent.logger:
+                if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Unknown LTE RRC channel type {:#x}'.format(rrc_chan_type))
                 return None
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
                 payload_type = util.gsmtap_type.LTE_RRC,
-                arfcn = self.parent.lte_last_earfcn_dl[0],
+                arfcn = self.parent.lte_last_earfcn_dl[0] if self.parent else 0,
                 sub_type = rrc_subtype_map[rrc_chan_type])
 
             return {'cp': [gsmtap_hdr + pkt_content]}
@@ -76,8 +76,8 @@ class HisiLogParser:
             return {'cp': [gsmtap_hdr + pkt_content]}
 
         else:
-            if self.parent.logger:
-                self.parent.logger.log(logging.WARNING, 'Unknown LTE OTA message type {:#x}'.format(ota_hdr.chan_type))
+            if self.parent:
+                self.parent.log(logging.WARNING, 'Unknown LTE OTA message type {:#x}'.format(ota_hdr.chan_type))
             return None
 
     def hisi_lte_current_cell_info(self, pkt_header, pkt_data, args):
@@ -95,23 +95,24 @@ class HisiLogParser:
                 75: 15,
                 100: 20 }
 
-        self.parent.lte_last_earfcn_ul[0] = cell_info.ul_earfcn
-        self.parent.lte_last_earfcn_dl[0] = cell_info.dl_earfcn
+        if self.parent:
+            self.parent.lte_last_earfcn_ul[0] = cell_info.ul_earfcn
+            self.parent.lte_last_earfcn_dl[0] = cell_info.dl_earfcn
 
-        if cell_info.ul_bw in nrb_to_bw:
-            self.parent.lte_last_bw_ul[0] = nrb_to_bw[cell_info.ul_bw]
-        else:
-            self.parent.lte_last_bw_ul[0] = 0
+            if cell_info.ul_bw in nrb_to_bw:
+                self.parent.lte_last_bw_ul[0] = nrb_to_bw[cell_info.ul_bw]
+            else:
+                self.parent.lte_last_bw_ul[0] = 0
 
-        if cell_info.dl_bw in nrb_to_bw:
-            self.parent.lte_last_bw_dl[0] = nrb_to_bw[cell_info.dl_bw]
-        else:
-            self.parent.lte_last_bw_dl[0] = 0
+            if cell_info.dl_bw in nrb_to_bw:
+                self.parent.lte_last_bw_dl[0] = nrb_to_bw[cell_info.dl_bw]
+            else:
+                self.parent.lte_last_bw_dl[0] = 0
 
-        self.parent.lte_last_band_ind[0] = cell_info.band_ind
+            self.parent.lte_last_band_ind[0] = cell_info.band_ind
 
         stdout = 'LTE Current Cell Info: EARFCN {}/{} ({:.1f}/{:.1f} MHz), Bandwidth {}/{} MHz, Band {}'.format(
             cell_info.dl_earfcn, cell_info.ul_earfcn, cell_info.dl_freq / 10, cell_info.ul_freq / 10,
-            self.parent.lte_last_bw_dl[0], self.parent.lte_last_bw_ul[0], cell_info.band_ind
+            nrb_to_bw[cell_info.dl_bw], nrb_to_bw[cell_info.ul_bw], cell_info.band_ind
         )
         return {'stdout': stdout}
