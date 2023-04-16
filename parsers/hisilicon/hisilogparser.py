@@ -16,6 +16,7 @@ class HisiLogParser:
             0x20010000: lambda x, y, z: self.hisi_lte_ota_msg(x, y, z),
             0x30940001: lambda x, y, z: self.hisi_debug_msg(x, y, z),
             0x20030000: lambda x, y, z: self.hisi_debug_msg(x, y, z),
+            0x20020000: lambda x, y, z: self.hisi_0x20020000(x, y, z),
         }
 
     def hisi_lte_ota_msg(self, pkt_header, pkt_data, args):
@@ -150,3 +151,98 @@ class HisiLogParser:
             payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
         return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_prefix + pkt_data]}
+
+    def hisi_0x20020000(self, pkt_header, pkt_data, args):
+        stdout = ''
+        header = namedtuple('Hisi0x20020000', 'cmdid1 unk2 seq_nr msgid cmdid2 unk6 unk7 unk8 inner_len')
+
+        info = header._make(struct.unpack('<LLLLLLLLL', pkt_data[0:36]))
+        info_data = pkt_data[36:]
+        # print('1: ' + str(info))
+        # print('Data: ' + binascii.hexlify(pkt_data[36:]).decode('utf-8'))
+        if info.msgid == 0x0986:
+            inner_header = namedtuple('Hisi0x20020000_0x0986', 'msgid opid cmd')
+            inner_header_data = inner_header._make(struct.unpack('<LHH', info_data[0:8]))
+            if inner_header_data.cmd == 0x1f:
+                # Idle measurement, Serving cell
+                scell_header = namedtuple('HisiSCellHeader', 'freq band')
+                scell_meas = namedtuple('HisiSCellMeas', 'pci rsrp rsrq unk')
+                scell_header_data = scell_header._make(struct.unpack('<HH', info_data[8:12]))
+
+                stdout += 'Idle mode serving cell measurement: {:.1f} MHz (Band {}), '.format(
+                    scell_header_data.freq / 10, scell_header_data.band
+                )
+                scell_meas_data = scell_meas._make(struct.unpack('<Hhhh', info_data[12:20]))
+                stdout += 'PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(
+                    scell_meas_data.pci,
+                    scell_meas_data.rsrp / 10, scell_meas_data.rsrq / 10
+                )
+            elif inner_header_data.cmd == 0x20:
+                # Idle measurement, Intra frequency cell
+                intra_freq_header = namedtuple('HisiIntraFreqHeader', 'freq band total_cell detected_cell')
+                intra_freq_meas = namedtuple('HisiIntraFreqMeas', 'pci rsrp rsrq unk')
+                intra_freq_header_data = intra_freq_header._make(struct.unpack('<HHHH', info_data[8:16]))
+
+                stdout += 'Idle mode intra frequency cell measurement: {:.1f} MHz (Band {}), Total/Detected: {}/{}\n'.format(
+                    intra_freq_header_data.freq / 10, intra_freq_header_data.band,
+                    intra_freq_header_data.total_cell, intra_freq_header_data.detected_cell
+                )
+                for i in range(intra_freq_header_data.total_cell):
+                    intra_freq_meas_data = intra_freq_meas._make(struct.unpack('<Hhhh', info_data[8*(i+2):8*(i+3)]))
+                    stdout += 'Cell {}: PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(i,
+                        intra_freq_meas_data.pci,
+                        intra_freq_meas_data.rsrp / 10, intra_freq_meas_data.rsrq / 10,
+                    )
+            elif inner_header_data.cmd == 0x21:
+                # Idle measurement, Inter frequency cell
+                num_freqs = struct.unpack('<H', info_data[8:10])[0]
+                inter_freq_header = namedtuple('HisiInterFreqHeader', 'cur_band freq band total_cell detected_cell')
+                inter_freq_meas = namedtuple('HisiInterFreqMeas', 'pci rsrp rsrq unk')
+                pos = 10
+                for i in range(num_freqs):
+                    inter_freq_header_data = inter_freq_header._make(struct.unpack('<HHHHH', info_data[pos:pos+10]))
+                    pos += 10
+
+                    stdout += 'Idle mode inter frequency cell measurement: {:.1f} MHz (Band {}), Total/Detected: {}/{}\n'.format(
+                        inter_freq_header_data.freq / 10, inter_freq_header_data.band,
+                        inter_freq_header_data.total_cell, inter_freq_header_data.detected_cell
+                    )
+                    for j in range(inter_freq_header_data.total_cell):
+                        inter_freq_meas_data = inter_freq_meas._make(struct.unpack('<Hhhh', info_data[pos:pos+8]))
+                        stdout += 'Cell {}: PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(j,
+                            inter_freq_meas_data.pci,
+                            inter_freq_meas_data.rsrp / 10, inter_freq_meas_data.rsrq / 10,
+                        )
+                        pos += 8
+            else:
+                # print(inner_header_data)
+                return None
+
+        elif info.msgid == 0x0988:
+            inner_header = namedtuple('Hisi0x20020000_0x0988', 'msgid opid cmd')
+            inner_header_data = inner_header._make(struct.unpack('<LHH', info_data[0:8]))
+
+            if inner_header_data.cmd == 0x33:
+                # Connected mode measurement, Intra frequency cell
+                intra_freq_header = namedtuple('HisiIntraFreqHeader', 'freq band total_cell detected_cell')
+                intra_freq_meas = namedtuple('HisiIntraFreqMeas', 'pci rsrp rsrq unk')
+                intra_freq_header_data = intra_freq_header._make(struct.unpack('<HHHH', info_data[8:16]))
+
+                stdout += 'Connected mode intra frequency cell measurement: {:.1f} MHz (Band {}), Total/Detected: {}/{}\n'.format(
+                    intra_freq_header_data.freq / 10, intra_freq_header_data.band,
+                    intra_freq_header_data.total_cell, intra_freq_header_data.detected_cell
+                )
+                for i in range(intra_freq_header_data.total_cell):
+                    intra_freq_meas_data = intra_freq_meas._make(struct.unpack('<Hhhh', info_data[8*(i+2):8*(i+3)]))
+                    stdout += 'Cell {}: PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(i,
+                        intra_freq_meas_data.pci,
+                        intra_freq_meas_data.rsrp / 10, intra_freq_meas_data.rsrq / 10,
+                    )
+            else:
+                # print(inner_header_data)
+                return None
+        else:
+            # print(info)
+            return None
+
+        return {'stdout': stdout.rstrip()}
