@@ -19,6 +19,7 @@ class SdmControlParser:
         self.ilm_group = {}
         self.ilm_total_count = 0
         self.ilm_cur_count = 0
+        self.trigger_group = {}
 
         self.process = {
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CONTROL_START_RESPONSE: lambda x: self.sdm_control_start_response(x),
@@ -31,6 +32,7 @@ class SdmControlParser:
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
         }
 
     def set_model(self, model):
@@ -168,4 +170,27 @@ class SdmControlParser:
         item = item_struct._make(struct.unpack('<HH', pkt[0:4]))
 
         stdout = 'TCP/IP Dump Response: DL max {} bytes, UL max {} bytes'.format(item.dl_size, item.ul_size)
+        return {'stdout': stdout}
+
+    def sdm_dm_trigger_table_response(self, pkt):
+        pkt = pkt[15:-1]
+
+        item_struct = namedtuple('SdmTriggerTableResponse', 'num_items1 num_items2')
+        subitem_struct = namedtuple('SdmTriggerTableItem', 'id text_len')
+        item = item_struct._make(struct.unpack('<LL', pkt[0:8]))
+        content = pkt[8:]
+
+        pos = 0
+        stdout = ''
+
+        for i in range(item.num_items1):
+            subitem = subitem_struct._make(struct.unpack('<LL', content[pos:pos+8]))
+            subitem_text = content[pos+8:pos+8+subitem.text_len].decode('utf-8')
+            self.trigger_group[subitem.id] = subitem_text
+            pos += (8 + subitem.text_len)
+
+        stdout += 'SDM Trigger Table:\n'
+        for x in self.trigger_group:
+            stdout += 'Item ID {:#06x}, Text: {}\n'.format(x, self.trigger_group[x])
+
         return {'stdout': stdout}

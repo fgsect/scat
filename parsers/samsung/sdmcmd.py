@@ -81,6 +81,9 @@ class sdm_control_message(IntEnum):
     TCPIP_DUMP_REQUEST            = 0x90
     TCPIP_DUMP_RESPONSE           = 0x91
 
+    TRIGGER_TABLE_REQUEST         = 0xC0
+    TRIGGER_TABLE_RESPONSE        = 0xC1
+
 @unique
 class sdm_common_data(IntEnum):
     COMMON_BASIC_INFO             = 0x00
