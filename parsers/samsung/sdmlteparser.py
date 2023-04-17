@@ -224,7 +224,6 @@ class SdmLteParser:
             sub_type = subtype)
         return {'cp': [gsmtap_hdr + msg]}
 
-
     def sdm_lte_rrc_ota_packet(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
@@ -258,7 +257,6 @@ class SdmLteParser:
         header = namedtuple('SdmLteRrcMultipleMessage', 'total_chunks num_chunk msgid channel direction length')
         rrc_header = header._make(struct.unpack('<BBBBBH', pkt[0:7]))
         rrc_msg = pkt[7:]
-        print(rrc_header)
 
         if rrc_header.msgid not in self.multi_message_chunk:
             # New msgid
@@ -283,7 +281,6 @@ class SdmLteParser:
             del self.multi_message_chunk[rrc_header.msgid]
             return self._parse_sdm_lte_rrc_message(sdm_pkt_hdr, rrc_header.channel, rrc_header.direction,
                 len(newpkt_body), newpkt_body)
-
 
     def sdm_lte_0x55(self, pkt):
         pkt = pkt[15:-1]
