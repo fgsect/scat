@@ -70,9 +70,13 @@ class sdm_control_message(IntEnum):
     TRACE_ITEM_SELELECT_2_REQUEST = 0x58
 
     ILM_START_REQUEST             = 0x70
+    ILM_START_RESPONSE            = 0x71
     ILM_STOP_REQUEST              = 0x72
+    ILM_STOP_RESPONSE             = 0x73
     ILM_ENTITY_TAGLE_GET_REQUEST  = 0x74
+    ILM_ENTITY_TAGLE_GET_RESPONSE = 0x75
     ILM_ITEM_SELECT_REQUEST       = 0x76
+    ILM_ITEM_SELECT_RESPONSE      = 0x77
 
     TCPIP_DUMP_REQUEST            = 0x90
     TCPIP_DUMP_RESPONSE           = 0x91

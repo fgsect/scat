@@ -16,6 +16,9 @@ class SdmControlParser:
             self.model = self.parent.model
 
         self.trace_group = {}
+        self.ilm_group = {}
+        self.ilm_total_count = 0
+        self.ilm_cur_count = 0
 
         self.process = {
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CONTROL_START_RESPONSE: lambda x: self.sdm_control_start_response(x),
@@ -26,6 +29,7 @@ class SdmControlParser:
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.HSPA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x40),
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CDMA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x44),
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
+            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
         }
 
@@ -118,6 +122,43 @@ class SdmControlParser:
             stdout += 'SDM Trace Table:\n'
             for x in self.trace_group:
                 stdout += 'Group ID {:#06x}, Items: {}\n'.format(x, ', '.join(self.trace_group[x]))
+
+        return {'stdout': stdout}
+
+    def sdm_dm_ilm_table_get_response(self, pkt):
+        pkt = pkt[15:-1]
+
+        item_struct = namedtuple('SdmIlmTableGetResponse', 'is_end unk total_item_count packet_item_count')
+        subitem_struct = namedtuple('SdmIlmTableIlmItem', 'id unk1 unk2 unk3 text_len')
+        item = item_struct._make(struct.unpack('<BBBB', pkt[0:4]))
+        content = pkt[4:]
+        stdout = ''
+        if self.ilm_total_count != 0:
+            if self.ilm_total_count != item.total_item_count:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, "ILM item total count changed: {} -> {}".format(self.ilm_total_count, item.total_item_count))
+        else:
+            self.ilm_total_count = item.total_item_count
+
+        for i in range(item.packet_item_count):
+            subitem = content[33*i:33*(i+1)]
+            item_hdr = subitem_struct._make(struct.unpack('<BLBBB', subitem[0:8]))
+            if item_hdr.text_len > 25:
+                item_str = subitem[8:].decode('utf-8')
+            else:
+                item_str = subitem[8:8+item_hdr.text_len].decode('utf-8')
+            self.ilm_group[item_hdr.id] = (item_hdr.unk1, item_hdr.unk2, item_hdr.unk3, item_str)
+            self.ilm_cur_count += 1
+
+        if item.is_end == 1:
+            if self.ilm_total_count != self.ilm_cur_count:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, "ILM item count mismatch: {} != {}".format(self.ilm_total_count, self.ilm_cur_count))
+            stdout += 'SDM ILM Table:\n'
+            for x in self.ilm_group:
+                stdout += 'Item ID {:#06x}, Args: {:#10x}, {:#04x}, {:#04x}, Text: {}\n'.format(x,
+                    self.ilm_group[x][0], self.ilm_group[x][1], self.ilm_group[x][2],
+                    self.ilm_group[x][3])
 
         return {'stdout': stdout}
 
