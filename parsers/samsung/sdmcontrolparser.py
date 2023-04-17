@@ -57,10 +57,17 @@ class SdmControlParser:
             rest_str = extra_str[extra_str_len:]
             extra_str = extra_str[:extra_str_len]
         extra_str = extra_str.decode('utf-8').split('\x00',1)[0]
+        chip_id = 0
+        if len(rest_str) == 4:
+            chip_id = struct.unpack('<L', rest_str)[0]
+        elif len(rest_str) == 2:
+            chip_id = struct.unpack('<H', rest_str)[0]
 
-        stdout = "SDM Start Response: Version: {}, Date: {}{}".format(
+
+        stdout = "SDM Start Response: Version: {}, Date: {}{}{}".format(
             version_str, date_str,
-            ', Extra: ' + extra_str if len(extra_str) > 0 else ''
+            ', Extra: ' + extra_str if len(extra_str) > 0 else '',
+            ', ID: ' + hex(chip_id) if len(rest_str) > 0 else ''
         )
         return {'stdout': stdout}
 
