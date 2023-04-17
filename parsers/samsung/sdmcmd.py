@@ -82,6 +82,7 @@ class sdm_common_data(IntEnum):
     COMMON_BASIC_INFO             = 0x00
     COMMON_DATA_INFO              = 0x02
     COMMON_SIGNALING_INFO         = 0x03
+    COMMON_MULTI_SIGNALING_INFO   = 0x06
 
 @unique
 class sdm_lte_data(IntEnum):
