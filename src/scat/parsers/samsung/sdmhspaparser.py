@@ -161,15 +161,25 @@ class SdmHspaParser:
             3: 'CS_PS',
         }
 
+        rrc_rel_map = {
+            0: 'UNKNOWN',
+            1: 'R99',
+            2: 'R4',
+            3: 'R5',
+            4: 'R6',
+            5: 'R7',
+        }
+
         if len(pkt) < 5:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (5)'.format(len(pkt)))
             return None
 
-        header = namedtuple('SdmHspaWcdmaRrcState', 'rrc_state domain unk3 unk4 unk5')
+        header = namedtuple('SdmHspaWcdmaRrcState', 'rrc_state domain rrc_rel has_hs_dsch has_e_dch')
         rrc_state = header._make(struct.unpack('<BBBBB', pkt[0:5]))
 
-        stdout += 'WCDMA RRC State: RRC Status: {}, Domain: {}'.format(
+        stdout += 'WCDMA RRC State: RRC Release: {}, RRC Status: {}, Domain: {}'.format(
+            util.map_lookup_value(rrc_rel_map, rrc_state.rrc_rel),
             util.map_lookup_value(rrc_state_map, rrc_state.rrc_state),
             util.map_lookup_value(rrc_domain_map, rrc_state.domain),
         )
