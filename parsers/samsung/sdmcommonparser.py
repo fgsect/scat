@@ -75,15 +75,15 @@ class SdmCommonParser:
                 0x34: util.gsmtap_umts_rrc_types.PCCH
                 }
 
-            subtype = 0
+            gsmtap_subtype = 0
             if direction == 2:
-                subtype = chan_map_dl[subtype]
+                gsmtap_subtype = chan_map_dl[subtype]
                 if self.parent:
                     arfcn = self.parent.umts_last_uarfcn_dl[0]
                 else:
                     arfcn = 0
             elif direction == 1:
-                subtype = chan_map_ul[subtype]
+                gsmtap_subtype = chan_map_ul[subtype]
                 if self.parent:
                     arfcn = self.parent.umts_last_uarfcn_ul[0]
                 else:
@@ -97,7 +97,7 @@ class SdmCommonParser:
                 version = 2,
                 payload_type = util.gsmtap_type.UMTS_RRC,
                 arfcn = arfcn,
-                sub_type = subtype)
+                sub_type = gsmtap_subtype)
 
             return {'cp': [gsmtap_hdr + msg]}
         elif type == 0x01: # UMTS NAS
