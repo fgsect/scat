@@ -130,6 +130,13 @@ class TestSdmLteParser(unittest.TestCase):
         }
         self.assertDictEqual(result, expected)
 
+    def test_sdm_lte_rrc_rach_message(self):
+        payload = binascii.unhexlify('0101000d000000050000008f360000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_RRC_RACH_MSG, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_rrc_rach_msg(packet)
+        expected = {'stdout': 'LTE RRC RACH Message: Direction: 1, Cause: 1, Preamble Group: 0x0, Preamble ID: 0xd, TA: 5, TC-RNTI: 0x368f'}
+        self.assertDictEqual(result, expected)
+
     def test_sdm_lte_volte_rtp_packet(self):
         payload = binascii.unhexlify('4a00621b80fe01004001000011cbe2f5')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_RX_PACKET_INFO, payload, timestamp=0x0)
