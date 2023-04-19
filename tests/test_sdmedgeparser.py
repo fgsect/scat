@@ -36,7 +36,7 @@ class TestSdmEdgeParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
     def test_sdm_edge_ncell_info(self):
-        payload = binascii.unhexlify('0002106caa87e5c422fc7e7f4200003f00668ba002103d174712141edc1e1600000000000207834692990d0000000000000000000000000000007e7e7f6a000067009f7ea002116caa87e57001397e7f6a00006700678ba002113d1747129f00ca0000000000000000000000000000000001640064000000000000000000e400b57e7f0a0100077e7f6a00000000d085a00211727a92b25101f9020000000000000000000000837e7f0a010007010000a002126caa87e50000007e7f0a01000701688ba002123d174712000000000c010000000000000000000000000000000000000000000000')
+        payload = binascii.unhexlify('067300ff35f9f9ffffffff00000000000000ff7600ff28f9f9ffffffff00000000000000ff5400ff26f9f9ffffffff00000000000000ff5200ff23f9f9ffffffff00000000000000ff4100ff1cf9f9ffffffff00000000000000ff4b00ff1df9f9ffffffff00000000000000ff0a73002954002252001f4b001e3a001d76001d41001c430018380018350016000000005ce79b417c061d43fd061d4311071d4300068114620000002875e44600204000020001000000000020282543060100001e0000007c426a413b5936417c426a417c000f1200060062f210140601418d0001000100000200')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_ncell_info(packet)
         expected = {'stdout': ''}
@@ -50,6 +50,12 @@ class TestSdmEdgeParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('00000000a843c745989153645c99d5420f0000000200000054b6c5455003c84279181642000000002c003d2200080162f2200134989153647d02000000000000420000004838e4')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_3G_NCELL_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_edge_3g_ncell_info(packet)
+        expected = {'stdout': ''}
+        self.assertDictEqual(result, expected)
+
+        payload = binascii.unhexlify('0a542a4f01015a3c542a2500016bf0542a4000016bf0542a6700016bf0542a7100016bf0542ac300016bf0542ad900016bf0542aef00016bf0542afa00016bf0542a0501016bf0')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_3G_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_3g_ncell_info(packet)
         expected = {'stdout': ''}
