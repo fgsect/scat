@@ -144,7 +144,7 @@ class SdmCommonParser:
                         #     sub_type = util.gsmtap_channel.SDCCH | 0x80)
                         # msg_content = b'\x00\x00\x01\x03\xf1' + msg_content
                         if self.parent:
-                            self.parent.logger.log(logging.WARNING, 'GSM RR with short PD, decode using "gsm_a_sacch": {}'.format(binascii.hexlify(msg_content).decode('utf-8')))
+                            self.parent.logger.log(logging.WARNING, 'GSM RR with short PD, decode using "gsm_a_sacch": {}'.format(binascii.hexlify(msg).decode('utf-8')))
                         return None
                     else:
                         if self.parent:
