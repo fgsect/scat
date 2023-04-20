@@ -23,6 +23,7 @@ import struct
 import datetime
 import logging
 from collections import namedtuple
+import binascii
 
 class QualcommParser:
     def __init__(self):
@@ -131,6 +132,12 @@ class QualcommParser:
 
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00)), 0x1000, False)
 
+        self.io_device.write(util.generate_packet(struct.pack('<LL', diagcmd.DIAG_LOG_CONFIG_F, diagcmd.LOG_CONFIG_RETRIEVE_ID_RANGES_OP)), False)
+        log_config_buf = self.io_device.read(0x1000)
+        result = self.parse_diag(log_config_buf[:-1])
+        if result:
+            self.postprocess_parse_result(result)
+
         # Send empty masks
         self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_1x()), 0x1000, False)
         self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_wcdma()), 0x1000, False)
@@ -213,6 +220,8 @@ class QualcommParser:
             return self.parse_diag_version(pkt)
         elif pkt[0] == diagcmd.DIAG_EXT_BUILD_ID_F:
             return self.parse_diag_ext_build_id(pkt)
+        elif pkt[0] == diagcmd.DIAG_LOG_CONFIG_F:
+            return self.parse_diag_log_config(pkt)
         else:
             #print("Not parsing non-Log packet %02x" % pkt[0])
             #util.xxd(pkt)
@@ -506,6 +515,37 @@ class QualcommParser:
             return None
 
         stdout = 'Build ID: {}'.format(pkt[12:-2].decode())
+        return {'stdout': stdout}
+
+    def parse_diag_log_config(self, pkt):
+        if len(pkt) < 8:
+            return None
+        header = namedtuple('QcDiagLogConfig', 'pkt_id cmd_id')
+        header_val = header._make(struct.unpack('<LL', pkt[0:8]))
+        payload = pkt[8:]
+        stdout = 'Log Config: '
+
+        if header_val.cmd_id == diagcmd.LOG_CONFIG_DISABLE_OP:
+            stdout += 'Disable'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_ID_RANGES_OP:
+            stdout += 'Retrieve ID ranges: '
+            ranges = payload[4:]
+            num_ranges = int(len(ranges)/4)
+            for i in range(num_ranges):
+                val = struct.unpack('<L', ranges[4*i:4*(i+1)])[0]
+                if val > 0:
+                    stdout += '{}: {}, '.format(i, val)
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_VALID_MASK_OP:
+            stdout += 'Retrieve valid mask'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_SET_MASK_OP:
+            stdout += 'Set mask'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_GET_LOGMASK_OP:
+            stdout += 'Get mask'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+
         return {'stdout': stdout}
 
 __entry__ = QualcommParser
