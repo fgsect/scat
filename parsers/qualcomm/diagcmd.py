@@ -318,11 +318,19 @@ def create_extended_message_config_set_mask(first_ssid, last_ssid, *masks):
     diag_log_config_mask_header = struct.pack('<BBHHH',
         DIAG_EXT_MSG_CONFIG_F, 0x04,
         first_ssid, last_ssid, 0x00)
-    ext_msg_config_mask_payload = bytearray(b'\x00\x00\x00\x00' * (last_ssid - first_ssid + 1))
+    ext_msg_config_levels = [0] * (last_ssid - first_ssid + 1)
+    ext_msg_config_mask_payload = b''
 
     # Each subsystem ID has own log level
-    # Currently Extended messages are not parsed so do nothing
     for mask in masks:
-        pass
+        subsys_id = mask[0]
+        if subsys_id < first_ssid or subsys_id > last_ssid:
+            continue
+        rel_subsys_id = subsys_id - first_ssid
+        log_level = mask[1]
+        ext_msg_config_levels[rel_subsys_id] = log_level
 
-    return diag_log_config_mask_header + bytes(ext_msg_config_mask_payload)
+    for x in ext_msg_config_levels:
+        ext_msg_config_mask_payload += struct.pack('<L', x)
+
+    return diag_log_config_mask_header + ext_msg_config_mask_payload
