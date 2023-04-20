@@ -116,6 +116,19 @@ class QualcommParser:
         self.logger.log(logging.INFO, 'Initializing diag')
         # Disable static event reporting
         self.io_device.read(0x1000)
+
+        self.io_device.write(util.generate_packet(struct.pack('<B', diagcmd.DIAG_VERNO_F)), False)
+        ver_buf = self.io_device.read(0x1000)
+        result = self.parse_diag(ver_buf[:-1])
+        if result:
+            self.postprocess_parse_result(result)
+
+        self.io_device.write(util.generate_packet(struct.pack('<B', diagcmd.DIAG_EXT_BUILD_ID_F)), False)
+        build_id_buf = self.io_device.read(0x1000)
+        result = self.parse_diag(build_id_buf[:-1])
+        if result:
+            self.postprocess_parse_result(result)
+
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00)), 0x1000, False)
 
         # Send empty masks
@@ -196,6 +209,10 @@ class QualcommParser:
             return self.parse_diag_qsr4_ext_msg(pkt)
         elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
             return self.parse_diag_multisim(pkt)
+        elif pkt[0] == diagcmd.DIAG_VERNO_F:
+            return self.parse_diag_version(pkt)
+        elif pkt[0] == diagcmd.DIAG_EXT_BUILD_ID_F:
+            return self.parse_diag_ext_build_id(pkt)
         else:
             #print("Not parsing non-Log packet %02x" % pkt[0])
             #util.xxd(pkt)
@@ -473,6 +490,23 @@ class QualcommParser:
 
     def parse_diag_qsr4_ext_msg(self, pkt):
         return None
+
+    def parse_diag_version(self, pkt):
+        header = namedtuple('QcDiagVersion', 'compile_date compile_time release_date release_time chipset')
+        if len(pkt) < 47:
+            return None
+        ver_info = header._make(struct.unpack('<11s 8s 11s 8s 8s', pkt[1:47]))
+
+        stdout = 'Compile: {}/{}, Release: {}/{}, Chipset: {}'.format(ver_info.compile_date.decode(),
+            ver_info.compile_time.decode(), ver_info.release_date.decode(), ver_info.release_time.decode(), ver_info.chipset.decode())
+        return {'stdout': stdout}
+
+    def parse_diag_ext_build_id(self, pkt):
+        if len(pkt) < 12:
+            return None
+
+        stdout = 'Build ID: {}'.format(pkt[12:-2].decode())
+        return {'stdout': stdout}
 
 __entry__ = QualcommParser
 
