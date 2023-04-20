@@ -29,5 +29,11 @@ class TestQualcommParser(unittest.TestCase):
         expected = {'stdout': 'Log Config: Retrieve ID ranges: 1: 4095, 4: 4087, 5: 4087, 6: 28, 7: 2910, 9: 2070, 10: 914, 11: 521, 13: 519, '}
         self.assertDictEqual(result, expected)
 
+    def test_parse_ext_msg_config(self):
+        payload = binascii.unhexlify('7d0101001a00000000008600f401fa01e803b004d007d807b80bc60ba00faa0f9411e811f81108128813ac137c158d157017c11764197919581b5b1bbc1bc71b201c211c401f401f34215421282330231c253125d827e2270b280f283c283c286e288928a028b0280429092900c063c0')
+        result = self.parser.parse_diag_ext_msg_config(payload)
+        expected = {'stdout': 'Extended message range: 0-134, 500-506, 1000-1200, 2000-2008, 3000-3014, 4000-4010, 4500-4584, 4600-4616, 5000-5036, 5500-5517, 6000-6081, 6500-6521, 7000-7003, 7100-7111, 7200-7201, 8000-8000, 8500-8532, 9000-9008, 9500-9521, 10200-10210, 10251-10255, 10300-10300, 10350-10377, 10400-10416, 10500-10505, 49152-49251, '}
+        self.assertEqual(result['stdout'], expected['stdout'])
+
 if __name__ == '__main__':
     unittest.main()

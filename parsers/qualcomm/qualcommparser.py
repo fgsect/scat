@@ -51,6 +51,7 @@ class QualcommParser:
         self.parse_events = False
         self.qsr_hash_filename = ''
         self.qsr4_hash_filename = ''
+        self.emr_id_range = []
 
         self.name = 'qualcomm'
         self.shortname = 'qc'
@@ -147,30 +148,41 @@ class QualcommParser:
         self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_lte()), 0x1000, False)
         self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_tdscdma()), 0x1000, False)
 
+        self.io_device.write(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EXT_MSG_CONFIG_F, 0x01)), False)
+        ext_msg_buf = self.io_device.read(0x1000)
+        result = self.parse_diag(ext_msg_buf[:-1])
+        if result:
+            self.postprocess_parse_result(result)
+
         emr = lambda x, y: diagcmd.create_extended_message_config_set_mask(x, y)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x0000, 0x0065)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x01f4, 0x01fa)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x03e8, 0x033f)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x07d0, 0x07d8)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x0bb8, 0x0bc6)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x0fa0, 0x0faa)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1194, 0x11ae)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x11f8, 0x1206)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1388, 0x13a6)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x157c, 0x158c)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1770, 0x17c0)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1964, 0x1979)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1b58, 0x1b5b)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1bbc, 0x1bc7)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1c20, 0x1c21)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x1f40, 0x1f40)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x2134, 0x214c)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x2328, 0x2330)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x251c, 0x2525)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x27d8, 0x27e2)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x280b, 0x280f)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x283c, 0x283c)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(emr(0x286e, 0x2886)), 0x1000, False)
+        if 'id_range' in result:
+            self.emr_id_range = result['id_range']
+            for x in result['id_range']:
+                self.io_device.write_then_read_discard(util.generate_packet(emr(x[0], x[1])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x0000, 0x0065)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x01f4, 0x01fa)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x03e8, 0x033f)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x07d0, 0x07d8)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x0bb8, 0x0bc6)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x0fa0, 0x0faa)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1194, 0x11ae)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x11f8, 0x1206)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1388, 0x13a6)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x157c, 0x158c)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1770, 0x17c0)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1964, 0x1979)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1b58, 0x1b5b)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1bbc, 0x1bc7)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1c20, 0x1c21)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x1f40, 0x1f40)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x2134, 0x214c)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x2328, 0x2330)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x251c, 0x2525)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x27d8, 0x27e2)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x280b, 0x280f)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x283c, 0x283c)), 0x1000, False)
+            self.io_device.write_then_read_discard(util.generate_packet(emr(0x286e, 0x2886)), 0x1000, False)
 
     def prepare_diag(self):
         self.logger.log(logging.INFO, 'Starting diag')
@@ -222,6 +234,8 @@ class QualcommParser:
             return self.parse_diag_ext_build_id(pkt)
         elif pkt[0] == diagcmd.DIAG_LOG_CONFIG_F:
             return self.parse_diag_log_config(pkt)
+        elif pkt[0] == diagcmd.DIAG_EXT_MSG_CONFIG_F:
+            return self.parse_diag_ext_msg_config(pkt)
         else:
             #print("Not parsing non-Log packet %02x" % pkt[0])
             #util.xxd(pkt)
@@ -266,7 +280,7 @@ class QualcommParser:
         # Static event reporting Disable
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00)), 0x1000, False)
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<LL', diagcmd.DIAG_LOG_CONFIG_F, diagcmd.LOG_CONFIG_DISABLE_OP)), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(b'\x7d\x05\x00\x00\x00\x00\x00\x00'), 0x1000, False)
+        self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BBHHH', diagcmd.DIAG_EXT_MSG_CONFIG_F, 0x05, 0x0000, 0x0000, 0x0000)), 0x1000, False)
 
     def parse_dlf(self):
         oldbuf = b''
@@ -547,6 +561,26 @@ class QualcommParser:
             stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
 
         return {'stdout': stdout}
+
+    def parse_diag_ext_msg_config(self, pkt):
+        if len(pkt) < 2:
+            return None
+
+        if pkt[1] == 0x01:
+            # Ranges
+            ext_msg_range_header = namedtuple('QcDiagExtMsgRange', 'cmd_code ts_type unk1 num_ranges unk2')
+            pkt_header = ext_msg_range_header._make(struct.unpack('<BBHHH', pkt[0:8]))
+            stdout = 'Extended message range: '
+            id_ranges = []
+
+            pos = 8
+            for i in range(pkt_header.num_ranges):
+                id_range = struct.unpack('<HH', pkt[pos:pos+4])
+                stdout += '{}-{}, '.format(id_range[0], id_range[1])
+                id_ranges.append((id_range[0], id_range[1]))
+                pos += 4
+
+            return {'stdout': stdout, 'id_range': id_ranges}
 
 __entry__ = QualcommParser
 
