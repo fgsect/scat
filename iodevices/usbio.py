@@ -50,13 +50,17 @@ class USBIO:
         # 0x0408: Samsung
         # 0x1004: LG
         # 0x2931: Jolla
-        self.dev = usb.core.find(idVendor=0x1004)
+        vid_list = [0x1004, 0x04e8, 0x2931]
+        self.dev = None
+
+        for vid in vid_list:
+            dev = usb.core.find(idVendor=vid)
+            if dev is not None:
+                self.dev = dev
+                break
+
         if self.dev is None:
-            self.dev = usb.core.find(idVendor=0x2931)
-            if self.dev is None:
-                self.dev = usb.core.find(idVendor=0x04e8)
-                if self.dev is None:
-                    raise ValueError('Device not found')
+            raise ValueError('Device not found')
 
     def claim_interface(self, interface):
         # Nexus 5: Interface #2 is DIAG
