@@ -33,6 +33,7 @@ class USBIO:
         self.read(read_size)
 
     def probe_device_by_vid_pid(self, vid, pid):
+        print('Trying USB device with vid:pid {:#06x}:{:#06x}'.format(vid, pid))
         if pid is None:
             self.dev = usb.core.find(idVendor=vid)
         else:
