@@ -13,6 +13,7 @@ class HisiNestedParser:
 
         self.process = {
             0x00020101: lambda x, y, z: self.hisi_l3_ota(x, y, z),
+            0xfd010101: lambda x, y, z: self.hisi_debug_msg(x, y, z),
         }
 
     def hisi_l3_ota(self, pkt_header, pkt_data, args):
@@ -132,3 +133,31 @@ class HisiNestedParser:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown L3 OTA message type {:#04x}'.format(pkt_data[0]))
             return None
+
+    def hisi_debug_msg(self, pkt_header, pkt_data, args):
+        # TODO decode hisi ts
+        if not self.parent.msgs:
+            return None
+
+        if pkt_header.cmd == 0xfd010101:
+            pkt_info = struct.unpack('<HHLLLLLL', pkt_data[:28])
+            print(pkt_info)
+            pkt_data = pkt_data[28:]
+            log_prefix = b''
+            app_name = ''
+        else:
+            log_prefix = b''
+            app_name = ''
+
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            process_name = app_name,
+            subsys_name = '',
+            filename = '',
+            line_number = 0
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_prefix + pkt_data]}
