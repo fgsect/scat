@@ -186,6 +186,22 @@ class QualcommParser:
 
     def prepare_diag(self):
         self.logger.log(logging.INFO, 'Starting diag')
+
+        emr_level_range = []
+        if self.parse_msgs:
+            if len(self.emr_id_range) > 0:
+                for x in self.emr_id_range:
+                    self.io_device.write(util.generate_packet(struct.pack('<BBHH', diagcmd.DIAG_EXT_MSG_CONFIG_F, 0x02, x[0], x[1])), False)
+                    ext_msg_level_buf = self.io_device.read(0x1000)
+                    result = self.parse_diag(ext_msg_level_buf[:-1])
+                    if result:
+                        self.postprocess_parse_result(result)
+                    emr_level_range.append((result['start'], result['end'], result['level']))
+
+            if len(emr_level_range) > 0:
+                for x in emr_level_range:
+                    self.io_device.write_then_read_discard(util.generate_packet(diagcmd.create_extended_message_config_set_mask(x[0], x[1], *x[2])), 0x1000, False)
+
         # Static event reporting Enable
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x01)), 0x1000, False)
 
@@ -581,6 +597,21 @@ class QualcommParser:
                 pos += 4
 
             return {'stdout': stdout, 'id_range': id_ranges}
+        elif pkt[1] == 0x02:
+            # Levels
+            ext_msg_level_header = namedtuple('QcDiagExtMsgLevel', 'cmd_code ts_type start_id end_id unk1')
+            pkt_header = ext_msg_level_header._make(struct.unpack('<BBHHH', pkt[0:8]))
+            stdout = 'Extended message level: \n'
+            levels = []
+
+            pos = 8
+            for i in range(pkt_header.end_id - pkt_header.start_id + 1):
+                level = struct.unpack('<L', pkt[pos:pos+4])[0]
+                stdout += 'Message ID {}: {:#x}\n'.format(pkt_header.start_id + i, level)
+                levels.append((pkt_header.start_id + i, level))
+                pos += 4
+
+            return {'stdout': stdout, 'start': pkt_header.start_id, 'end': pkt_header.end_id, 'level': levels}
 
 __entry__ = QualcommParser
 
@@ -589,4 +620,3 @@ def name():
 
 def shortname():
     return 'qc'
-
