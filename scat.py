@@ -60,6 +60,11 @@ if __name__ == '__main__':
     input_group.add_argument('-u', '--usb', action='store_true', help='Use USB diagnostics port')
     input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL, SDM, LPD)', nargs='*')
 
+    serial_group = parser.add_argument_group('Serial device settings')
+    serial_group.add_argument('-b', '--baudrate', help='Set the serial baud rate', type=int, default=115200)
+    serial_group.add_argument('--no-rts', action='store_true', help='Do not enable the RTS/CTS')
+    serial_group.add_argument('--no-dsr', action='store_true', help='Do not enable the DSR/DTR')
+
     usb_group = parser.add_argument_group('USB device settings')
     usb_group.add_argument('-v', '--vendor', help='Specify USB vendor ID', type=hexint)
     usb_group.add_argument('-p', '--product', help='Specify USB product ID', type=hexint)
@@ -108,7 +113,7 @@ if __name__ == '__main__':
     # Device preparation
     io_device = None
     if args.serial:
-        io_device = iodevices.SerialIO(args.serial)
+        io_device = iodevices.SerialIO(args.serial, args.baudrate, not args.no_rts, not args.no_dsr)
     elif args.usb:
         io_device = iodevices.USBIO()
         if args.address:
