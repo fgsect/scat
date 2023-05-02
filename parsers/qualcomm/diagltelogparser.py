@@ -959,7 +959,7 @@ class DiagLteLogParser:
 
                     else:
                         if self.parent:
-                            self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket version %s' % subpkt_ver)
+                            self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SRB Subpacket version %s' % subpkt_version)
                         pos += subpkt_size
                         continue
 
