@@ -359,7 +359,9 @@ class QualcommParser:
             body += self.io_device.read(pkt_len - 2)
             pkt = header + body
 
-            self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
+            parse_result = self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
+            if parse_result is not None:
+                self.postprocess_parse_result(parse_result)
 
     def read_dump(self):
         while self.io_device.file_available:
