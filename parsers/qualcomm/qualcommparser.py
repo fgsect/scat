@@ -347,7 +347,7 @@ class QualcommParser:
         if 'ts' in parse_result:
             ts = parse_result['ts']
         else:
-            ts = None
+            ts = datetime.datetime.now()
 
         if 'cp' in parse_result:
             for sock_content in parse_result['cp']:
