@@ -375,7 +375,6 @@ class QualcommParser:
             return
 
         pkt_header = self.log_header._make(struct.unpack('<BBHHHQ', pkt[0:16]))
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_body = pkt[16:]
 
         if len(pkt_body) != (pkt_header.length2 - 12):
@@ -461,6 +460,7 @@ class QualcommParser:
 
         pos = 3
         event_pkts = []
+        ts = datetime.datetime.now()
         while pos < len(pkt):
             # id 12b, _pad 1b, payload_len 2b, ts_trunc 1b
             _eid = struct.unpack('<H', pkt[pos:pos+2])[0]
@@ -522,7 +522,7 @@ class QualcommParser:
                     event_pkts.append(self.diag_fallback_event_parser.parse_event_fallback(ts, event_id, arg_bin))
                 pos += (1 + pkt[pos])
 
-        return {'cp': event_pkts}
+        return {'cp': event_pkts, 'ts': ts}
 
     def parse_diag_qsr_ext_msg(self, pkt):
         return None
