@@ -26,6 +26,7 @@ class Diag1xLogParser:
         }
 
     def parse_ip(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         item_struct = namedtuple('QcDiag1xProtocolData', 'instance protocol ifnameid direction sequence_num segment_num_is_final')
         item = item_struct._make(struct.unpack('<BBBBHH', pkt_body[0:8]))
         item_data = pkt_body[8:]
@@ -44,10 +45,10 @@ class Diag1xLogParser:
 
         if is_final_segment:
             if segment_num == 0:
-                return {'up': [item_data]}
+                return {'up': [item_data], 'ts': pkt_ts}
             else:
                 if not (pkt_id in self.pending_pkts.keys()):
-                    return {'up': [item_data]}
+                    return {'up': [item_data], 'ts': pkt_ts}
                 pending_pkt = self.pending_pkts.get(pkt_id)
                 for x in range(segment_num):
                     if not (x in pending_pkt.keys()):
@@ -57,7 +58,7 @@ class Diag1xLogParser:
                     pkt_buf += pending_pkt[x]
                 del self.pending_pkts[pkt_id]
                 pkt_buf += item_data
-                return {'up': [pkt_buf]}
+                return {'up': [pkt_buf], 'ts': pkt_ts}
         else:
             if pkt_id in self.pending_pkts.keys():
                 self.pending_pkts[pkt_id][segment_num] = item_data
@@ -100,13 +101,13 @@ class Diag1xLogParser:
                 self.last_tx[sim_id] = tx_buf
                 return
             else:
-                return {'cp': [gsmtap_hdr + rx_buf]}
+                return {'cp': [gsmtap_hdr + rx_buf], 'ts': pkt_ts}
         elif len(self.last_tx[sim_id]) > 0:
             if len(rx_buf) > 0:
                 last_sim_tx = self.last_tx[sim_id] + rx_buf
                 self.last_tx[sim_id] = b''
-                return {'cp': [gsmtap_hdr + last_sim_tx]}
+                return {'cp': [gsmtap_hdr + last_sim_tx], 'ts': pkt_ts}
             else:
                 last_sim_tx = self.last_tx[sim_id]
                 self.last_tx[sim_id] = b''
-                return {'cp': [gsmtap_hdr + last_sim_tx, gsmtap_hdr + tx_buf]}
+                return {'cp': [gsmtap_hdr + last_sim_tx, gsmtap_hdr + tx_buf], 'ts': pkt_ts}
