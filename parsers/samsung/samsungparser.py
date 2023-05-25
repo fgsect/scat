@@ -236,7 +236,7 @@ class SamsungParser:
 
     def run_logger(self):
         self.logger.log(logging.INFO, 'Starting diag from logger output')
-        logger_header_struct = namedtuple('SdmLoggerHeader', 'magic1 streamid magic2 seqnr direction group command timestamp')
+        logger_header_struct = namedtuple('SdmLoggerHeader', 'magic streamid logger_version seqnr direction group command timestamp')
 
         oldbuf = b''
         loop = True
@@ -268,12 +268,11 @@ class SamsungParser:
 
                     # print(binascii.hexlify(pkt))
                     if len(pkt) < 17:
-                        print('Skipping packet as shorter than expected')
+                        self.logger.log(logging.INFO, 'Skipping packet as shorter than expected')
                         continue
                     logger_header = logger_header_struct._make(struct.unpack('<HLHHBBBL', pkt[0:17]))
-                    known_magic = [0x0174, 0x017f, 0x0180, 0x0185, 0x0186, 0x0187]
-                    if not (logger_header.magic1 == 0x7f39 and logger_header.magic2 in known_magic):
-                        print('Skipping packet as magic does not match')
+                    if not (logger_header.magic == 0x7f39):
+                        self.logger.log(logging.INFO, 'Skipping packet as magic does not match')
                         continue
                     payload = pkt[17:]
                     parse_result = self.parse_diag(generate_sdm_packet(logger_header.direction, logger_header.group, logger_header.command, payload, logger_header.timestamp))
