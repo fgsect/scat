@@ -63,9 +63,17 @@ class SdmControlParser:
         elif len(rest_str) == 2:
             chip_id = struct.unpack('<H', rest_str)[0]
 
+        if self.parent:
+            self.parent.icd_ver_min = pkt[55]
+            self.parent.icd_ver_maj = pkt[56]
+            icd_ver_min = self.parent.icd_ver_min
+            icd_ver_maj = self.parent.icd_ver_maj
+        else:
+            icd_ver_min = pkt[55]
+            icd_ver_maj = pkt[56]
 
-        stdout = "SDM Start Response: Version: {}, Date: {}{}{}".format(
-            version_str, date_str,
+        stdout = "SDM Start Response: Version: {}, ICD: {}.{}, Date: {}{}{}".format(
+            version_str, icd_ver_maj, icd_ver_min, date_str,
             ', Extra: ' + extra_str if len(extra_str) > 0 else '',
             ', ID: ' + hex(chip_id) if len(rest_str) > 0 else ''
         )

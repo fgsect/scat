@@ -54,6 +54,8 @@ class SamsungParser:
         self.start_magic = 0x41414141
         self.tcpip_mtu_rx = 1500
         self.tcpip_mtu_tx = 1500
+        self.icd_ver_maj = 0
+        self.icd_ver_min = 0
 
         self.logger = logging.getLogger('scat.samsungparser')
 
