@@ -5,7 +5,7 @@ import binascii
 import datetime
 from collections import namedtuple
 
-from parsers.qualcomm.qualcommparser import QualcommParser
+from scat.parsers.qualcomm.qualcommparser import QualcommParser
 
 class TestQualcommParser(unittest.TestCase):
     parser = QualcommParser()

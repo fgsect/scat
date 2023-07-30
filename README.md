@@ -32,6 +32,19 @@ If your smartphone does not expose the diagnostic port via USB, you can try
 using the baseband dump features existing in some smartphones. Follow [the wiki
 page](https://github.com/fgsect/scat/wiki/Baseband-Dumps) for details.
 
+## Installation
+
+Install SCAT through pip using:
+
+```
+$ pip install https://github.com/fgsect/scat
+```
+
+Please note that the name SCAT is taken in the PyPI, I will find further solution.
+
+For development purposes, please use `pip install -e .` on your checkout directory.
+The older `scat.py` is moved to `src/scat/main.py`.
+
 ## Usage
 
 While we recommend using USB directly to access the diagnostics port, if your
@@ -57,7 +70,7 @@ Please see the [wiki page for advanced options](https://github.com/fgsect/scat/w
 For Samsung devices, you need to manually supply the baseband model through `-m`
 option like this example:
 
-`$ scat.py -t sec -m e333`
+`$ scat -t sec -m e333`
 
 Available model types are following:
 
@@ -73,8 +86,8 @@ Available model types are following:
 Accessing the baseband diagnostics via USB:
 
 ```
-$ scat.py -t qc -u -a 001:010 -i 2
-$ scat.py -t sec -u -a 001:010 -i 2
+$ scat -t qc -u -a 001:010 -i 2
+$ scat -t sec -u -a 001:010 -i 2
 ```
 
 Although there are small heuristic to determine the connected device, it is
@@ -90,7 +103,7 @@ option.
 ### Serial
 Accessing the baseband diagnostics via serial port:
 
-`$ scat.py -t qc -s /dev/ttyUSB0`
+`$ scat -t qc -s /dev/ttyUSB0`
 
 Replace `/dev/ttyUSB0` to what is your diagnostic device.
 
@@ -98,9 +111,9 @@ Replace `/dev/ttyUSB0` to what is your diagnostic device.
 Parsing the baseband dump file:
 
 ```
-$ scat.py -t qc -d test.qmdl
-$ scat.py -t sec -d test.sdm
-$ scat.py -t hisi -d test.lpd
+$ scat -t qc -d test.qmdl
+$ scat -t sec -d test.sdm
+$ scat -t hisi -d test.lpd
 ```
 
 ### Tested Devices

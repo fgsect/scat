@@ -5,7 +5,7 @@ import binascii
 import datetime
 from collections import namedtuple
 
-from parsers.qualcomm.diagltelogparser import DiagLteLogParser
+from scat.parsers.qualcomm.diagltelogparser import DiagLteLogParser
 
 class TestDiagLteLogParser(unittest.TestCase):
     parser = DiagLteLogParser(parent=None)

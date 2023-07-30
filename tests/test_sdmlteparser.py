@@ -3,8 +3,8 @@
 import unittest
 import binascii
 
-from parsers.samsung.sdmlteparser import SdmLteParser
-from parsers.samsung import sdmcmd
+from scat.parsers.samsung.sdmlteparser import SdmLteParser
+from scat.parsers.samsung import sdmcmd
 
 class TestSdmLteParser(unittest.TestCase):
     parser = SdmLteParser(parent=None, model='e5123')

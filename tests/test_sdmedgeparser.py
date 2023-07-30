@@ -3,8 +3,8 @@
 import unittest
 import binascii
 
-from parsers.samsung import sdmcmd
-from parsers.samsung.sdmedgeparser import SdmEdgeParser
+from scat.parsers.samsung import sdmcmd
+from scat.parsers.samsung.sdmedgeparser import SdmEdgeParser
 
 class TestSdmEdgeParser(unittest.TestCase):
     parser = SdmEdgeParser(parent=None, model='e5123')

@@ -3,7 +3,7 @@
 import unittest
 import binascii
 
-from parsers.hisilicon.hisilogparser import HisiLogParser
+from scat.parsers.hisilicon.hisilogparser import HisiLogParser
 
 class TestHisiLogParser(unittest.TestCase):
     parser = HisiLogParser(parent=None)
