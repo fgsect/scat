@@ -574,8 +574,13 @@ class QualcommParser:
             return None
         ver_info = header._make(struct.unpack('<11s 8s 11s 8s 8s', pkt[1:47]))
 
-        stdout = 'Compile: {}/{}, Release: {}/{}, Chipset: {}'.format(ver_info.compile_date.decode(),
-            ver_info.compile_time.decode(), ver_info.release_date.decode(), ver_info.release_time.decode(), ver_info.chipset.decode())
+        stdout = 'Compile: {}/{}, Release: {}/{}, Chipset: {}'.format(
+            ver_info.compile_date.decode(errors="ignore"),
+            ver_info.compile_time.decode(errors="ignore"),
+            ver_info.release_date.decode(errors="ignore"),
+            ver_info.release_time.decode(errors="ignore"),
+            ver_info.chipset.decode(errors="ignore"))
+
         return {'stdout': stdout}
 
     def parse_diag_ext_build_id(self, pkt):
