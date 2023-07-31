@@ -19,7 +19,7 @@ class SdmEdgeParser:
         self.process = {
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_NCELL_INFO: lambda x: self.sdm_edge_dummy(x, 0x06),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_dummy(x, 0x07),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_dummy(x, 0x09),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
@@ -58,18 +58,27 @@ class SdmEdgeParser:
         return {'stdout': ''}
 
     def sdm_edge_3g_ncell_info(self, pkt):
-        '''
-        0x07: 'GsmServ',
-            "bsic",  '>B',  1 bytes, pos:20, # 7bit
-            "arfcn", '>H',  2 bytes, pos:26, # 10bit
-            "mcc",   '<2s', 2 bytes, pos:39, # bcd encoded
-            "mnc",   '<1s', 1 bytes, pos:41, # bcd encoded
-            "lac",   '>H',  2 bytes, pos:42,
-            "cid",   '>H',  2 bytes, pos:45,
-        ], []),
-        if pkt[0] == 0x07:
-        '''
-        return {'stdout': ''}
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        stdout = ''
+        num_3g_cells = pkt[0]
+
+        if num_3g_cells > 10:
+            num_3g_cells = 10
+
+        stdout += 'EDGE 3G Neighbor Cell Info: {} Cells\n'.format(num_3g_cells)
+
+        pos = 1
+        n_meas = namedtuple('SdmEdge3GNCellNCell', 'uarfcn psc rssi rscp ecno')
+        for i in range(num_3g_cells):
+            n_meas_pkt = n_meas._make(struct.unpack('<HHBBB', pkt[pos:pos+7]))
+            stdout += "NCell {}: UARFCN {}, PSC {}, RSSI {}, RSCP {}, Ec/No {}\n".format(
+                i, n_meas_pkt.uarfcn, n_meas_pkt.psc,
+                n_meas_pkt.rssi, n_meas_pkt.rscp * -1, n_meas_pkt.ecno / -10
+            )
+            pos += 7
+
+        return {'stdout': stdout.rstrip()}
 
     def sdm_edge_handover_info(self, pkt):
         return {'stdout': ''}
