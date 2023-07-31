@@ -167,6 +167,12 @@ class diag_log_code_lte(IntEnum):
     LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE = 0xEC # 0xB0EC LTE NAS EMM Plain OTA Incoming Message
     LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE = 0xED # 0xB0ED LTE NAS EMM Plain OTA Outgoing Message
 
+@unique
+class diag_log_code_5gnr(IntEnum):
+    # RRC
+    LOG_5GNR_RRC_MIB_INFO            = 0x822 # 0xB822 NR RRC MIB Info
+    LOG_5GNR_RRC_SUPPORTED_CA_COMBOS = 0x826 # 0xB826 NR RRC Supported CA Combinations
+
 def bytes_reqd_for_bit(bit):
     if bit % 8 > 0:
         return int(bit / 8) + 1
@@ -290,7 +296,7 @@ def log_mask_empty_lte():
     return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0209)
 
 def log_mask_scat_lte():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0826,
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x09ff,
         diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
         diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS,
@@ -307,7 +313,9 @@ def log_mask_scat_lte():
         diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE,
-        0x826
+
+        diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
     )
 
 def log_mask_empty_tdscdma():
