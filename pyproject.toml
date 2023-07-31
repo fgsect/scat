@@ -1,0 +1,29 @@
+[project]
+name = "scat"
+version = "1.0.0"
+authors = [
+    { name="Shinjo Park", email="peremen@gmail.com" },
+]
+description = "Signaling Collection and Analysis Tool"
+readme = "README.md"
+license = {text = "GPL-2.0-or-later"}
+classifiers = [
+    "Operating System :: OS Independent",
+]
+
+requires-python = ">=3.7"
+dependencies = [
+    "pyusb>=1.0.2",
+    "pyserial>=3.3"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/fgsect/scat"
+"Bug Tracker" = "https://github.com/fgsect/scat/issues"
+
+[project.scripts]
+scat = "scat.main:scat_main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
