@@ -305,18 +305,13 @@ class SamsungParser:
         else:
             radio_id = 0
 
-        if 'ts' in parse_result:
-            ts = parse_result['ts']
-        else:
-            ts = None
-
         if 'cp' in parse_result:
             for sock_content in parse_result['cp']:
-                self.writer.write_cp(sock_content, radio_id, ts)
+                self.writer.write_cp(sock_content, radio_id)
 
         if 'up' in parse_result:
             for sock_content in parse_result['up']:
-                self.writer.write_up(sock_content, radio_id, ts)
+                self.writer.write_up(sock_content, radio_id)
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:
