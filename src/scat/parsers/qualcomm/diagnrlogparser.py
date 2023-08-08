@@ -2,10 +2,16 @@
 
 from scat.parsers.qualcomm import diagcmd
 import scat.util as util
-
+from binascii import hexlify
 import struct
 from collections import namedtuple
 import logging
+import json
+
+try:
+    from pycrate_asn1dir import RRCNR, RRCLTE
+except Exception as e:
+    print(e)
 
 class DiagNrLogParser:
     def __init__(self, parent):
@@ -15,6 +21,7 @@ class DiagNrLogParser:
             # NR
             0xB822: lambda x, y, z: self.parse_nr_mib_info(x, y, z), # NR RRC MIB Info
             0xB826: lambda x, y, z: self.parse_cacombos(x, y, z), # NR RRC Supported CA Combos
+            0xB821: lambda x, y, z: self.parse_nr_ota_sibs_mibs(x,y,z) # NR RRC OTA
         }
 
     def parse_nr_mib_info(self, pkt_header, pkt_body, args):
@@ -54,3 +61,80 @@ class DiagNrLogParser:
 
     def parse_cacombos(self, pkt_header, pkt_body, args):
         self.parent.logger.log(logging.WARNING, "0xB826 " + util.xxd_oneline(pkt_body))
+    
+    def parse_nr_ota_sibs_mibs(self, pkt_header, pkt_body, args):
+        try:
+            (pkt_ver, unk) = struct.unpack('<B3s', pkt_body)
+            sib_dict = {}
+            mib_dict = {}
+            if(pkt_ver == 14):
+                (pkt_ver, unk, rrc_rel, rrc_ver, bearer_id, pci, freq, frame_num, 
+                pdu, sib_mask, null, length) = struct.unpack('<B3sBBBHI3sBB3sH', pkt_body)
+                
+                # https://lab.dobergroup.org.ua/libraries-and-modules/pycrate/-/wikis/Using-the-pycrate-asn1-runtime.md
+
+                # NR SIB: RRC_BCCH_SCH_DL
+                if(pdu==1):
+                    # Decode data using PyCrate decoder! Could use just raw data and manual decoder/and or wireshark
+                    sib_data = sib_mask
+                    # print("sib data: ", hexlify(sib_data))
+                    sib_nr = RRCNR.NR_RRC_Definitions.BCCH_DL_SCH_Message
+                    sib_nr.from_uper(sib_data)
+                    sib_dict = json.loads(sib_nr.to_json())
+                    # print(sib_dict)
+                    sib_dict["raw"] = str(hexlify(sib_nr.to_uper()))[2:-1]
+                    
+                
+                # NR MIB: RRC_BCCH_BCH    
+                elif(pdu==2):
+                    pass
+                    mib_data = sib_mask
+                    mib_nr = RRCNR.NR_RRC_Definitions.BCCH_BCH_Message
+                    mib_nr.from_uper(mib_data)
+                    mib_dict = json.loads(mib_nr.to_json())
+                    mib_dict["raw"] = str(hexlify(mib_nr.to_uper()))[2:-1]
+    
+                else:
+                    print("unknown pdu")
+
+                return (sib_dict, mib_dict)
+
+            elif(pkt_ver == 12):
+                pass
+            
+            elif(pkt_ver == 9):
+                pass
+
+            else:
+                print("unknown pkt type")
+
+        except Exception as e:
+            print("NR OTA Error: ", e)
+            return None
+        #     9: {
+        #     HEADER_FMT: '<B3sBBBHIIBB3sH', 
+        #     HEADER_LEN: 24,
+        #     HEADER_FIELDS: ["pkt_ver", "unk", "rrc_rel", "rrc_ver", "bearer_id",
+        #                "pci", "freq", "frame_num", "pdu", "sib_mask", "null",
+        #                "length"]
+        # },
+        # 12: {
+        #     HEADER_FMT: '<B3sBBBHI3sBB3sH',
+        #     HEADER_LEN: 23,
+        #     HEADER_FIELDS: ["pkt_ver", "unk", "rrc_rel", "rrc_ver", "bearer_id",
+        #                "pci", "freq", "frame_num", "pdu", "sib_mask", "null",
+        #                "length"]
+        # },
+        # 14: {
+        #     HEADER_FMT: '<B3sBBBHI3sBB3sH',
+        #     HEADER_LEN: 23,
+        #     HEADER_FIELDS: ["pkt_ver", "unk", "rrc_rel", "rrc_ver", "bearer_id",
+        #                "pci", "freq", "frame_num", "pdu", "sib_mask", "null",
+        #                "length"]
+        # } 
+
+    
+    # TODO: NR signal strength (rsrp, rsrq, etc.)
+    def parse_nr_ml1_beam_database_update(self, pkt_header, pkt_body, args):
+        pass
+

@@ -29,6 +29,8 @@ DIAG_SUBSYS_ID_UMTS = 0x07
 DIAG_SUBSYS_ID_DTV = 0x0A
 DIAG_SUBSYS_ID_APPS = 0x0B
 DIAG_SUBSYS_ID_LTE = 0x0B
+DIAG_SUBSYS_ID_NR = 0x0B
+DIAG_SUBSYS_ID_NR_AND_LTE = 0x0B # Non-stand-alone
 DIAG_SUBSYS_ID_TDSCDMA = 0x0D
 
 # Log configuration operations
@@ -172,6 +174,9 @@ class diag_log_code_5gnr(IntEnum):
     # RRC
     LOG_5GNR_RRC_MIB_INFO            = 0x822 # 0xB822 NR RRC MIB Info
     LOG_5GNR_RRC_SUPPORTED_CA_COMBOS = 0x826 # 0xB826 NR RRC Supported CA Combinations
+    LOG_5GNR_RRC_OTA                 = 0x821 # 0xB821 NR RRC OTA (Over the Air), contains SIBs and MIBs
+    # ML1
+    LOG_5GNR_ML1_MEAS_DATABASE_UPDATE  = 0x97F # 0xB97F NR ML1 Beam messages, contain nr signal stregth info
 
 def bytes_reqd_for_bit(bit):
     if bit % 8 > 0:
@@ -316,6 +321,17 @@ def log_mask_scat_lte():
 
         diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
+    )
+
+def log_mask_empty_nr():
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_NR,0x1000)
+
+def log_mask_scat_nr():
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_NR,0x1000,
+        diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
+        diag_log_code_5gnr.LOG_5GNR_RRC_OTA,
+        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE
     )
 
 def log_mask_empty_tdscdma():
