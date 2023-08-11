@@ -5,6 +5,10 @@ import scat.util as util
 import struct
 import logging
 import datetime
+from inspect import currentframe, getframeinfo
+from pathlib import Path
+import os, sys
+
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser
 from scat.parsers.samsung.sdmcommonparser import SdmCommonParser
@@ -57,6 +61,7 @@ class SamsungParser:
         self.tcpip_mtu_tx = 1500
         self.icd_ver_maj = 0
         self.icd_ver_min = 0
+        self.combine_stdout = False
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -91,6 +96,8 @@ class SamsungParser:
                 self.logger.setLevel(params[p])
             elif p == 'start-magic':
                 self.start_magic = int(params[p], base=16)
+            elif p == 'combine-stdout':
+                self.combine_stdout = params[p]
 
     def init_diag(self):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))
@@ -306,18 +313,36 @@ class SamsungParser:
         else:
             radio_id = 0
 
+        ts = datetime.datetime.now()
+
         if 'cp' in parse_result:
             for sock_content in parse_result['cp']:
-                self.writer.write_cp(sock_content, radio_id, datetime.datetime.now())
+                self.writer.write_cp(sock_content, radio_id, ts)
 
         if 'up' in parse_result:
             for sock_content in parse_result['up']:
-                self.writer.write_up(sock_content, radio_id, datetime.datetime.now())
+                self.writer.write_up(sock_content, radio_id, ts)
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:
-                for l in parse_result['stdout'].split('\n'):
-                    print('Radio {}: {}'.format(radio_id, l))
+                if self.combine_stdout:
+                    for l in parse_result['stdout'].split('\n'):
+                        osmocore_log_hdr = util.create_osmocore_logging_header(
+                            timestamp = ts,
+                            process_name = Path(sys.argv[0]).name,
+                            pid = os.getpid(),
+                            level = 3,
+                            subsys_name = self.__class__.__name__,
+                            filename = Path(__file__).name,
+                            line_number = getframeinfo(currentframe()).lineno
+                        )
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 2,
+                            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+                        self.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + l.encode('utf-8'), radio_id, ts)
+                else:
+                    for l in parse_result['stdout'].split('\n'):
+                        print('Radio {}: {}'.format(radio_id, l))
 
     def parse_diag_log(self, pkt):
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):

@@ -24,6 +24,9 @@ import datetime
 import logging
 from collections import namedtuple
 import binascii
+from inspect import currentframe, getframeinfo
+from pathlib import Path
+import os, sys
 
 class QualcommParser:
     def __init__(self):
@@ -52,6 +55,7 @@ class QualcommParser:
         self.qsr_hash_filename = ''
         self.qsr4_hash_filename = ''
         self.emr_id_range = []
+        self.combine_stdout = False
 
         self.name = 'qualcomm'
         self.shortname = 'qc'
@@ -105,6 +109,8 @@ class QualcommParser:
                 self.parse_events = params[p]
             elif p == 'msgs':
                 self.parse_msgs = params[p]
+            elif p == 'combine-stdout':
+                self.combine_stdout = params[p]
 
     def sanitize_radio_id(self, radio_id):
         if radio_id <= 0:
@@ -397,8 +403,24 @@ class QualcommParser:
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:
-                for l in parse_result['stdout'].split('\n'):
-                    print('Radio {}: {}'.format(radio_id, l))
+                if self.combine_stdout:
+                    for l in parse_result['stdout'].split('\n'):
+                        osmocore_log_hdr = util.create_osmocore_logging_header(
+                            timestamp = ts,
+                            process_name = Path(sys.argv[0]).name,
+                            pid = os.getpid(),
+                            level = 3,
+                            subsys_name = self.__class__.__name__,
+                            filename = Path(__file__).name,
+                            line_number = getframeinfo(currentframe()).lineno
+                        )
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 2,
+                            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+                        self.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + l.encode('utf-8'), radio_id, ts)
+                else:
+                    for l in parse_result['stdout'].split('\n'):
+                        print('Radio {}: {}'.format(radio_id, l))
 
     log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
 

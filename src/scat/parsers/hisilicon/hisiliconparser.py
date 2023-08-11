@@ -4,8 +4,10 @@
 import scat.util as util
 import struct
 import logging
-import binascii
 from collections import namedtuple
+from inspect import currentframe, getframeinfo
+from pathlib import Path
+import os, sys
 
 from scat.parsers.hisilicon.hisilogparser import HisiLogParser
 from scat.parsers.hisilicon.hisinestedparser import HisiNestedParser
@@ -34,6 +36,7 @@ class HisiliconParser:
 
         self.io_device = None
         self.writer = None
+        self.combine_stdout = False
 
         self.name = 'hisilicon'
         self.shortname = 'hisi'
@@ -76,6 +79,8 @@ class HisiliconParser:
                 self.logger.setLevel(params[p])
             elif p == 'msgs':
                 self.msgs = params[p]
+            elif p == 'combine-stdout':
+                self.combine_stdout = params[p]
 
     def init_diag(self):
         pass
@@ -173,8 +178,24 @@ class HisiliconParser:
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:
-                for l in parse_result['stdout'].split('\n'):
-                    print('Radio {}: {}'.format(radio_id, l))
+                if self.combine_stdout:
+                    for l in parse_result['stdout'].split('\n'):
+                        osmocore_log_hdr = util.create_osmocore_logging_header(
+                            timestamp = ts,
+                            process_name = Path(sys.argv[0]).name,
+                            pid = os.getpid(),
+                            level = 3,
+                            subsys_name = self.__class__.__name__,
+                            filename = Path(__file__).name,
+                            line_number = getframeinfo(currentframe()).lineno
+                        )
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 2,
+                            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+                        self.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + l.encode('utf-8'), radio_id, ts)
+                else:
+                    for l in parse_result['stdout'].split('\n'):
+                        print('Radio {}: {}'.format(radio_id, l))
 
     log_header = namedtuple('HisiLogHeader', 'unk2 ts unk3 cmd len')
     type_0x01_header = namedtuple('Hisi0x01Header', 'unk1 unk2 magic nested_len1 cmd nested_len2 ts')

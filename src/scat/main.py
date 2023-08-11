@@ -98,6 +98,7 @@ def scat_main():
     ip_group.add_argument('-H', '--hostname', help='Change base host name/IP to emit GSMTAP packets. For dual SIM devices the subsequent IP address will be used.', type=str, default='127.0.0.1')
 
     ip_group.add_argument('-F', '--pcap-file', help='Write GSMTAP packets directly to specified PCAP file')
+    ip_group.add_argument('-C', '--combine-stdout', action='store_true', help='Write standard output messages as osmocore log file, along with other GSMTAP packets.')
 
     args = parser.parse_args()
 
@@ -160,14 +161,17 @@ def scat_main():
             'qsr-hash': args.qsr_hash,
             'qsr4-hash': args.qsr4_hash,
             'events': args.events,
-            'msgs': args.msgs})
+            'msgs': args.msgs,
+            'combine-stdout': args.combine_stdout})
     elif args.type == 'sec':
         current_parser.set_parameter({
             'model': args.model,
-            'start-magic': args.start_magic})
+            'start-magic': args.start_magic,
+            'combine-stdout': args.combine_stdout})
     elif args.type == 'hisi':
         current_parser.set_parameter({
-            'msgs': args.msgs})
+            'msgs': args.msgs,
+            'combine-stdout': args.combine_stdout})
 
     # Run process
     if args.serial or args.usb:
