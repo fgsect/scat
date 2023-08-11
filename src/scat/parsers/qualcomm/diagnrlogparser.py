@@ -64,6 +64,8 @@ class DiagNrLogParser:
                 7: "UL_CCCH1",
                 8: "UL_DCCH",
                 9: "RRC_RECONFIGURATION",
+                10: "RRC_RECONFIGURATION_COMPLETE",
+                25: "nr-RadioBearerConfig",
                 28: "UE_MRDC_CAPABILITY",
                 29: "UE_NR_CAPABILITY",
             }
@@ -78,6 +80,7 @@ class DiagNrLogParser:
                 7: "UL_CCCH1",
                 8: "UL_DCCH",
                 9: "RRC_RECONFIGURATION",
+                10: "RRC_RECONFIGURATION_COMPLETE",
                 31: "UE_MRDC_CAPABILITY",
                 32: "UE_NR_CAPABILITY",
                 33: "UE_NR_CAPABILITY",
