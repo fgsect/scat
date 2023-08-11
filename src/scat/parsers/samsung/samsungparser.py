@@ -4,6 +4,7 @@
 import scat.util as util
 import struct
 import logging
+import datetime
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser
 from scat.parsers.samsung.sdmcommonparser import SdmCommonParser
@@ -307,11 +308,11 @@ class SamsungParser:
 
         if 'cp' in parse_result:
             for sock_content in parse_result['cp']:
-                self.writer.write_cp(sock_content, radio_id)
+                self.writer.write_cp(sock_content, radio_id, datetime.datetime.now())
 
         if 'up' in parse_result:
             for sock_content in parse_result['up']:
-                self.writer.write_up(sock_content, radio_id)
+                self.writer.write_up(sock_content, radio_id, datetime.datetime.now())
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:
