@@ -74,11 +74,13 @@ def generate_diag_port_hex(subsys_id,*packet_types):
 # hex string for manual testing/configuration for NR packets out of diag port on other modem brands/models 
 if __name__ == "__main__":
     
-    nr_diag_write_str = hexlify(generate_packet(diag_port_config_gen(diagcmd.DIAG_SUBSYS_ID_LTE,0x1000,
-        diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
-        diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS, 
+    nr_diag_write_str = hexlify(generate_packet(diag_port_config_gen(diagcmd.DIAG_SUBSYS_ID_NR,0x1000,
+        # diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO, 
         diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_OTA,
-        diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE
+        diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
+        diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
+        diagcmd.diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE,
+        diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE,
     )))
 
     print(nr_diag_write_str)

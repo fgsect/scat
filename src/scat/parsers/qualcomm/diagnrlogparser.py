@@ -69,14 +69,15 @@ class DiagNrLogParser:
             mib_dict = {}
             if(pkt_ver == 14):
                 (pkt_ver, unk, rrc_rel, rrc_ver, bearer_id, pci, freq, frame_num, 
-                pdu, sib_mask, null, length) = struct.unpack('<B3sBBBHI3sBB3sH', pkt_body)
+                pdu, sib_mask, null, length) = struct.unpack('<B3sBBBHI3sBB3sH', pkt_body[:23])
+                pkt_body = pkt_body[23:]
                 
                 # https://lab.dobergroup.org.ua/libraries-and-modules/pycrate/-/wikis/Using-the-pycrate-asn1-runtime.md
 
                 # NR SIB: RRC_BCCH_SCH_DL
                 if(pdu==1):
                     # Decode data using PyCrate decoder! Could use just raw data and manual decoder/and or wireshark
-                    sib_data = sib_mask
+                    sib_data = pkt_body
                     # print("sib data: ", hexlify(sib_data))
                     sib_nr = RRCNR.NR_RRC_Definitions.BCCH_DL_SCH_Message
                     sib_nr.from_uper(sib_data)
@@ -87,8 +88,7 @@ class DiagNrLogParser:
                 
                 # NR MIB: RRC_BCCH_BCH    
                 elif(pdu==2):
-                    pass
-                    mib_data = sib_mask
+                    mib_data = pkt_body
                     mib_nr = RRCNR.NR_RRC_Definitions.BCCH_BCH_Message
                     mib_nr.from_uper(mib_data)
                     mib_dict = json.loads(mib_nr.to_json())
