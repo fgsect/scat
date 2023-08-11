@@ -29,5 +29,16 @@ class TestDiagNrLogParser(unittest.TestCase):
         expected = {'stdout': 'NR MIB: NR-ARFCN 431070, PCI  988, SFN: 512, SCS: 15 kHz'}
         self.assertDictEqual(result, expected)
 
+    def test_parse_nr_rrc_scell_info(self):
+        payload = binascii.unhexlify('040000009d02e0ca0900d6c609005a005a0000127df204000000060102010001297900004e00')
+        result = self.parser.parse_nr_rrc_scell_info(None, payload, None)
+        expected = {'stdout': 'NR RRC SCell Info: NR-ARFCN 641760/640726, Bandwidth 90/90 MHz, Band 78, PCI  669, xTAC/xCID 7929/4f27d1200, MCC 262, MNC 01'}
+        self.assertDictEqual(result, expected)
+
+        payload = binascii.unhexlify('040000001a00a0a40900c492090050005000ca409b060000000006010202000094c000004e00')
+        result = self.parser.parse_nr_rrc_scell_info(None, payload, None)
+        expected = {'stdout': 'NR RRC SCell Info: NR-ARFCN 631968/627396, Bandwidth 80/80 MHz, Band 78, PCI   26, xTAC/xCID c094/69b40ca, MCC 262, MNC 02'}
+        self.assertDictEqual(result, expected)
+
 if __name__ == '__main__':
     unittest.main()
