@@ -28,7 +28,7 @@ DIAG_SUBSYS_ID_GSM = 0x05
 DIAG_SUBSYS_ID_UMTS = 0x07
 DIAG_SUBSYS_ID_DTV = 0x0A
 DIAG_SUBSYS_ID_APPS = 0x0B
-DIAG_SUBSYS_ID_LTE = 0x0B
+DIAG_SUBSYS_ID_LTE = 0x0B # Also shared by NR
 DIAG_SUBSYS_ID_TDSCDMA = 0x0D
 
 # Log configuration operations
@@ -169,9 +169,20 @@ class diag_log_code_lte(IntEnum):
 
 @unique
 class diag_log_code_5gnr(IntEnum):
+    # Management Layer 1
+    LOG_5GNR_ML1_MEAS_DATABASE_UPDATE  = 0x97F # 0xB97F NR ML1 Measurement Database Update
+
+    # MAC
+
     # RRC
-    LOG_5GNR_RRC_MIB_INFO            = 0x822 # 0xB822 NR RRC MIB Info
-    LOG_5GNR_RRC_SUPPORTED_CA_COMBOS = 0x826 # 0xB826 NR RRC Supported CA Combinations
+    LOG_5GNR_RRC_OTA_MESSAGE           = 0x821 # 0xB821 NR RRC OTA
+    LOG_5GNR_RRC_MIB_INFO              = 0x822 # 0xB822 NR RRC MIB Info
+    LOG_5GNR_RRC_SERVING_CELL_INFO     = 0x823 # 0xB823 NR RRC Serving Cell Info
+    LOG_5GNR_RRC_CONFIGURATION_INFO    = 0x825 # 0xB825 NR RRC Configuration Info
+    LOG_5GNR_RRC_SUPPORTED_CA_COMBOS   = 0x826 # 0xB826 NR RRC Supported CA Combinations
+
+    # NAS
+    LOG_5GNR_NAS_5GMM_STATE            = 0x80C # NR NAS MM5G State - According to MobileInsight
 
 def bytes_reqd_for_bit(bit):
     if bit % 8 > 0:
@@ -314,8 +325,25 @@ def log_mask_scat_lte():
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE,
 
+        diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
+        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE
+    )
+
+def log_mask_empty_nr():
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x09ff)
+
+def log_mask_scat_nr():
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x09ff,
+        diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
+        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE
     )
 
 def log_mask_empty_tdscdma():
