@@ -27,6 +27,7 @@ import binascii
 from inspect import currentframe, getframeinfo
 from pathlib import Path
 import os, sys
+import re
 
 class QualcommParser:
     def __init__(self):
@@ -463,15 +464,56 @@ class QualcommParser:
         # Message: two null-terminated strings, one for log and another for filename
         pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_args = list(struct.unpack('<{}L'.format(pkt_header.num_args), pkt[20:20+4*pkt_header.num_args]))
         pkt_body = pkt[20 + 4 * pkt_header.num_args:]
         pkt_body = pkt_body.rstrip(b'\0').rsplit(b'\0', maxsplit=1)
 
         if len(pkt_body) == 2:
             src_fname = pkt_body[1]
-            log_content = pkt_body[0]
+            log_content = pkt_body[0].decode('utf-8')
         else:
             src_fname = b''
-            log_content = pkt_body[0]
+            log_content = pkt_body[0].decode('utf-8')
+
+        # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x'}
+        cfmt = re.compile('(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxX])|%%)')
+        cfmt_nums = re.compile('%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxX]')
+        fmt_strs = cfmt.findall(log_content)
+        formatted_strs = []
+        log_content_pyfmt = cfmt.sub('{}', log_content)
+
+        i = 0
+        if len(pkt_args) != len(fmt_strs):
+            log_content_formatted = log_content
+        else:
+            for fmt_str in fmt_strs:
+                fmt_num = ''
+                x = cfmt_nums.match(fmt_str)
+                if x:
+                    fmt_num = x.group(1)
+                if fmt_str == '%%':
+                    formatted_strs.append('%')
+                else:
+                    if fmt_str[-1] in ('x', 'X'):
+                        pyfmt_str = '{:' + fmt_num + fmt_str[-1] + '}'
+                        formatted_strs.append(pyfmt_str.format(pkt_args[i]))
+                    elif fmt_str[-1] in ('d'):
+                        pyfmt_str = '{:' + fmt_num + '}'
+                        if pkt_args[i] > 2147483648:
+                            formatted_strs.append(pyfmt_str.format(-(4294967296 - pkt_args[i])))
+                        else:
+                            formatted_strs.append(pyfmt_str.format(pkt_args[i]))
+                    else:
+                        pyfmt_str = '{:' + fmt_num + '}'
+                        formatted_strs.append(pyfmt_str.format(pkt_args[i]))
+                i += 1
+            try:
+                log_content_formatted = log_content_pyfmt.format(*formatted_strs)
+            except:
+                log_content_formatted = log_content
+                if len(pkt_args) > 0:
+                    log_content_formatted += ", args="
+                    log_content_formatted += ', '.join(['0x{:x}'.format(x) for x in pkt_args])
 
         osmocore_log_hdr = util.create_osmocore_logging_header(
             timestamp = pkt_ts,
@@ -484,7 +526,7 @@ class QualcommParser:
             version = 2,
             payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
-        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content], 'ts': pkt_ts}
+        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
     multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
 
