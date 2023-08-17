@@ -190,6 +190,7 @@ class diag_log_code_5gnr(IntEnum):
     LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE   = 0x809 # NR NAS 5GMM Security Protected OTA Outgoing Message
     LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE = 0x80A # NR NAS 5GMM Plain OTA Incoming Message
     LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE = 0x80B # NR NAS 5GMM Plain OTA Outgoing Message
+    LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE= 0x814 # NR NAS 5GMM Plain OTA Container Message
     LOG_5GNR_NAS_5GMM_STATE                      = 0x80C # NR NAS 5GMM State - According to MobileInsight
 
 def bytes_reqd_for_bit(bit):
@@ -346,6 +347,7 @@ def log_mask_scat_lte():
         diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
     )
 
@@ -366,6 +368,7 @@ def log_mask_scat_nr():
         diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
     )
 

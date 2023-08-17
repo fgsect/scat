@@ -33,6 +33,7 @@ class DiagNrLogParser:
             0xB809: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB809), # NR NAS 5GMM Encrypted OTA Outgoing
             0xB80A: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80A), # NR NAS 5GMM Plain OTA Incoming
             0xB80B: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80B), # NR NAS 5GMM Plain OTA Outgoing
+            0xB814: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB814), # NR NAS
             0xB80C: lambda x, y, z: self.parse_nr_mm_state(x, y, z), # NR NAS MM5G State - According to MobileInsight
         }
 
