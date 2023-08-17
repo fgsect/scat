@@ -56,6 +56,7 @@ class QualcommParser:
         self.qsr_hash_filename = ''
         self.qsr4_hash_filename = ''
         self.emr_id_range = []
+        self.log_id_range = {}
         self.combine_stdout = False
 
         self.name = 'qualcomm'
@@ -147,13 +148,34 @@ class QualcommParser:
             self.postprocess_parse_result(result)
 
         # Send empty masks
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_1x()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_wcdma()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_gsm()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_umts()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_dtv()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_lte()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_tdscdma()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_1X in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_1x(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_1X])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_1x()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_WCDMA in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_wcdma(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_WCDMA])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_wcdma()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_GSM in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_gsm(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_GSM])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_gsm()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_UMTS in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_umts(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_UMTS])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_umts()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_DTV in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_dtv(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_DTV])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_dtv()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_LTE in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_lte(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_LTE])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_lte()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_TDSCDMA in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_tdscdma(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_TDSCDMA])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_tdscdma()), 0x1000, False)
 
         self.io_device.write(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EXT_MSG_CONFIG_F, 0x01)), False)
         ext_msg_buf = self.io_device.read(0x1000)
@@ -212,11 +234,26 @@ class QualcommParser:
         # Static event reporting Enable
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x01)), 0x1000, False)
 
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_1x()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_wcdma()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_gsm()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_umts()), 0x1000, False)
-        self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_lte()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_1X in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_1x(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_1X])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_1x()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_WCDMA in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_wcdma(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_WCDMA])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_wcdma()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_GSM in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_gsm(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_GSM])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_gsm()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_UMTS in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_umts(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_UMTS])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_umts()), 0x1000, False)
+        if diagcmd.DIAG_SUBSYS_ID_LTE in self.log_id_range:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_lte(self.log_id_range[diagcmd.DIAG_SUBSYS_ID_LTE])), 0x1000, False)
+        else:
+            self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_lte()), 0x1000, False)
 
     def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, args = None):
         # Should contain DIAG command and CRC16
@@ -673,6 +710,7 @@ class QualcommParser:
                 val = struct.unpack('<L', ranges[4*i:4*(i+1)])[0]
                 if val > 0:
                     stdout += '{}: {}, '.format(i, val)
+                    self.log_id_range[i] = val
         elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_VALID_MASK_OP:
             stdout += 'Retrieve valid mask'
             stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())

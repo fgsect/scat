@@ -208,7 +208,6 @@ def create_log_config_set_mask(equip_id, last_item, *bits):
 
     for bit in bits:
         if bit > last_item:
-            print("Bit 0x%d is outside of maximal items" % (bit))
             continue
 
         pos_byte = int(bit / 8)
@@ -218,11 +217,11 @@ def create_log_config_set_mask(equip_id, last_item, *bits):
     return diag_log_config_mask_header + bytes(diag_log_config_mask_payload)
 
 # Preferred log masks used by SCAT
-def log_mask_empty_1x():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, 0x0fff)
+def log_mask_empty_1x(num_max_items=0x0fff):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, num_max_items)
 
-def log_mask_scat_1x():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, 0x0847,
+def log_mask_scat_1x(num_max_items=0x0847):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, num_max_items,
         diag_log_code_1x.LOG_UIM_DATA_C,
         diag_log_code_1x.LOG_INTERNAL_CORE_DUMP_C,
         diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_C,
@@ -258,22 +257,22 @@ def log_mask_scat_1x():
         diag_log_code_1x.LOG_IMS_SIP_MESSAGE,
         )
 
-def log_mask_empty_wcdma():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, 0x0ff7)
+def log_mask_empty_wcdma(num_max_items=0x0ff7):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, num_max_items)
 
-def log_mask_scat_wcdma():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, 0x0ff7,
+def log_mask_scat_wcdma(num_max_items=0x0ff7):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, num_max_items,
         diag_log_code_wcdma.LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C,
         diag_log_code_wcdma.LOG_WCDMA_CELL_ID_C,
         diag_log_code_wcdma.LOG_WCDMA_SIB_C,
         diag_log_code_wcdma.LOG_WCDMA_SIGNALING_MSG_C
         )
 
-def log_mask_empty_gsm():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, 0x0ff7)
+def log_mask_empty_gsm(num_max_items=0x0ff7):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, num_max_items)
 
-def log_mask_scat_gsm():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, 0x0ff7,
+def log_mask_scat_gsm(num_max_items=0x0ff7):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, num_max_items,
         diag_log_code_gsm.LOG_GSM_L1_FCCH_ACQUISITION_C,
         diag_log_code_gsm.LOG_GSM_L1_SCH_ACQUISITION_C,
         diag_log_code_gsm.LOG_GSM_L1_NEW_BURST_METRICS_C,
@@ -301,23 +300,23 @@ def log_mask_scat_gsm():
         diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_3_C,
     )
 
-def log_mask_empty_umts():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, 0x0b5e)
+def log_mask_empty_umts(num_max_items=0x0b5e):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, num_max_items)
 
-def log_mask_scat_umts():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, 0x0b5e,
+def log_mask_scat_umts(num_max_items=0x0b5e):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, num_max_items,
         diag_log_code_umts.LOG_UMTS_NAS_OTA_MESSAGE_LOG_PACKET_C,
         diag_log_code_umts.LOG_UMTS_DSDS_NAS_SIGNALING_MESSAGE,
     )
 
-def log_mask_empty_dtv():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_DTV, 0x0392)
+def log_mask_empty_dtv(num_max_items=0x0392):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_DTV, num_max_items)
 
-def log_mask_empty_lte():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x0209)
+def log_mask_empty_lte(num_max_items=0x0209):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items)
 
-def log_mask_scat_lte():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x09ff,
+def log_mask_scat_lte(num_max_items=0x09ff):
+    items_lte = [
         diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
         diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS,
@@ -334,7 +333,38 @@ def log_mask_scat_lte():
         diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE,
         diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE,
+    ]
 
+    items_nr = [
+        diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
+        diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
+        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
+    ]
+    if num_max_items < 0x0800:
+        return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items,
+            *items_lte
+        )
+    else:
+        return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items,
+            *(items_lte + items_nr)
+        )
+
+def log_mask_empty_nr(num_max_items=0x09ff):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items)
+
+def log_mask_scat_nr(num_max_items=0x09ff):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items,
         diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
@@ -351,29 +381,8 @@ def log_mask_scat_lte():
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
     )
 
-def log_mask_empty_nr():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x09ff)
-
-def log_mask_scat_nr():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, 0x09ff,
-        diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
-        diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
-        diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
-        diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
-        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
-    )
-
-def log_mask_empty_tdscdma():
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_TDSCDMA, 0x0207)
+def log_mask_empty_tdscdma(num_max_items=0x0207):
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_TDSCDMA, num_max_items)
 
 def create_extended_message_config_set_mask(first_ssid, last_ssid, *masks):
     # Command ID, Operation | first_ssid, last_ssid, runtime_masks
