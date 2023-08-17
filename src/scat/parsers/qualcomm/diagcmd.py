@@ -70,6 +70,7 @@ class diag_log_code_1x(IntEnum):
     LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_FULL_C = 0x583           # 0x1583 Flow Rm Tx Full
     LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C = 0x584       # 0x1584 Flow Um Tx 80 Bytes
     LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C = 0x585           # 0x1585 Flow Um Tx Full
+    LOG_IMS_SIP_MESSAGE = 0x56E                                   # 0x156E IMS SIP Message
 
 # Origin: http://cgit.osmocom.org/osmo-qcdiag/tree/src/protocol/diag_log_wcdma.h
 def diag_log_get_wcdma_item_id(x):
@@ -253,6 +254,7 @@ def log_mask_scat_1x():
         0x652, # 0x1652   Unrecognized
         0x653, # 0x1653   Unrecognized
         0x654, # 0x1654   Unrecognized
+        diag_log_code_1x.LOG_IMS_SIP_MESSAGE,
         )
 
 def log_mask_empty_wcdma():

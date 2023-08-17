@@ -15,6 +15,7 @@ class Diag1xLogParser:
 
         self.last_tx = [b'', b'']
         self.last_rx = [b'', b'']
+        self.ip_id = 0
 
         self.process = {
             # SIM
@@ -23,6 +24,9 @@ class Diag1xLogParser:
 
             # Generic
             0x11EB: lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
+
+            # IMS
+            0x156E: lambda x, y, z: self.parse_sip_message(x, y, z),
         }
 
     def parse_ip(self, pkt_header, pkt_body, args):
@@ -111,3 +115,31 @@ class Diag1xLogParser:
                 last_sim_tx = self.last_tx[sim_id]
                 self.last_tx[sim_id] = b''
                 return {'cp': [gsmtap_hdr + last_sim_tx, gsmtap_hdr + tx_buf], 'ts': pkt_ts}
+
+    def parse_sip_message(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        item_struct = namedtuple('QcDiag1xSipMessage', 'version direction has_sdp len_call_id len_pkt len_pkt_real msg_type status_code unk4')
+        item = item_struct._make(struct.unpack('<BBB BHH HHL', pkt_body[0:16]))
+        # direction: 0: downlink, 1: uplink
+        # type: 1: REGISTER 2: INVITE 3: PRACK 5: ACK 6: BYE 7: SUBSCRIBE 8: NOTIFY 14: OPTIONS
+
+        item_data = pkt_body[16:]
+        call_id = item_data[:item.len_call_id-1]
+        sip_body = item_data[item.len_call_id:item.len_call_id+item.len_pkt_real-1]
+
+        # Wrap SIP inside user-plane UDP packet
+        if item.direction == 1:
+            udp_hdr = struct.pack('>HHHH', 50600, 5060, len(sip_body)+8, 0)
+            ip_hdr = struct.pack('>BBHHBBBBHLL', 0x45, 0x00, len(sip_body)+28,
+                self.ip_id, 0x40, 0x00, 0x40, 0x11, 0x0,
+                0x0a000002, 0x0a000001
+            )
+        else:
+            udp_hdr = struct.pack('>HHHH', 5060, 50600, len(sip_body)+8, 0)
+            ip_hdr = struct.pack('>BBHHBBBBHLL', 0x45, 0x00, len(sip_body)+28,
+                self.ip_id, 0x40, 0x00, 0x40, 0x11, 0x0,
+                0x0a000001, 0x0a000002
+            )
+        self.ip_id += 1
+
+        return {'up': [ip_hdr+udp_hdr+sip_body], 'ts': pkt_ts}
