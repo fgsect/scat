@@ -40,5 +40,11 @@ class TestDiagNrLogParser(unittest.TestCase):
         expected = {'stdout': 'NR RRC SCell Info: NR-ARFCN 631968/627396, Bandwidth 80/80 MHz, Band 78, PCI   26, xTAC/xCID c094/69b40ca, MCC 262, MNC 02'}
         self.assertDictEqual(result, expected)
 
+    def test_parse_nr_mm_state(self):
+        payload = binascii.unhexlify('0100000003000054f0800254f080a206001636ac480400a040fe')
+        result = self.parser.parse_nr_mm_state(None, payload, None)
+        expected = {'stdout': '5GMM State: 3/0/0, PLMN: 450/  8, TAC: a040fe, GUTI: 450-008-a2-006-16-0448ac36'}
+        self.assertDictEqual(result, expected)
+
 if __name__ == '__main__':
     unittest.main()

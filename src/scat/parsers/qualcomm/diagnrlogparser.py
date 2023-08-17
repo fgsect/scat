@@ -27,6 +27,13 @@ class DiagNrLogParser:
             0xB826: lambda x, y, z: self.parse_cacombos(x, y, z), # NR RRC Supported CA Combos
 
             # NAS
+            0xB800: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB800), # NR NAS 5GSM Plain OTA Incoming
+            0xB801: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB801), # NR NAS 5GSM Plain OTA Outgoing
+            0xB808: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB808), # NR NAS 5GMM Encrypted OTA Incoming
+            0xB809: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB809), # NR NAS 5GMM Encrypted OTA Outgoing
+            0xB80A: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80A), # NR NAS 5GMM Plain OTA Incoming
+            0xB80B: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80B), # NR NAS 5GMM Plain OTA Outgoing
+            0xB80C: lambda x, y, z: self.parse_nr_mm_state(x, y, z), # NR NAS MM5G State - According to MobileInsight
         }
 
     # ML1
@@ -168,3 +175,56 @@ class DiagNrLogParser:
 
     def parse_cacombos(self, pkt_header, pkt_body, args):
         self.parent.logger.log(logging.WARNING, "0xB826 " + util.xxd_oneline(pkt_body))
+
+    # NAS
+    def parse_nr_nas(self, pkt_header, pkt_body, args, cmd_id):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+        stdout = ''
+
+        # Version 4b, std version maj.min.rev 1b each
+        pkt_ver = struct.unpack('<L', pkt_body[0:4])[0]
+        item_struct = namedtuple('QcDiagNrNasMsg', 'vermaj vermid vermin')
+        msg_content = pkt_body[7:]
+        if pkt_ver == 0x1:
+            item = item_struct._make(struct.unpack('<BBB', pkt_body[4:7]))
+            stdout = "NAS-5GS message ({:04X}) version {:x}.{:x}.{:x}: ".format(cmd_id, item.vermaj, item.vermid, item.vermin)
+            msg_content = pkt_body[7:]
+            stdout += "{}".format(binascii.hexlify(msg_content).decode('utf-8'))
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown NR NAS Message packet version {:#x}'.format(pkt_ver))
+                self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt_body)))
+            return None
+
+        return {'stdout': stdout, 'ts': pkt_ts}
+
+    def parse_nr_mm_state(self, pkt_heaer, pkt_body, args):
+        pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
+
+        if pkt_ver == 0x01: # Version 1
+            item_struct = namedtuple('QcDiagNrNasMmState', 'mm_state mm_substate plmn_id guti_5gs mm_update_status tac')
+            item = item_struct._make(struct.unpack('<BH3s12sb3s', pkt_body[4:26]))
+            plmn_id = util.unpack_mcc_mnc(item.plmn_id)
+            tac = struct.unpack('>L', b'\x00'+item.tac)[0]
+
+            if item.guti_5gs[0] == 0x02:
+                # mcc-mcc-amf_rid-amf_sid-amf_ptr-5g_tmsi
+                plmn_id_guti = util.unpack_mcc_mnc(item.guti_5gs[1:4])
+                amf_sid = struct.unpack('<H', item.guti_5gs[5:7])[0]
+                tmsi_5gs = struct.unpack('<L', item.guti_5gs[8:12])[0]
+                guti_str = '{:03x}-{:03x}-{:02x}-{:03x}-{:02x}-{:08x}'.format(plmn_id_guti[0], plmn_id_guti[1], item.guti_5gs[4],
+                                                              amf_sid, item.guti_5gs[7], tmsi_5gs)
+            else:
+                guti_str = binascii.hexlify(item.guti_5gs).decode('utf-8')
+
+            stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
+                item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
+            )
+            return {'stdout': stdout}
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown NR MM State packet version %s' % pkt_ver)
+                self.parent.logger.log(logging.WARNING, "Body: %s" % (util.xxd_oneline(pkt_body[4:])))
+            return

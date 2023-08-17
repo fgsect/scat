@@ -173,6 +173,7 @@ class diag_log_code_5gnr(IntEnum):
     LOG_5GNR_ML1_MEAS_DATABASE_UPDATE  = 0x97F # 0xB97F NR ML1 Measurement Database Update
 
     # MAC
+    LOG_5GNR_MAC_RACH_ATTEMPT          = 0x88A # 0xB88A NR MAC RACH Attempt
 
     # RRC
     LOG_5GNR_RRC_OTA_MESSAGE           = 0x821 # 0xB821 NR RRC OTA
@@ -182,7 +183,13 @@ class diag_log_code_5gnr(IntEnum):
     LOG_5GNR_RRC_SUPPORTED_CA_COMBOS   = 0x826 # 0xB826 NR RRC Supported CA Combinations
 
     # NAS
-    LOG_5GNR_NAS_5GMM_STATE            = 0x80C # NR NAS MM5G State - According to MobileInsight
+    LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE = 0x800 # NR NAS 5GSM Plain OTA Incoming Message
+    LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE = 0x801 # NR NAS 5GSM Plain OTA Outgoing Message
+    LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE   = 0x808 # NR NAS 5GMM Security Protected OTA Incoming Message
+    LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE   = 0x809 # NR NAS 5GMM Security Protected OTA Outgoing Message
+    LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE = 0x80A # NR NAS 5GMM Plain OTA Incoming Message
+    LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE = 0x80B # NR NAS 5GMM Plain OTA Outgoing Message
+    LOG_5GNR_NAS_5GMM_STATE                      = 0x80C # NR NAS 5GMM State - According to MobileInsight
 
 def bytes_reqd_for_bit(bit):
     if bit % 8 > 0:
@@ -330,7 +337,14 @@ def log_mask_scat_lte():
         diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
-        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE
+        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
     )
 
 def log_mask_empty_nr():
@@ -343,7 +357,14 @@ def log_mask_scat_nr():
         diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
-        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE
+        diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
     )
 
 def log_mask_empty_tdscdma():
