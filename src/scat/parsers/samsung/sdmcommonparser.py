@@ -17,6 +17,7 @@ class SdmCommonParser:
             self.model = self.parent.model
 
         self.multi_message_chunk = {}
+        self.ip_id = 0
 
         self.process = {
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
@@ -165,6 +166,28 @@ class SdmCommonParser:
                 sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
 
             return {'cp': [gsmtap_hdr + msg]}
+        elif type == 0x40: # SIP
+            # subtype: 0x40: request, 0x41: response
+            # direction: 1: UL, 2: DL
+            sip_type = struct.unpack('>H', msg[0:2])[0]
+            sip_body = msg[2:]
+
+            # Wrap SIP inside user-plane UDP packet
+            if direction == 1:
+                udp_hdr = struct.pack('>HHHH', 50600, 5060, len(sip_body)+8, 0)
+                ip_hdr = struct.pack('>BBHHBBBBHLL', 0x45, 0x00, len(sip_body)+28,
+                    self.ip_id, 0x40, 0x00, 0x40, 0x11, 0x0,
+                    0x0a000002, 0x0a000001
+                )
+            else:
+                udp_hdr = struct.pack('>HHHH', 5060, 50600, len(sip_body)+8, 0)
+                ip_hdr = struct.pack('>BBHHBBBBHLL', 0x45, 0x00, len(sip_body)+28,
+                    self.ip_id, 0x40, 0x00, 0x40, 0x11, 0x0,
+                    0x0a000001, 0x0a000002
+                )
+            self.ip_id += 1
+
+            return {'up': [ip_hdr+udp_hdr+sip_body]}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(type))
