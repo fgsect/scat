@@ -19,6 +19,8 @@ class SdmHspaParser:
         self.process = {
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO: lambda x: self.sdm_hspa_ul1_rf_info(x),
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_SERV_CELL: lambda x: self.sdm_hspa_ul1_serving_cell(x),
+            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL: lambda x: self.sdm_hspa_ul1_intra_freq_resel(x),
+            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_INTER_FREQ_RESEL: lambda x: self.sdm_hspa_ul1_inter_freq_resel(x),
 
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_RRC_STATUS: lambda x: self.sdm_hspa_wcdma_rrc_status(x),
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
@@ -91,19 +93,94 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
+    def sdm_hspa_ul1_intra_freq_resel(self, pkt):
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmHspaUL1IntraFreqResel', 'psc cpich_rscp cpich_ecno')
+
+        num_meas = struct.unpack('<H', pkt[0:2])[0]
+        stdout = ''
+
+        stdout += 'HSPA UL1 Intra Frequency Reselection:\n'
+        pos = 2
+        for i in range(num_meas):
+            intra_meas = header._make(struct.unpack('<Hhh', pkt[pos:pos+6]))
+            stdout += 'Measurement {}: PSC {}, CPICH RSCP {}, CPICH Ec/No {}\n'.format(
+                i,
+                intra_meas.psc,
+                intra_meas.cpich_rscp,
+                intra_meas.cpich_ecno,
+            )
+            pos += 6
+
+        extra = pkt[pos:]
+
+        if len(extra) > 0:
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+
+        return {'stdout': stdout.rstrip()}
+
+    def sdm_hspa_ul1_inter_freq_resel(self, pkt):
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmHspaUL1InterFreqResel', 'uarfcn psc cpich_rscp cpich_ecno')
+        num_meas = struct.unpack('<H', pkt[0:2])[0]
+        stdout = ''
+
+        stdout += 'HSPA UL1 Inter Frequency Reselection:\n'
+        pos = 2
+        for i in range(num_meas):
+            inter_meas = header._make(struct.unpack('<HHhh', pkt[pos:pos+8]))
+            stdout += 'Measurement {}: UARFCN {}, PSC {}, CPICH RSCP {}, CPICH Ec/No {}\n'.format(
+                i,
+                inter_meas.uarfcn,
+                inter_meas.psc,
+                inter_meas.cpich_rscp,
+                inter_meas.cpich_ecno,
+            )
+            pos += 8
+
+        extra = pkt[pos:]
+
+        if len(extra) > 0:
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+
+        return {'stdout': stdout.rstrip()}
+
     def sdm_hspa_wcdma_rrc_status(self, pkt):
         # uint8: channel
         # 0x00 - DISCONNECTED, 0x01: CELL_DCH, 0x02: CELL_FACH, 0x03: CELL_PCH, 0x04: URA_PCH
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
+        stdout = ''
+        rrc_state_map = {
+            0: 'DISCONNECTED',
+            1: 'CELL_DCH',
+            2: 'CELL_FACH',
+            3: 'CELL_PCH',
+            4: 'URA_PCH',
+        }
+
+        rrc_domain_map = {
+            0: 'IDLE',
+            1: 'CS',
+            2: 'PS',
+            3: 'CS_PS',
+        }
 
         if len(pkt) < 5:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (5)'.format(len(pkt)))
             return None
 
-        header = namedtuple('SdmHspaWcdmaRrcState', 'val1 val2 val3 val4 val5')
+        header = namedtuple('SdmHspaWcdmaRrcState', 'rrc_state domain unk3 unk4 unk5')
         rrc_state = header._make(struct.unpack('<BBBBB', pkt[0:5]))
-        # print(rrc_state)
+
+        stdout += 'WCDMA RRC State: RRC Status: {}, Domain: {}'.format(
+            util.map_lookup_value(rrc_state_map, rrc_state.rrc_state),
+            util.map_lookup_value(rrc_domain_map, rrc_state.domain),
+        )
+        return {'stdout': stdout}
 
     def sdm_hspa_wcdma_serving_cell(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])

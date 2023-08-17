@@ -188,6 +188,7 @@ class sdm_hspa_data(IntEnum):
     HSPA_UL1_INTERNAL_MEAS    = 0x1a
     HSPA_UL1_SERV_CELL        = 0x1b
     HSPA_UL1_INTRA_FREQ_RESEL = 0x1c
+    HSPA_UL1_INTER_FREQ_RESEL = 0x1d
 
     HSPA_URRC_RRC_STATUS      = 0x20
     HSPA_URRC_RB_MAPPING      = 0x21
