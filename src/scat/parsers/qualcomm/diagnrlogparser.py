@@ -47,6 +47,7 @@ class DiagNrLogParser:
         stdout = ''
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
         item_struct = namedtuple('QcDiagNrRrcOtaPacket', 'rrc_rel_maj rrc_rel_min rbid pci nrarfcn sfn_subfn pdu_id sib_mask len')
+        item_struct_v17 = namedtuple('QcDiagNrRrcOtaPacketV17', 'rrc_rel_maj rrc_rel_min rbid pci unk1 nrarfcn sfn_subfn pdu_id sib_mask len')
 
         if pkt_ver in (0x09, ): # Version 9
             item = item_struct._make(struct.unpack('<BBBHIIBIH', pkt_body[4:24]))
@@ -54,6 +55,9 @@ class DiagNrLogParser:
         elif pkt_ver in (0x0c, 0x0e): # Version 12, 14
             item = item_struct._make(struct.unpack('<BBBHI3sBIH', pkt_body[4:23]))
             msg_content = pkt_body[23:]
+        elif pkt_ver in (0x11, ): # Version 17
+            item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIH', pkt_body[4:31]))
+            msg_content = pkt_body[31:]
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR RRC OTA Message packet version {:#x}'.format(pkt_ver))
@@ -91,6 +95,20 @@ class DiagNrLogParser:
                 31: "UE_MRDC_CAPABILITY",
                 32: "UE_NR_CAPABILITY",
                 33: "UE_NR_CAPABILITY",
+            }
+        elif pkt_ver in (0x11, ):
+            rrc_type_map = {
+                1: "BCCH_BCH",
+                2: "BCCH_DL_SCH",
+                3: "DL_CCCH",
+                4: "DL_DCCH",
+                5: "PCCH",
+                6: "UL_CCCH",
+                7: "UL_CCCH1",
+                8: "UL_DCCH",
+                9: "RRC_RECONFIGURATION",
+                10: "RRC_RECONFIGURATION_COMPLETE",
+                29: "nr-RadioBearerConfig",
             }
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -153,6 +171,9 @@ class DiagNrLogParser:
         elif pkt_ver == 0x30000:
             # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
             item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
+        elif pkt_ver == 0x30002:
+            # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR SCell Information packet version {:4x}'.format(pkt_ver))
