@@ -358,7 +358,7 @@ def scat_sdm_lte_selection_ext():
     )
 
 def scat_sdm_edge_selection():
-    return create_sdm_item_selection(0x01,
+    return create_sdm_item_selection(0x06,
         (sdm_edge_data.EDGE_SCELL_INFO, True),
         (sdm_edge_data.EDGE_NCELL_INFO, True),
         (sdm_edge_data.EDGE_3G_NCELL_INFO, True),
