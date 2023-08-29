@@ -507,10 +507,10 @@ class QualcommParser:
 
         if len(pkt_body) == 2:
             src_fname = pkt_body[1]
-            log_content = pkt_body[0].decode('utf-8')
+            log_content = pkt_body[0].decode('utf-8', errors='backslashreplace')
         else:
             src_fname = b''
-            log_content = pkt_body[0].decode('utf-8')
+            log_content = pkt_body[0].decode('utf-8', errors='backslashreplace')
 
         # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x'}
         cfmt = re.compile('(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxX])|%%)')
