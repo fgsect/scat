@@ -8,13 +8,9 @@ import logging
 import binascii
 
 class SdmControlParser:
-    def __init__(self, parent, model=None):
+    def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
-        if model:
-            self.model = model
-        else:
-            self.model = self.parent.model
-
+        self.icd_ver = icd_ver
         self.trace_group = {}
         self.ilm_group = {}
         self.ilm_total_count = 0
@@ -35,8 +31,8 @@ class SdmControlParser:
             (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
         }
 
-    def set_model(self, model):
-        self.model = model
+    def set_icd_ver(self, version):
+        self.icd_ver = version
 
     def sdm_control_start_response(self, pkt):
         pkt = pkt[15:-1]
@@ -63,14 +59,14 @@ class SdmControlParser:
         elif len(rest_str) == 2:
             chip_id = struct.unpack('<H', rest_str)[0]
 
-        if self.parent:
-            self.parent.icd_ver_min = pkt[55]
-            self.parent.icd_ver_maj = pkt[56]
-            icd_ver_min = self.parent.icd_ver_min
-            icd_ver_maj = self.parent.icd_ver_maj
-        else:
-            icd_ver_min = pkt[55]
-            icd_ver_maj = pkt[56]
+        icd_ver_min = pkt[55]
+        icd_ver_maj = pkt[56]
+
+        if icd_ver_maj > 0:
+            if self.parent:
+                self.parent.update_icd_ver((icd_ver_maj, icd_ver_min))
+            else:
+                self.set_icd_ver((icd_ver_maj, icd_ver_min))
 
         stdout = "SDM Start Response: Version: {}, ICD: {}.{}, Date: {}{}{}".format(
             version_str, icd_ver_maj, icd_ver_min, date_str,

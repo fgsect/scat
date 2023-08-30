@@ -61,6 +61,7 @@ class SamsungParser:
         self.tcpip_mtu_tx = 1500
         self.icd_ver_maj = 0
         self.icd_ver_min = 0
+        self.icd_ver = (0, 0)
         self.combine_stdout = False
 
         self.logger = logging.getLogger('scat.samsungparser')
@@ -78,11 +79,32 @@ class SamsungParser:
             except AttributeError:
                 pass
 
+    @staticmethod
+    def model_to_icd_ver(model):
+        if model == 'cmc221s':
+            return (4, 54)
+        elif model == 'e303':
+            return (4, 64)
+        elif model == 'e333':
+            return (4, 128)
+        elif model == 'e335':
+            return (5, 23)
+        elif model == 'e5123':
+            return (6, 22)
+        elif model == 'e5300':
+            return (7, 2)
+        else:
+            return (0, 0)
+
     def set_io_device(self, io_device):
         self.io_device = io_device
 
     def set_writer(self, writer):
         self.writer = writer
+
+    def update_icd_ver(self, version):
+        for p in self.sdm_parsers:
+            p.set_icd_ver(version)
 
     def set_parameter(self, params):
         for p in params:
@@ -90,8 +112,9 @@ class SamsungParser:
                 self.model = params[p]
                 if self.model == 'e5123':
                     SamsungParser.pkg_header_len = 11
-                for p in self.sdm_parsers:
-                    p.set_model(self.model)
+                icd_ver = SamsungParser.model_to_icd_ver(self.model)
+                if icd_ver != (0, 0):
+                    self.update_icd_ver(icd_ver)
             elif p == 'log_level':
                 self.logger.setLevel(params[p])
             elif p == 'start-magic':

@@ -9,12 +9,9 @@ import logging
 from collections import namedtuple
 
 class SdmHspaParser:
-    def __init__(self, parent, model=None):
+    def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
-        if model:
-            self.model = model
-        else:
-            self.model = self.parent.model
+        self.icd_ver = icd_ver
 
         self.process = {
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO: lambda x: self.sdm_hspa_ul1_rf_info(x),
@@ -26,10 +23,10 @@ class SdmHspaParser:
             (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
         }
 
-    def set_model(self, model):
-        self.model = model
+    def set_icd_ver(self, version):
+        self.icd_ver = version
 
-    def sdm_hspa_ul1_rf_info_old(self, pkt):
+    def sdm_hspa_ul1_rf_info_icd_4(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1RfInfoOld', 'uarfcn zero rssi txpwr')
@@ -47,7 +44,7 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_hspa_ul1_rf_info_e355(self, pkt):
+    def sdm_hspa_ul1_rf_info_icd_5(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1RfInfo', 'uarfcn psc rssi ecno rscp txpwr')
@@ -68,10 +65,10 @@ class SdmHspaParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_hspa_ul1_rf_info(self, pkt):
-        if self.model == 'cmc221s' or self.model == 'e333':
-            return self.sdm_hspa_ul1_rf_info_old(pkt)
+        if self.icd_ver[0] >= 5:
+            return self.sdm_hspa_ul1_rf_info_icd_5(pkt)
         else:
-            return self.sdm_hspa_ul1_rf_info_e355(pkt)
+            return self.sdm_hspa_ul1_rf_info_icd_4(pkt)
 
     def sdm_hspa_ul1_serving_cell(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])

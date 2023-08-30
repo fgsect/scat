@@ -9,13 +9,9 @@ import struct
 import logging
 
 class SdmCommonParser:
-    def __init__(self, parent, model=None):
+    def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
-        if model:
-            self.model = model
-        else:
-            self.model = self.parent.model
-
+        self.icd_ver = icd_ver
         self.multi_message_chunk = {}
         self.ip_id = 0
 
@@ -27,8 +23,8 @@ class SdmCommonParser:
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
         }
 
-    def set_model(self, model):
-        self.model = model
+    def set_icd_ver(self, version):
+        self.icd_ver = version
 
     def sdm_common_basic_info(self, pkt):
         pkt = pkt[15:-1]

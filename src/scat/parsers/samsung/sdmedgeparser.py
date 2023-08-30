@@ -9,12 +9,9 @@ import binascii
 from collections import namedtuple
 
 class SdmEdgeParser:
-    def __init__(self, parent, model=None):
+    def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
-        if model:
-            self.model = model
-        else:
-            self.model = self.parent.model
+        self.icd_ver = icd_ver
 
         self.process = {
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
@@ -25,8 +22,8 @@ class SdmEdgeParser:
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
         }
 
-    def set_model(self, model):
-        self.model = model
+    def set_icd_ver(self, version):
+        self.icd_ver = version
 
     def sdm_edge_dummy(self, pkt, num):
         pkt = pkt[15:-1]

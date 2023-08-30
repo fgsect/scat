@@ -9,13 +9,9 @@ import binascii
 from collections import namedtuple
 
 class SdmLteParser:
-    def __init__(self, parent, model=None):
+    def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
-        if model:
-            self.model = model
-        else:
-            self.model = self.parent.model
-
+        self.icd_ver = icd_ver
         self.multi_message_chunk = {}
 
         self.process = {
@@ -42,8 +38,8 @@ class SdmLteParser:
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
         }
 
-    def set_model(self, model):
-        self.model = model
+    def set_icd_ver(self, version):
+        self.icd_ver = version
 
     def sdm_lte_phy_status(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
@@ -64,7 +60,7 @@ class SdmLteParser:
         header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2 reserved1 reserved2 rsrp rsrq num_ncell')
         ncell_header = namedtuple('SdmLtePhyCellInfoNCellMeas', 'type earfcn pci zero1 reserved1 rsrp rsrq reserved2')
 
-        if self.model == 'e5123' or self.model == 'e5300':
+        if self.icd_ver[0] >= 6:
             struct_format = '<IIIHHHHLLB'
         else:
             struct_format = '<IIHHHHHLLB'
@@ -82,7 +78,7 @@ class SdmLteParser:
         stdout = 'LTE PHY Cell Info: EARFCN {}, PCI {}, PLMN {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(cell_info.arfcn, cell_info.pci, cell_info.plmn, cell_info.rsrp / -100.0, cell_info.rsrq / -100.0)
 
         if cell_info.num_ncell > 0:
-            if self.model == 'e5123' or self.model == 'e5300':
+            if self.icd_ver[0] >= 6:
                 ncell_header_format = '<BLHHHLLH'
             else:
                 ncell_header_format = '<BHHHHLLH'
@@ -90,18 +86,38 @@ class SdmLteParser:
             if len(extra) == ncell_len * cell_info.num_ncell:
                 for i in range(cell_info.num_ncell):
                     ncell = ncell_header._make(struct.unpack(ncell_header_format, extra[i*ncell_len:(i+1)*ncell_len]))
-                    if ncell.type == 0:
-                        stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
-                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
-                    elif ncell.type == 1:
-                        stdout += 'LTE PHY Cell Info: NCell {} (WCDMA): UARFCN {}, PSC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
-                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
-                    elif ncell.type == 3:
-                        stdout += 'LTE PHY Cell Info: NCell {} (GSM): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
-                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                    if self.icd_ver[0] >= 8:
+                        if ncell.type == 0:
+                            stdout += 'LTE PHY Cell Info: NCell {} (GSM): ARFCN {}, BSIC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 1:
+                            stdout += 'LTE PHY Cell Info: NCell {} (WCDMA): UARFCN {}, PSC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 2:
+                            stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 6:
+                            stdout += 'LTE PHY Cell Info: NCell {} (NR): NR-ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        else:
+                            stdout += 'LTE PHY Cell Info: NCell {} (Type {}): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.type, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
                     else:
-                        stdout += 'LTE PHY Cell Info: NCell {} (Type {}): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.type, ncell.earfcn,
-                            ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        if ncell.type == 0:
+                            stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 1:
+                            stdout += 'LTE PHY Cell Info: NCell {} (WCDMA): UARFCN {}, PSC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 3:
+                            stdout += 'LTE PHY Cell Info: NCell {} (GSM): ARFCN {}, BSIC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 6:
+                            stdout += 'LTE PHY Cell Info: NCell {} (NR): NR-ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        else:
+                            stdout += 'LTE PHY Cell Info: NCell {} (Type {}): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.type, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
             else:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
@@ -141,7 +157,7 @@ class SdmLteParser:
             "tac", '>H',  2 bytes, pos:20
         '''
         pkt = pkt[15:-1]
-        if self.model == 'e5123' or self.model == 'e5300':
+        if self.icd_ver[0] >= 6:
             struct_format = '<IIIIHH'
         else:
             struct_format = '<IIIIH'
@@ -152,7 +168,7 @@ class SdmLteParser:
 
         header = namedtuple('SdmLteRrcServingCell', 'cid zero1 zero2 plmn tac')
         header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid zero1 zero2 plmn tac band_indicator')
-        if self.model == 'e5123' or self.model == 'e5300':
+        if self.icd_ver[0] >= 6:
             cell_info = header_e5123._make(struct.unpack(struct_format, pkt[0:expected_len]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}, Band {}'.format(tac_real, cell_info.cid, cell_info.plmn, cell_info.band_indicator)

@@ -9,20 +9,17 @@ import binascii
 from collections import namedtuple
 
 class SdmIpParser:
-    def __init__(self, parent, model=None):
+    def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
-        if model:
-            self.model = model
-        else:
-            self.model = self.parent.model
+        self.icd_ver = icd_ver
 
         self.process = {
             (sdm_command_group.CMD_IP_DATA << 8) | 0x00: lambda x: self.sdm_ip_data(x),
             (sdm_command_group.CMD_IP_DATA << 8) | 0x10: lambda x: self.sdm_0x0710(x),
         }
 
-    def set_model(self, model):
-        self.model = model
+    def set_icd_ver(self, version):
+        self.icd_ver = version
 
     def sdm_ip_data(self, pkt):
         # Unknown: 0x0800, 0x150D
