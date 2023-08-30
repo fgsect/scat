@@ -21,7 +21,7 @@ class SdmEdgeParser:
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_NCELL_INFO: lambda x: self.sdm_edge_dummy(x, 0x06),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_dummy(x, 0x09),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_handover_history_info(x),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
         }
 
@@ -84,7 +84,35 @@ class SdmEdgeParser:
         return {'stdout': ''}
 
     def sdm_edge_handover_history_info(self, pkt):
-        return {'stdout': ''}
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        header_234 = namedtuple('SdmEdgeHandoverHistoryInfo234', 'arfcn bsic uarfcn psc earfcn pci')
+        stdout = ''
+
+        if len(pkt) >= 12:
+            ho_history_info = header_234._make(struct.unpack('<HHHHHH', pkt[0:12]))
+            extra = pkt[12:]
+        elif len(pkt) >= 8:
+            ho_history_info = header_234._make(struct.unpack('<HHHH', pkt[0:8]) + (0xffff, 0xffff))
+            extra = pkt[8:]
+        else:
+            ho_history_info = None
+            extra = pkt
+
+        if ho_history_info:
+            stdout += 'EDGE Handover History Info: '
+            if ho_history_info.arfcn != 0xffff:
+                stdout += 'ARFCN {}/BSIC {} '.format(ho_history_info.arfcn, ho_history_info.bsic)
+            if ho_history_info.uarfcn != 0xffff:
+                stdout += 'UARFCN {}/PSC {} '.format(ho_history_info.uarfcn, ho_history_info.psc)
+            if ho_history_info.earfcn != 0xffff:
+                stdout += 'EARFCN {}/PCI {} '.format(ho_history_info.earfcn, ho_history_info.pci)
+            stdout += '\n'
+
+        if len(extra) > 0:
+            stdout += 'Extra: {}\n'.format(binascii.hexlify(extra).decode('utf-8'))
+
+        return {'stdout': stdout.rstrip()}
 
     def sdm_edge_meas_info(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])

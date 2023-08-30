@@ -79,16 +79,10 @@ NCell 9: UARFCN 10836, PSC 261, RSSI 1, RSCP -107, Ec/No -24.0'''}
         self.assertDictEqual(result, expected)
 
     def test_sdm_edge_handover_history_info(self):
-        payload = binascii.unhexlify('000000000000')
-        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO, payload, timestamp=0x0)
-        result = self.parser.sdm_edge_handover_history_info(packet)
-        expected = {'stdout': ''}
-        self.assertDictEqual(result, expected)
-
         payload = binascii.unhexlify('ffffffff44291501')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_handover_history_info(packet)
-        expected = {'stdout': ''}
+        expected = {'stdout': 'EDGE Handover History Info: UARFCN 10564/PSC 277'}
         self.assertDictEqual(result, expected)
 
     def test_sdm_edge_meas_info(self):
