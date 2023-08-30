@@ -7,17 +7,17 @@ from scat.parsers.samsung.sdmcommonparser import SdmCommonParser
 from scat.parsers.samsung import sdmcmd
 
 class TestSdmCommonParser(unittest.TestCase):
-    parser = SdmCommonParser(parent=None, model='e5123')
+    parser = SdmCommonParser(parent=None)
 
     def test_sdm_common_basic_info(self):
-        self.parser.model = 'cmc221s'
+        self.parser.icd_ver = (4, 54)
         payload = binascii.unhexlify('170003002cac6d40960268')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x0f01614f)
         result = self.parser.sdm_common_basic_info(packet)
         expected = {'stdout': 'Common Basic Info: RAT 23, MIMO 3, Frequency 1840.00/1745.00 MHz'}
         self.assertDictEqual(result, expected)
 
-        self.parser.model = 'e333'
+        self.parser.icd_ver = (4, 128)
         payload = binascii.unhexlify('170403002cac6d4096026841000000')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x057687c3)
         result = self.parser.sdm_common_basic_info(packet)
@@ -39,7 +39,7 @@ class TestSdmCommonParser(unittest.TestCase):
         expected = {'stdout': 'Common Basic Info: RAT 23, MIMO 2, Frequency 2630.00/2510.00 MHz, Extra: 7f1a0000'}
         self.assertDictEqual(result, expected)
 
-        self.parser.model = 'e5123'
+        self.parser.icd_ver = (6, 34)
         payload = binascii.unhexlify('1700036076e13820d13236006f30c300ffffffffffffff')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x03ecaac6)
         result = self.parser.sdm_common_basic_info(packet)

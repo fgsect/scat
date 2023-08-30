@@ -7,7 +7,7 @@ from scat.parsers.samsung import sdmcmd
 from scat.parsers.samsung.sdmedgeparser import SdmEdgeParser
 
 class TestSdmEdgeParser(unittest.TestCase):
-    parser = SdmEdgeParser(parent=None, model='e5123')
+    parser = SdmEdgeParser(parent=None, icd_ver=(6, 34))
     maxDiff = None
 
     def test_sdm_edge_scell_info(self):

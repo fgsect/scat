@@ -7,12 +7,12 @@ from scat.parsers.samsung import sdmcmd
 from scat.parsers.samsung.sdmhspaparser import SdmHspaParser
 
 class TestSdmHspaParser(unittest.TestCase):
-    parser = SdmHspaParser(parent=None, model='e5123')
+    parser = SdmHspaParser(parent=None, icd_ver = (6, 34))
     maxDiff = None
 
     def test_sdm_hspa_ul1_rf_info(self):
         # cmc221s:
-        self.parser.model = 'cmc221s'
+        self.parser.icd_ver = (4, 54)
         payload = binascii.unhexlify('3c2a0000b4ffa8e4')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
@@ -20,7 +20,7 @@ class TestSdmHspaParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
         # e333:
-        self.parser.model = 'e333'
+        self.parser.icd_ver = (4, 128)
         payload = binascii.unhexlify('44290000adff7cfc')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
@@ -28,7 +28,7 @@ class TestSdmHspaParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
         # e355:
-        self.parser.model = 'e355'
+        self.parser.icd_ver = (5, 23)
         payload = binascii.unhexlify('3c2a4f01202a2d3b')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
@@ -36,7 +36,7 @@ class TestSdmHspaParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
         # e5123
-        self.parser.model = 'e5123'
+        self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('ea0bd501162e2547')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
@@ -45,6 +45,7 @@ class TestSdmHspaParser(unittest.TestCase):
 
     def test_sdm_hspa_ul1_serving_cell(self):
         # e5300
+        self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('d501c6ff0000fdff5000')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_SERV_CELL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_serving_cell(packet)
@@ -58,6 +59,7 @@ class TestSdmHspaParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
     def test_hspa_ul1_intra_freq_resel(self):
+        self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('170067008cffe8ff40008cffe8ff9d018cffe8ffce018cffe8ffc3008cffe8ff25008cffe8ffef008cffe8ff73018cffe8ff9c018cffe8ffd9008cffe8ffe3018cffe8ff70008cffe8ffd6008cffe8ffae018cffe8ff5a018cffe8ff1c018cffe8ff22018cffe8ff06018cffe8ff29018cffe8ff1a008cffe8fffa008cffe8ff65018cffe8ff45018cffe8ff6400000009240004010000004400000058f9e44193d26c4005000000232a000400000000540800000400000014000000000000005927')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_intra_freq_resel(packet)
@@ -135,6 +137,7 @@ Extra: 0000010000000100000000000f00f0ff0000000000000a000000020000000100000020620
         self.assertDictEqual(result, expected)
 
     def test_hspa_ul1_inter_freq_resel(self):
+        self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('0000203031203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030203030200a3e2041484f27446c617373205b3130335d2028696e74294154495f4d53475f484f27445f53494e474c455f434c49454e540000484f27440000000000000000000000000000000000000000000000000000000000000000000000000000000000000000484f274400000000000000000000000000000000484f274404000000690000009062dc40a803000028692441b6020000504600002863dc40610000003030')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_INTER_FREQ_RESEL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_inter_freq_resel(packet)
@@ -151,6 +154,7 @@ Extra: 61707320496e636f6d696e67205b373731355d204e535f53544154455f4348414e47455f4
         self.assertDictEqual(result, expected)
 
     def test_sdm_hspa_wcdma_rrc_status(self):
+        self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('7f1300001000c0ffa004205b942c0f00000000007e')
         result = self.parser.sdm_hspa_wcdma_rrc_status(payload)
         expected = {'stdout': 'WCDMA RRC State: RRC Status: DISCONNECTED, Domain: IDLE'}
@@ -162,6 +166,7 @@ Extra: 61707320496e636f6d696e67205b373731355d204e535f53544154455f4348414e47455f4
         self.assertDictEqual(result, expected)
 
     def test_sdm_hspa_wcdma_serving_cell(self):
+        self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('7f1600001300e9ffa00422e6c4ec3586263c2a500408007e')
         result = self.parser.sdm_hspa_wcdma_serving_cell(payload)
         expected = {'stdout': 'WCDMA Serving Cell: UARFCN 10812/9862, MCC 450, MNC 8'}
