@@ -46,7 +46,7 @@ class SdmLteParser:
         pkt = pkt[15:-1]
 
         if len(pkt) != 2:
-            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (2)'.format(len(pkt), 2))
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), 2))
             return None
 
         header = namedtuple('SdmLtePhyStatus', 'sfn')
@@ -125,7 +125,19 @@ class SdmLteParser:
 
     def sdm_lte_l2_rach_info(self, pkt):
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE L2 RACH Info: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        struct_format = '<HHB'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteL2RachInfo', 'preamble_id preamble_group num_preamble')
+        rach_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        stdout = 'LTE L2 RACH Info: Preamble ID: {:#x}, Preamble Group: {:#x}, Num Preamble: {}'.format(
+            rach_info.preamble_id, rach_info.preamble_group, rach_info.num_preamble)
+        return {'stdout': stdout}
 
     def sdm_lte_l2_rnti_info(self, pkt):
         pkt = pkt[15:-1]
@@ -295,29 +307,6 @@ class SdmLteParser:
 
     def sdm_lte_rrc_rach_msg(self, pkt):
         pkt = pkt[15:-1]
-        # TODO: RACH Preamble/Response
-        # pkt[1] - pkt[4]: TS
-        # direction = pkt[1] # 0 - UL, 1 - DL
-        # rach_vals = struct.unpack('<HIIH', pkt[2:14])
-
-        # 01 01 00 0d00 0000 05000000 | 8f360000
-        # 01 01 00 1a00 0000 03000000 | 1e1a0000
-        # 01 01 00 0500 0000 03000000 | 791a0000
-        # 01 01 00 0500 0000 06000000 | 3d450000
-
-        # if direction == 0:
-        #     # UL: RACH cause, Preamble ID, ?, ?
-        #     pass
-        # elif direction == 1:
-        #     # DL: ?, Preamble ID, TA, T-C-RNTI
-        #     # MAC-LTE: RAR Header, TA, UL Grant, T-C-RNTI
-        #     pass
-        # else:
-        #     if self.parent:
-        #         self.parent.logger.log(logging.WARNING, "Invalid RACH direction 0x{:02x}".format(direction))
-        #         self.parent.logger.log(logging.DEBUG, util.xxd(pkt))
-        # # return None
-
         struct_format = '<BBBLLL'
         expected_len = struct.calcsize(struct_format)
         if len(pkt) < expected_len:
@@ -325,16 +314,14 @@ class SdmLteParser:
                 self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
             return None
 
-        header = namedtuple('SdmLteRrcRachMessage', 'direction val1 val2 val3 val4 tc_rnti_prob')
-        # direction: 0, 1
+        header = namedtuple('SdmLteRrcRachMessage', 'direction val1 preamble_group preamble_id val4 tc_rnti')
         # val1: 1, 5, 6, 7
-        # val2: 0
-        # val3: 0, 00-1b, 3e, 3f
         # val4: 1-7
-        # val5: varies
         rach_message = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
 
-        stdout = 'LTE 0x55: {}'.format(rach_message)
+        stdout = 'LTE RRC RACH Message: Direction: {}, {}, Preamble Group: {:#x}, Preamble ID: {:#x}, {}, TC-RNTI: {:#x}'.format(
+            rach_message.direction, rach_message.val1, rach_message.preamble_group,
+            rach_message.preamble_id, rach_message.val4, rach_message.tc_rnti)
         return {'stdout': stdout}
 
     def sdm_lte_0x57(self, pkt):
