@@ -26,7 +26,7 @@ class SdmLteParser:
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_OTA_PACKET: lambda x: self.sdm_lte_rrc_ota_packet(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | 0x55: lambda x: self.sdm_lte_0x55(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_RACH_MSG: lambda x: self.sdm_lte_rrc_rach_msg(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | 0x57: lambda x: self.sdm_lte_0x57(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
@@ -298,7 +298,7 @@ class SdmLteParser:
             return self._parse_sdm_lte_rrc_message(sdm_pkt_hdr, rrc_header.channel, rrc_header.direction,
                 len(newpkt_body), newpkt_body)
 
-    def sdm_lte_0x55(self, pkt):
+    def sdm_lte_rrc_rach_msg(self, pkt):
         pkt = pkt[15:-1]
         # TODO: RACH Preamble/Response
         # pkt[1] - pkt[4]: TS

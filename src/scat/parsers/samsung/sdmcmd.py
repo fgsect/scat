@@ -89,6 +89,7 @@ class sdm_common_data(IntEnum):
     COMMON_BASIC_INFO             = 0x00
     COMMON_DATA_INFO              = 0x02
     COMMON_SIGNALING_INFO         = 0x03
+    COMMON_SMS_INFO               = 0x04
     COMMON_MULTI_SIGNALING_INFO   = 0x06
 
 @unique
@@ -230,9 +231,9 @@ def scat_sdm_common_selection():
         (0x01, True),
         (sdm_common_data.COMMON_DATA_INFO, True),
         (sdm_common_data.COMMON_SIGNALING_INFO, True),
-        (0x04, True),
+        (sdm_common_data.COMMON_SMS_INFO, True),
         (0x05, True),
-        (0x06, True),
+        (sdm_common_data.COMMON_MULTI_SIGNALING_INFO, True),
     )
 
 def scat_sdm_lte_selection():

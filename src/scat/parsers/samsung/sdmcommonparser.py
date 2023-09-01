@@ -19,7 +19,8 @@ class SdmCommonParser:
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_INFO: lambda x: self.sdm_common_0x02(x),
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | 0x04: lambda x: self.sdm_common_0x04(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SMS_INFO: lambda x: self.sdm_common_0x04(x),
+            (sdm_command_group.CMD_COMMON_DATA << 8) | 0x05: lambda x: self.sdm_common_0x05(x),
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
         }
 
@@ -201,7 +202,27 @@ class SdmCommonParser:
 
     def sdm_common_0x04(self, pkt):
         pkt = pkt[15:-1]
-        # print(util.xxd(pkt))
+        return {'stdout': 'SDM 0x04: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+        # acacac f2f2f2 9f9f9f e5e5e5
+        # acacac f2f2f2 9f9f9f e5e5e5
+        # 00 00 18 000018 000018 000018
+        # 03 00 00 000018 000018 000018
+        # 03 01 00 000018 000018 000018
+
+    def sdm_common_0x05(self, pkt):
+        pkt = pkt[15:-1]
+        return {'stdout': 'SDM 0x05: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+        # 01 08 07 00 00
+        # 03 08 07 00 00
+        # 01 08 07 00 00
+        # 02 08 07 00 00
+
+        # 03 00 00 00 00
+        # 01 00 00 00 00
+        # 02 00 00 00 00
+        # 01 00 00 00 00
 
     def sdm_common_multi_signaling(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
