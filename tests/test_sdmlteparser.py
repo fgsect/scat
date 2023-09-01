@@ -39,6 +39,13 @@ class TestSdmLteParser(unittest.TestCase):
         expected = 'LTE PHY Cell Info: EARFCN 100, PCI 11, PLMN 45006, RSRP: -102.00, RSRQ: -10.00\nLTE PHY Cell Info: NCell 0 (Type 2): ARFCN 3050, PCI 11, RSRP: -89.00, RSRQ: -9.00'
         self.assertEqual(result['stdout'], expected)
 
+    def test_sdm_lte_l2_rach_info(self):
+        self.parser.icd_ver = (4, 96)
+        payload = binascii.unhexlify('7f1a00001700f308a1223a4dd70803fffffefff4ff95ea0200f4ff7e')
+        result = self.parser.sdm_lte_l2_rnti_info(payload)
+        expected = {'stdout': 'LTE L2 RNTI Info: SI: 0xffff P: 0xfffe TC: 0xfff4 C: 0xea95 RA: 0x2 0xfff4'}
+        self.assertDictEqual(result, expected)
+
     def test_sdm_lte_rrc_serving_cell(self):
         self.parser.icd_ver = (4, 96)
         payload = binascii.unhexlify('7f2000001d00fe5ba0025092190c22110692000100000000000000ceaf000090017e')

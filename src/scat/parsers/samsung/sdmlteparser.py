@@ -128,12 +128,6 @@ class SdmLteParser:
         return {'stdout': 'LTE L2 RACH Info: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
 
     def sdm_lte_l2_rnti_info(self, pkt):
-        # FFFF: SI-RNTI
-        # FFFE: P-RNTI
-        # FFFA: SC-N-RNTI
-        # ffff | feff | faff | 8f36 | faff | faff
-        # ffff | feff | faff | dc19 | faff | faff
-        # ffff | feff | faff | cdc4 | faff | faff (o2)
         pkt = pkt[15:-1]
         struct_format = '<HHHHHH'
         expected_len = struct.calcsize(struct_format)
@@ -142,11 +136,12 @@ class SdmLteParser:
                 self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
             return None
 
-        header = namedtuple('SdmLteL2RntiInfo', 'si_rnti p_rnti tc_rnti c_rnti val5 val6')
+        header = namedtuple('SdmLteL2RntiInfo', 'si_rnti p_rnti tc_rnti c_rnti ra_rnti val6')
         rnti_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
 
-        stdout = 'LTE L2 RNTI Info: {:#x} {:#x} {:#x} {:#x} {:#x} {:#x}'.format(rnti_info.si_rnti, rnti_info.p_rnti, rnti_info.tc_rnti,
-            rnti_info.c_rnti, rnti_info.val5, rnti_info.val6)
+        stdout = 'LTE L2 RNTI Info: SI: {:#x} P: {:#x} TC: {:#x} C: {:#x} RA: {:#x} {:#x}'.format(
+            rnti_info.si_rnti, rnti_info.p_rnti, rnti_info.tc_rnti,
+            rnti_info.c_rnti, rnti_info.ra_rnti, rnti_info.val6)
         return {'stdout': stdout}
 
     def sdm_lte_rrc_serving_cell(self, pkt):
