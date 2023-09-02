@@ -372,9 +372,11 @@ def scat_sdm_edge_selection_ext():
     return create_sdm_item_selection(0xff)
 
 def scat_sdm_hspa_selection():
-    return create_sdm_item_selection(0x04,
+    return create_sdm_item_selection(0x06,
         (sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, True),
         (sdm_hspa_data.HSPA_UL1_SERV_CELL, True),
+        (sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL, True),
+        (sdm_hspa_data.HSPA_UL1_INTER_FREQ_RESEL, True),
         (sdm_hspa_data.HSPA_URRC_RRC_STATUS, True),
         (sdm_hspa_data.HSPA_URRC_NETWORK_INFO, True),
     )
