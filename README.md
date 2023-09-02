@@ -67,20 +67,16 @@ Please see the [wiki page for advanced options](https://github.com/fgsect/scat/w
 * `-t sec`: Samsung
 * `-t hisi`: HiSilicon (experimental, only baseband dump is supported)
 
-For Samsung devices, you need to manually supply the baseband model through `-m`
-option like this example:
+If one of the following packets are not properly decoded on Samsung baseband
+please file an issue with the debug output (`--debug`) attached:
 
-`$ scat -t sec -m e333`
+* HSPA UL1 RF Info
+* LTE PHY Cell Info
+* LTE RRC Serving Cell
 
-Available model types are following:
-
-* `-m cmc221s`: CMC221S, used in very early Samsung LTE modem/smartphone.
-* `-m e303`: Exynos modem 303.
-* `-m e333`: Exynos modem 333.
-* `-m e5123`: Exynos modem 5123.
-* `-m e5300`: Exynos modem 5300.
-* For modems not listed in here, try `-m e333` or `-m e5123` based on the
-  relative age of the device.
+SCAT version up to 1.1.0 required specifying the Samsung baseband type manually
+using `-m`. As SCAT now autodetects the Samsung baseband type, This option will
+be deprecated in future releases.
 
 ### USB
 Accessing the baseband diagnostics via USB:
@@ -97,8 +93,8 @@ syntax visible in `lsusb` command. `-i 2` specifies the interface number of the
 diagnostic node, which is again device specific.
 
 Newer Samsung devices require a correct magic number to be supplied to start the
-diagnostic session through USB. This could be specified by `--start-magic`
-option.
+diagnostic session through USB. Please see [Issue #27](https://github.com/fgsect/scat/issues/27#issuecomment-1416233282)
+for more information on this.
 
 ### Serial
 Accessing the baseband diagnostics via serial port:
