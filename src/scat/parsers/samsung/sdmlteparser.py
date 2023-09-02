@@ -165,16 +165,16 @@ class SdmLteParser:
         '''
         pkt = pkt[15:-1]
         if self.icd_ver[0] >= 6:
-            struct_format = '<IIIIHH'
+            struct_format = '<IQIHH'
         else:
-            struct_format = '<IIIIH'
+            struct_format = '<IQIH'
         expected_len = struct.calcsize(struct_format)
         if len(pkt) < expected_len:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), expected_len))
             return None
 
-        header = namedtuple('SdmLteRrcServingCell', 'cid zero1 zero2 plmn tac')
-        header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid zero1 zero2 plmn tac band_indicator')
+        header = namedtuple('SdmLteRrcServingCell', 'cid band_bits plmn tac')
+        header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid band_bits plmn tac band_indicator')
         if self.icd_ver[0] >= 6:
             cell_info = header_e5123._make(struct.unpack(struct_format, pkt[0:expected_len]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
