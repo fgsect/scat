@@ -78,6 +78,7 @@ def scat_main():
         qc_group.add_argument('--qsr4-hash', help='Specify QSR4 message hash file (need to obtain from the device firmware), implies --msgs', type=str)
         qc_group.add_argument('--events', action='store_true', help='Decode Events as GSMTAP logging')
         qc_group.add_argument('--msgs', action='store_true', help='Decode Extended Message Reports and QSR Message Reports as GSMTAP logging')
+        qc_group.add_argument('--cacombos', action='store_true', help='Display raw values of UE CA combo information on 4G/5G (0xB0CD/0xB826)')
 
     if 'sec' in parser_dict.keys():
         sec_group = parser.add_argument_group('Samsung specific settings')
@@ -162,6 +163,7 @@ def scat_main():
             'qsr4-hash': args.qsr4_hash,
             'events': args.events,
             'msgs': args.msgs,
+            'cacombos': args.cacombos,
             'combine-stdout': args.combine_stdout})
     elif args.type == 'sec':
         current_parser.set_parameter({

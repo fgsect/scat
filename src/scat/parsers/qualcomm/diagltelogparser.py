@@ -6,6 +6,7 @@ import scat.util as util
 import struct
 import calendar
 import logging
+import binascii
 from collections import namedtuple
 
 class DiagLteLogParser:
@@ -58,7 +59,7 @@ class DiagLteLogParser:
             0xB0C2: lambda x, y, z: self.parse_lte_rrc_cell_info(x, y, z), # LTE RRC Serving Cell Info
 
             # LTE CA COMBOS
-            # 0xB0CD: lambda x, y, z: self.parse_cacombos(x, y, z),
+            0xB0CD: lambda x, y, z: self.parse_lte_cacombos(x, y, z),
 
             # LTE NAS
             0xB0E0: lambda x, y, z: self.parse_lte_nas(x, y, z, False), # NAS ESM RX Enc
@@ -1315,5 +1316,9 @@ class DiagLteLogParser:
 
         return {'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
 
-    def parse_cacombos(self, pkt_header, pkt_body, args):
-        self.parent.logger.log(logging.WARNING, "0xB0CD " + util.xxd_oneline(pkt_body))
+    def parse_lte_cacombos(self, pkt_header, pkt_body, args):
+        if self.parent:
+            if not self.parent.cacombos:
+                return None
+
+        return {'stdout': 'LTE UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode('utf-8'))}

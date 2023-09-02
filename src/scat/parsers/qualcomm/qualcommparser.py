@@ -57,6 +57,7 @@ class QualcommParser:
         self.qsr4_hash_filename = ''
         self.emr_id_range = []
         self.log_id_range = {}
+        self.cacombos = False
         self.combine_stdout = False
 
         self.name = 'qualcomm'
@@ -111,6 +112,8 @@ class QualcommParser:
                 self.parse_events = params[p]
             elif p == 'msgs':
                 self.parse_msgs = params[p]
+            elif p == 'cacombos':
+                self.cacombos = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
 

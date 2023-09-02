@@ -24,7 +24,7 @@ class DiagNrLogParser:
             0xB822: lambda x, y, z: self.parse_nr_mib_info(x, y, z), # NR RRC MIB Info
             0xB823: lambda x, y, z: self.parse_nr_rrc_scell_info(x, y, z), # NR RRC Serving Cell Info
             # 0xB825: lambda x, y, z: self.parse_nr_rrc_conf_info(x, y, z), # NR RRC Configuration Info
-            0xB826: lambda x, y, z: self.parse_cacombos(x, y, z), # NR RRC Supported CA Combos
+            0xB826: lambda x, y, z: self.parse_nr_cacombos(x, y, z), # NR RRC Supported CA Combos
 
             # NAS
             0xB800: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB800), # NR NAS 5GSM Plain OTA Incoming
@@ -195,8 +195,12 @@ class DiagNrLogParser:
     def parse_nr_rrc_conf_info(self, pkt_header, pkt_body, args):
         pass
 
-    def parse_cacombos(self, pkt_header, pkt_body, args):
-        self.parent.logger.log(logging.WARNING, "0xB826 " + util.xxd_oneline(pkt_body))
+    def parse_nr_cacombos(self, pkt_header, pkt_body, args):
+        if self.parent:
+            if not self.parent.cacombos:
+                return None
+
+        return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode('utf-8'))}
 
     # NAS
     def parse_nr_nas(self, pkt_header, pkt_body, args, cmd_id):
