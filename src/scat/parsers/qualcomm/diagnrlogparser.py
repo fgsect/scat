@@ -122,7 +122,7 @@ class DiagNrLogParser:
             type_str = '{}'.format(item.pdu_id)
 
         stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}, Type: {}\n".format(item.nrarfcn, item.pci, type_str)
-        stdout += "NR RRC OTA Packet: Body: {}".format(binascii.hexlify(msg_content).decode('utf-8'))
+        stdout += "NR RRC OTA Packet: Body: {}".format(binascii.hexlify(msg_content).decode())
 
         return {'stdout': stdout, 'ts': pkt_ts}
 
@@ -200,7 +200,7 @@ class DiagNrLogParser:
             if not self.parent.cacombos:
                 return None
 
-        return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode('utf-8'))}
+        return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode())}
 
     # NAS
     def parse_nr_nas(self, pkt_header, pkt_body, args, cmd_id):
@@ -217,7 +217,7 @@ class DiagNrLogParser:
             item = item_struct._make(struct.unpack('<BBB', pkt_body[4:7]))
             stdout = "NAS-5GS message ({:04X}) version {:x}.{:x}.{:x}: ".format(cmd_id, item.vermaj, item.vermid, item.vermin)
             msg_content = pkt_body[7:]
-            stdout += "{}".format(binascii.hexlify(msg_content).decode('utf-8'))
+            stdout += "{}".format(binascii.hexlify(msg_content).decode())
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR NAS Message packet version {:#x}'.format(pkt_ver))
@@ -243,7 +243,7 @@ class DiagNrLogParser:
                 guti_str = '{:03x}-{:03x}-{:02x}-{:03x}-{:02x}-{:08x}'.format(plmn_id_guti[0], plmn_id_guti[1], item.guti_5gs[4],
                                                               amf_sid, item.guti_5gs[7], tmsi_5gs)
             else:
-                guti_str = binascii.hexlify(item.guti_5gs).decode('utf-8')
+                guti_str = binascii.hexlify(item.guti_5gs).decode()
 
             stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
                 item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
