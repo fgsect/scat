@@ -149,6 +149,13 @@ class sdm_lte_data(IntEnum):
     LTE_DATA_HANDOVER_STAT       = 0x62
     LTE_DATA_CALL_DROP           = 0x63
 
+    LTE_VOLTE_TX_PACKET_INFO     = 0x70
+    LTE_VOLTE_RX_PACKET_INFO     = 0x71
+    LTE_VOLTE_TX_OVERALL_STAT_INFO = 0x72
+    LTE_VOLTE_RX_OVERALL_STAT_INFO = 0x73
+    LTE_VOLTE_TX_RTP_STAT_INFO   = 0x74
+    LTE_VOLTE_RX_RTP_STAT_INFO   = 0x75
+
 @unique
 class sdm_edge_data(IntEnum):
     EDGE_TIME_SLOT_INFO           = 0x00
@@ -237,7 +244,7 @@ def scat_sdm_common_selection():
     )
 
 def scat_sdm_lte_selection():
-    return create_sdm_item_selection(0x14,
+    return create_sdm_item_selection(26,
         (sdm_lte_data.LTE_PHY_STATUS, True),
         (sdm_lte_data.LTE_PHY_CELL_SEARCH_MEAS, True),
         (sdm_lte_data.LTE_PHY_NCELL_INFO, True),
@@ -258,6 +265,12 @@ def scat_sdm_lte_selection():
         (sdm_lte_data.LTE_NAS_PDP, True),
         (sdm_lte_data.LTE_NAS_IP, True),
         (sdm_lte_data.LTE_NAS_ESM_MESSAGE, True),
+        (sdm_lte_data.LTE_VOLTE_TX_PACKET_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_RX_PACKET_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_TX_OVERALL_STAT_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_RX_RTP_STAT_INFO, True),
     )
 
 def scat_sdm_lte_selection_ext():

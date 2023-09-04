@@ -6,6 +6,7 @@ import scat.util as util
 import struct
 import logging
 import binascii
+import ipaddress
 from collections import namedtuple
 
 class SdmLteParser:
@@ -27,7 +28,7 @@ class SdmLteParser:
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_RACH_MSG: lambda x: self.sdm_lte_rrc_rach_msg(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | 0x57: lambda x: self.sdm_lte_0x57(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | 0x57: lambda x: self.sdm_lte_dummy(x, 0x57),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
@@ -36,10 +37,21 @@ class SdmLteParser:
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_PDP: lambda x: self.sdm_lte_nas_pdp(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_IP: lambda x: self.sdm_lte_nas_ip(x),
             (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
+
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_TX_PACKET_INFO: lambda x: self.sdm_lte_volte_rtp_packet(x, 0x70),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_RX_PACKET_INFO: lambda x: self.sdm_lte_volte_rtp_packet(x, 0x71),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_TX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_tx_stats(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_rx_stats(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_tx_rtp_stats(x),
+            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_RX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_rx_rtp_stats(x),
         }
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def sdm_lte_dummy(self, pkt, cmdid):
+        pkt = pkt[15:-1]
+        return {'stdout': 'LTE {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode('utf-8'))}
 
     def sdm_lte_phy_status(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
@@ -397,7 +409,7 @@ class SdmLteParser:
         # 0000ff0000ff0000ff
         # 0001ff0000ff0000ff
         # 0501ff0000ff0000ff
-        # EPS bearer identity 5
+        # Bearer ID, Bearer Type, ? x3
 
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS PDP: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
@@ -410,3 +422,92 @@ class SdmLteParser:
 
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS IP: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+
+    def sdm_lte_volte_rtp_packet(self, pkt, cmdid):
+        # 0x70: TX
+        # 0x71: RX
+        pkt = pkt[15:-1]
+
+        if len(pkt) < 16:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected (16)'.format(len(pkt)))
+            return
+
+        header = namedtuple('SdmLteVolteRtpPacket', 'rtp_len dst_port rtp_hdr rtp_payload_type rtp_seq rtp_timestamp rtp_ssrc')
+        rtp_info = header._make(struct.unpack('<HHBBHLL', pkt[0:16]))
+
+        stdout = 'LTE VoLTE RTP Packet: Dst Port: {}, Length: {}, Header={}, PT={}, SSRC={:#010x}, Seq={}, Time={}'.format(
+            rtp_info.dst_port, rtp_info.rtp_len,
+            rtp_info.rtp_hdr,
+            rtp_info.rtp_payload_type, rtp_info.rtp_ssrc, rtp_info.rtp_seq, rtp_info.rtp_timestamp
+        )
+
+        return {'stdout': stdout}
+
+    def sdm_lte_volte_tx_stats(self, pkt):
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmLteVolteTxStats', 'rtp_payload_type rtp_ssrc dst_port ip_type ip_addr time')
+        tx_stats = header._make(struct.unpack('<BLHH16sL', pkt[0:58]))
+
+        ip_str = ''
+
+        if tx_stats.ip_type == 0:
+            ip_str = str(ipaddress.IPv4Address(tx_stats.ip_addr[0:4]))
+        elif tx_stats.ip_type == 1:
+            ip_str = str(ipaddress.IPv6Address(tx_stats.ip_addr))
+        else:
+            ip_str = 'Unknown IP type {}'.format(tx_stats.ip_type)
+
+        stdout = 'LTE VoLTE TX Stats: IP: {}, Dst Port: {}, PT={}, SSRC={:#010x}, {:.2f}s'.format(
+            ip_str,
+            tx_stats.dst_port,
+            tx_stats.rtp_payload_type,
+            tx_stats.rtp_ssrc,
+            tx_stats.time / 1000
+        )
+
+        return {'stdout': stdout}
+
+    def sdm_lte_volte_rx_stats(self, pkt):
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmLteVolteRxStats', 'rtp_ssrc dst_port ip_type ip_addr')
+        rx_stats = header._make(struct.unpack('<LHH16s', pkt[0:48]))
+
+        if rx_stats.ip_type == 0:
+            ip_str = str(ipaddress.IPv4Address(rx_stats.ip_addr[0:4]))
+        elif rx_stats.ip_type == 1:
+            ip_str = str(ipaddress.IPv6Address(rx_stats.ip_addr))
+        else:
+            ip_str = 'Unknown IP type {}'.format(rx_stats.ip_type)
+
+        stdout = 'LTE VoLTE RX Stats: IP: {}, Dst Port: {}, SSRC={:#010x}'.format(
+            ip_str,
+            rx_stats.dst_port, rx_stats.rtp_ssrc
+        )
+
+        return {'stdout': stdout}
+
+    def sdm_lte_volte_tx_rtp_stats(self, pkt):
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmLteVolteTxRtpStats', 'time pkts bytes')
+        tx_stats = header._make(struct.unpack('<LLL', pkt[0:12]))
+
+        stdout = 'LTE VoLTE TX RTP Stats: {:.2f}s, Num Packets: {}, Num Bytes: {}'.format(
+            tx_stats.time / 1000,
+            tx_stats.pkts,
+            tx_stats.bytes
+        )
+
+        return {'stdout': stdout}
+
+    def sdm_lte_volte_rx_rtp_stats(self, pkt):
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmLteVolteRxRtpStats', 'time pkts bytes')
+        rx_stats = header._make(struct.unpack('<LLL', pkt[0:12]))
+
+        stdout = 'LTE VoLTE RX RTP Stats: {:.2f}s, Num Packets: {}, Num Bytes: {}'.format(
+            rx_stats.time / 1000,
+            rx_stats.pkts,
+            rx_stats.bytes
+        )
+
+        return {'stdout': stdout}
