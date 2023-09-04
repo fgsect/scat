@@ -17,15 +17,41 @@ class SdmCommonParser:
 
         self.process = {
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_INFO: lambda x: self.sdm_common_0x02(x),
+            # (sdm_command_group.CMD_COMMON_DATA << 8) | 0x01: lambda x: self.sdm_common_dummy(x, 0x01),
+            # (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_INFO: lambda x: self.sdm_common_dummy(x, 0x02),
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SMS_INFO: lambda x: self.sdm_common_0x04(x),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | 0x05: lambda x: self.sdm_common_0x05(x),
+            # (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SMS_INFO: lambda x: self.sdm_common_dummy(x, 0x04),
+            # (sdm_command_group.CMD_COMMON_DATA << 8) | 0x05: lambda x: self.sdm_common_dummy(x, 0x05),
             (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
         }
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def sdm_common_dummy(self, pkt, cmdid):
+        pkt = pkt[15:-1]
+        return {'stdout': 'COMMON {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode('utf-8'))}
+        # 0x02
+        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
+        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
+
+        # 0x04
+        # acacac f2f2f2 9f9f9f e5e5e5
+        # acacac f2f2f2 9f9f9f e5e5e5
+        # 00 00 18 000018 000018 000018
+        # 03 00 00 000018 000018 000018
+        # 03 01 00 000018 000018 000018
+
+        # 0x05
+        # 01 08 07 00 00
+        # 03 08 07 00 00
+        # 01 08 07 00 00
+        # 02 08 07 00 00
+
+        # 03 00 00 00 00
+        # 01 00 00 00 00
+        # 02 00 00 00 00
+        # 01 00 00 00 00
 
     def sdm_common_basic_info(self, pkt):
         pkt = pkt[15:-1]
@@ -53,12 +79,6 @@ class SdmCommonParser:
                 0 if common_basic.ulfreq == 4294967295 else common_basic.ulfreq / 1000000)
 
         return {'stdout': stdout}
-
-    def sdm_common_0x02(self, pkt):
-        pkt = pkt[15:-1]
-        # print(util.xxd(pkt))
-        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
-        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
 
     def _parse_sdm_common_signaling(self, sdm_pkt_hdr, type, subtype, direction, length, msg):
         if type == 0x30: # UMTS RRC
@@ -199,30 +219,6 @@ class SdmCommonParser:
         msg_content = pkt[5:]
 
         return self._parse_sdm_common_signaling(sdm_pkt_hdr, pkt_header.type, pkt_header.subtype, pkt_header.direction, pkt_header.length, msg_content)
-
-    def sdm_common_0x04(self, pkt):
-        pkt = pkt[15:-1]
-        return {'stdout': 'SDM 0x04: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
-
-        # acacac f2f2f2 9f9f9f e5e5e5
-        # acacac f2f2f2 9f9f9f e5e5e5
-        # 00 00 18 000018 000018 000018
-        # 03 00 00 000018 000018 000018
-        # 03 01 00 000018 000018 000018
-
-    def sdm_common_0x05(self, pkt):
-        pkt = pkt[15:-1]
-        return {'stdout': 'SDM 0x05: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
-
-        # 01 08 07 00 00
-        # 03 08 07 00 00
-        # 01 08 07 00 00
-        # 02 08 07 00 00
-
-        # 03 00 00 00 00
-        # 01 00 00 00 00
-        # 02 00 00 00 00
-        # 01 00 00 00 00
 
     def sdm_common_multi_signaling(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
