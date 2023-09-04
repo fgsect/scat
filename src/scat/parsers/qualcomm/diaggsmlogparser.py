@@ -198,7 +198,7 @@ class DiagGsmLogParser:
         if self.parent:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
             self.parent.gsm_last_cell_id[radio_id] = item.cid
-        return {'stdout': 'GSM RR Cell Info: ARFCN {}/Band {}, BCC {}, NCC {}, xCID {:x}, xLAI {}'.format(arfcn, band, item.bcc, item.ncc, item.cid, binascii.hexlify(item.lai).decode('utf-8'))}
+        return {'stdout': 'GSM RR Cell Info: ARFCN {}/Band {}, BCC {}, NCC {}, xCID {:x}, xLAI {}'.format(arfcn, band, item.bcc, item.ncc, item.cid, binascii.hexlify(item.lai).decode())}
 
     def parse_gsm_dsds_cell_info(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])

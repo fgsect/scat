@@ -122,7 +122,7 @@ class HisiNestedParser:
                         #     sub_type = util.gsmtap_channel.SDCCH | 0x80)
                         # ota_data = b'\x00\x00\x01\x03\xf1' + ota_data
                         if self.parent:
-                            self.parent.logger.log(logging.WARNING, 'GSM RR with short PD, decode using "gsm_a_sacch": {}'.format(binascii.hexlify(ota_data).decode('utf-8')))
+                            self.parent.logger.log(logging.WARNING, 'GSM RR with short PD, decode using "gsm_a_sacch": {}'.format(binascii.hexlify(ota_data).decode()))
                         return None
                     else:
                         if self.parent:

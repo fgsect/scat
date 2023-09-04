@@ -76,7 +76,7 @@ class DiagCommonEventParser:
     @build_header
     def parse_event_diag_process_name_id(self, ts, event_id, arg_bin):
         diag_id = arg_bin[0]
-        diag_process_name = arg_bin[1:].decode('utf-8')
+        diag_process_name = arg_bin[1:].decode(errors='backslashreplace')
 
         log_content = "diag_id={}, diag_process_name={}".format(diag_id, diag_process_name).encode('utf-8')
 

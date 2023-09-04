@@ -131,7 +131,7 @@ class DiagWcdmaLogParser:
         return {'up': packets, 'ts': pkt_ts}
 
     def parse_wcdma_rlc_ul_am_signaling_pdu(self, pkt_header, pkt_body, args):
-        print('WCDMARLCAMUL ' + binascii.hexlify(pkt_body).decode('utf-8'))
+        return {'stdout': 'WCDMARLCAMUL ' + binascii.hexlify(pkt_body).decode()}
 
     def parse_wcdma_rlc_dl_am_control_pdu_log(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -220,7 +220,7 @@ class DiagWcdmaLogParser:
             self.parent.umts_last_cell_id[radio_id] = psc
         return {'stdout': 'WCDMA Cell ID: UARFCN {}/{}, PSC {}, xCID/xLAC/xRAC {:x}/{:x}/{:x}, MCC {}, MNC {}'.format(item.dl_uarfcn,
             item.ul_uarfcn, psc, item.cell_id, item.lac, item.rac,
-            binascii.hexlify(item.mcc).decode('utf-8'), binascii.hexlify(item.mnc).decode('utf-8'))}
+            binascii.hexlify(item.mcc).decode(), binascii.hexlify(item.mnc).decode())}
 
     def parse_wcdma_rrc(self, pkt_header, pkt_body, args):
         item_struct = namedtuple('QcDiagWcdmaRrcOtaPacket', 'channel_type rbid len')

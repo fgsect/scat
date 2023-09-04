@@ -40,7 +40,7 @@ class SdmHspaParser:
             ul1_rf_info.txpwr / 100
         )
         if len(extra) > 0:
-            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode())
 
         return {'stdout': stdout.rstrip()}
 
@@ -60,7 +60,7 @@ class SdmHspaParser:
             ul1_rf_info.txpwr - 71
         )
         if len(extra) > 0:
-            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode())
 
         return {'stdout': stdout.rstrip()}
 
@@ -86,7 +86,7 @@ class SdmHspaParser:
             ul1_meas.drx_cycle
         )
         if len(extra) > 0:
-            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode())
 
         return {'stdout': stdout.rstrip()}
 
@@ -113,7 +113,7 @@ class SdmHspaParser:
         extra = pkt[pos:]
 
         if len(extra) > 0:
-            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode())
 
         return {'stdout': stdout.rstrip()}
 
@@ -140,7 +140,7 @@ class SdmHspaParser:
         extra = pkt[pos:]
 
         if len(extra) > 0:
-            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode('utf-8'))
+            stdout += "Extra: {}\n".format(binascii.hexlify(extra).decode())
 
         return {'stdout': stdout.rstrip()}
 

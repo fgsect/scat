@@ -40,4 +40,4 @@ class SdmIpParser:
         header_struct = namedtuple('Sdm0x0710Data', 'seq_num direction')
         header = header_struct._make(struct.unpack('<HH', pkt[0:4]))
         payload = pkt[4:]
-        return {'stdout': 'SDM 0x0710: {}, {}'.format(header, binascii.hexlify(payload).decode('utf-8'))}
+        return {'stdout': 'SDM 0x0710: {}, {}'.format(header, binascii.hexlify(payload).decode())}

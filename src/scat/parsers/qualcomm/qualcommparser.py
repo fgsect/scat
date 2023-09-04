@@ -510,10 +510,10 @@ class QualcommParser:
 
         if len(pkt_body) == 2:
             src_fname = pkt_body[1]
-            log_content = pkt_body[0].decode('utf-8', errors='backslashreplace')
+            log_content = pkt_body[0].decode(errors='backslashreplace')
         else:
             src_fname = b''
-            log_content = pkt_body[0].decode('utf-8', errors='backslashreplace')
+            log_content = pkt_body[0].decode(errors='backslashreplace')
 
         # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x'}
         cfmt = re.compile('(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxX])|%%)')
@@ -679,11 +679,11 @@ class QualcommParser:
         ver_info = header._make(struct.unpack('<11s 8s 11s 8s 8s', pkt[1:47]))
 
         stdout = 'Compile: {}/{}, Release: {}/{}, Chipset: {}'.format(
-            ver_info.compile_date.decode(errors="ignore"),
-            ver_info.compile_time.decode(errors="ignore"),
-            ver_info.release_date.decode(errors="ignore"),
-            ver_info.release_time.decode(errors="ignore"),
-            ver_info.chipset.decode(errors="ignore"))
+            ver_info.compile_date.decode(errors="backslashreplace"),
+            ver_info.compile_time.decode(errors="backslashreplace"),
+            ver_info.release_date.decode(errors="backslashreplace"),
+            ver_info.release_time.decode(errors="backslashreplace"),
+            ver_info.chipset.decode(errors="backslashreplace"))
 
         return {'stdout': stdout}
 
@@ -691,7 +691,7 @@ class QualcommParser:
         if len(pkt) < 12:
             return None
 
-        stdout = 'Build ID: {}'.format(pkt[12:-2].decode())
+        stdout = 'Build ID: {}'.format(pkt[12:-2].decode(errors='backslashreplace'))
         return {'stdout': stdout}
 
     def parse_diag_log_config(self, pkt):

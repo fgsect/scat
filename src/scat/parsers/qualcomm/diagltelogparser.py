@@ -1321,4 +1321,4 @@ class DiagLteLogParser:
             if not self.parent.cacombos:
                 return None
 
-        return {'stdout': 'LTE UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode('utf-8'))}
+        return {'stdout': 'LTE UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode())}

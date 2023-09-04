@@ -51,7 +51,7 @@ class SdmLteParser:
 
     def sdm_lte_dummy(self, pkt, cmdid):
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode())}
 
     def sdm_lte_phy_status(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
@@ -279,14 +279,14 @@ class SdmLteParser:
         # [02, 04, 10] 00000000
 
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE RRC Timer: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE RRC Timer: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_rrc_asn_version(self, pkt):
         # Always 01? 1b - only for old revision
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         if len(pkt) < 5:
-            return {'stdout': 'LTE RRC ASN Version: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+            return {'stdout': 'LTE RRC ASN Version: {}'.format(binascii.hexlify(pkt).decode())}
 
         # num_chunk is base 1, should be <= total_chunks
         header = namedtuple('SdmLteRrcMultipleMessage', 'total_chunks num_chunk msgid channel direction length')
@@ -344,7 +344,7 @@ class SdmLteParser:
         if pkt[0] == 0x57:
         '''
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE 0x57: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE 0x57: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_sim_data(self, pkt):
         '''
@@ -355,7 +355,7 @@ class SdmLteParser:
         if pkt[0] == 0x58:
         '''
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS SIM Data: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE NAS SIM Data: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_status_variable(self, pkt):
         # 3 bytes
@@ -364,7 +364,7 @@ class SdmLteParser:
         # val3: 00-ff
 
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS Status Variable: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE NAS Status Variable: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_msg(self, pkt):
         pkt = pkt[15:-1]
@@ -398,12 +398,12 @@ class SdmLteParser:
         # 02070002
         # 02070001
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS PLMN Selection: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE NAS PLMN Selection: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_security(self, pkt):
         # All zeroes?
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS Security: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE NAS Security: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_pdp(self, pkt):
         # 0000ff0000ff0000ff
@@ -412,7 +412,7 @@ class SdmLteParser:
         # Bearer ID, Bearer Type, ? x3
 
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS PDP: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE NAS PDP: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_ip(self, pkt):
         # 00000000050000000000000001000000020000000000000000000000
@@ -421,7 +421,7 @@ class SdmLteParser:
         # 00000000005ffd75000000000000170035d0a0240000000000000000
 
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS IP: {}'.format(binascii.hexlify(pkt).decode('utf-8'))}
+        return {'stdout': 'LTE NAS IP: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_volte_rtp_packet(self, pkt, cmdid):
         # 0x70: TX

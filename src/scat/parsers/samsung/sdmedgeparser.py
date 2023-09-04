@@ -27,7 +27,7 @@ class SdmEdgeParser:
 
     def sdm_edge_dummy(self, pkt, num):
         pkt = pkt[15:-1]
-        print("GSM {:#x}: {}".format(num, binascii.hexlify(pkt).decode('utf-8')))
+        print("GSM {:#x}: {}".format(num, binascii.hexlify(pkt).decode()))
 
     def sdm_edge_scell_info(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
@@ -107,7 +107,7 @@ class SdmEdgeParser:
             stdout += '\n'
 
         if len(extra) > 0:
-            stdout += 'Extra: {}\n'.format(binascii.hexlify(extra).decode('utf-8'))
+            stdout += 'Extra: {}\n'.format(binascii.hexlify(extra).decode())
 
         return {'stdout': stdout.rstrip()}
 
