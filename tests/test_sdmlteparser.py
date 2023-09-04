@@ -39,7 +39,7 @@ class TestSdmLteParser(unittest.TestCase):
         expected = 'LTE PHY Cell Info: EARFCN 100, PCI 11, PLMN 45006, RSRP: -102.00, RSRQ: -10.00\nLTE PHY Cell Info: NCell 0 (Type 2): ARFCN 3050, PCI 11, RSRP: -89.00, RSRQ: -9.00'
         self.assertEqual(result['stdout'], expected)
 
-    def test_sdm_lte_l2_rach_info(self):
+    def test_sdm_lte_l2_rnti_info(self):
         self.parser.icd_ver = (4, 96)
         payload = binascii.unhexlify('7f1a00001700f308a1223a4dd70803fffffefff4ff95ea0200f4ff7e')
         result = self.parser.sdm_lte_l2_rnti_info(payload)
@@ -107,6 +107,65 @@ class TestSdmLteParser(unittest.TestCase):
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
         expected = {'cp': [binascii.unhexlify('02040d000000000000000000010000002206005139404663f96ceb25e7788018')]}
         self.assertDictEqual(result, expected)
+
+    def test_sdm_lte_volte_rtp_packet(self):
+        payload = binascii.unhexlify('4a00621b80fe01004001000011cbe2f5')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_RX_PACKET_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_rtp_packet(packet, 0x70)
+        expected = 'LTE VoLTE RTP Packet: Dst Port: 7010, Length: 74, Header=128, PT=254, SSRC=0xf5e2cb11, Seq=1, Time=320'
+        self.assertEqual(result['stdout'], expected)
+
+        payload = binascii.unhexlify('4a00961580fe0100400100003d24d539')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_TX_PACKET_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_rtp_packet(packet, 0x71)
+        expected = 'LTE VoLTE RTP Packet: Dst Port: 5526, Length: 74, Header=128, PT=254, SSRC=0x39d5243d, Seq=1, Time=320'
+        self.assertEqual(result['stdout'], expected)
+
+    def test_sdm_lte_volte_tx_stats(self):
+        payload = binascii.unhexlify('7e3d24d539961501002a0108f00400052300000000000000090c170000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_TX_OVERALL_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_tx_stats(packet)
+        expected = 'LTE VoLTE TX Stats: IP: 2a01:8f0:400:523::9, Dst Port: 5526, PT=126, SSRC=0x39d5243d, 5.90s'
+        self.assertEqual(result['stdout'], expected)
+
+        payload = binascii.unhexlify('00fca4c3c3ba2a00000a89dd1200000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_TX_OVERALL_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_tx_stats(packet)
+        expected = 'LTE VoLTE TX Stats: IP: 10.137.221.18, Dst Port: 10938, PT=0, SSRC=0xc3c3a4fc, 0.00s'
+        self.assertEqual(result['stdout'], expected)
+
+    def test_sdm_lte_volte_rx_stats(self):
+        payload = binascii.unhexlify('11cbe2f5621b01002a00002060f59e4f4fae585752f89406')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_rx_stats(packet)
+        expected = 'LTE VoLTE RX Stats: IP: 2a00:20:60f5:9e4f:4fae:5857:52f8:9406, Dst Port: 7010, SSRC=0xf5e2cb11'
+        self.assertEqual(result['stdout'], expected)
+
+        payload = binascii.unhexlify('000000000000ffff00000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_rx_stats(packet)
+        expected = 'LTE VoLTE RX Stats: IP: Unknown IP type 65535, Dst Port: 0, SSRC=0x00000000'
+        self.assertEqual(result['stdout'], expected)
+
+    def test_sdm_lte_volte_tx_rtp_stats(self):
+        payload = binascii.unhexlify('ac170000520000002f100000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_tx_rtp_stats(packet)
+        expected = 'LTE VoLTE TX RTP Stats: 6.06s, Num Packets: 82, Num Bytes: 4143'
+        self.assertEqual(result['stdout'], expected)
+
+        payload = binascii.unhexlify('2c0600005000000020170000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_tx_rtp_stats(packet)
+        expected = 'LTE VoLTE TX RTP Stats: 1.58s, Num Packets: 80, Num Bytes: 5920'
+        self.assertEqual(result['stdout'], expected)
+
+    def test_sdm_lte_volte_rx_rtp_stats(self):
+        payload = binascii.unhexlify('0c1700002801000090550000000000000000000000000000700000009c000000a90100004a000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_VOLTE_RX_RTP_STAT_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_volte_rx_rtp_stats(packet)
+        expected = 'LTE VoLTE RX RTP Stats: 5.90s, Num Packets: 296, Num Bytes: 21904'
+        self.assertEqual(result['stdout'], expected)
 
 if __name__ == '__main__':
     unittest.main()
