@@ -60,23 +60,59 @@ class SdmCommonParser:
             return
 
         stdout = ''
-
-        # rat: GSM 10, 13 / WCDMA 12, 14 / LTE 17, 19, 20 / 5G TODO
+        rat_name_map = {
+            # 2G
+            0x10: 'GSM',
+            0x13: 'GPRS',
+            # 3G
+            0x12: 'WCDMA',
+            0x14: 'HSDPA',
+            # 4G
+            0x17: 'LTE',
+            # 0x19: 'LTE+',
+            # 0x20: '',
+            # 0x21: '',
+            # 5G
+        }
         header = namedtuple('SdmCommonBasicInfo', 'rat status mimo dlfreq ulfreq')
-        common_basic = header._make(struct.unpack('<BBBLL', pkt[0:11]))
 
-        if len(pkt) > 11:
-            extra = pkt[11:]
-            stdout = 'Common Basic Info: RAT {}, MIMO {}, Frequency {:.2f}/{:.2f} MHz, Extra: {}'.format(common_basic.rat,
-                common_basic.mimo,
-                0 if common_basic.dlfreq == 4294967295 else common_basic.dlfreq / 1000000,
-                0 if common_basic.ulfreq == 4294967295 else common_basic.ulfreq / 1000000,
-                binascii.hexlify(extra).decode('utf-8'))
+        if self.icd_ver[0] >= 8:
+            common_basic = header._make(struct.unpack('<BBBQQ', pkt[0:19]))
+            extra = pkt[19:]
         else:
-            stdout = 'Common Basic Info: RAT {}, MIMO {}, Frequency {:.2f}/{:.2f} MHz'.format(common_basic.rat,
-                common_basic.mimo,
-                0 if common_basic.dlfreq == 4294967295 else common_basic.dlfreq / 1000000,
-                0 if common_basic.ulfreq == 4294967295 else common_basic.ulfreq / 1000000)
+            common_basic = header._make(struct.unpack('<BBBLL', pkt[0:11]))
+            extra = pkt[11:]
+
+        extra_str = ''
+        if len(extra) >= 4:
+            extra_str += ', Extra: {:#010x}'.format(struct.unpack('<L', extra[0:4])[0])
+        if len(extra) >= 5:
+            num_cells = extra[4]
+            if num_cells <= len(extra[5:]):
+                extra_str += ', Num cells: {}'.format(num_cells)
+                if num_cells > 0:
+                    extra_str += ' ({})'.format(', '.join([str(x) for x in extra[5:5+num_cells]]))
+
+        rat_str = util.map_lookup_value(rat_name_map, common_basic.rat)
+
+        known_bad_freq = (0, 0xffffffff, 0xffffffffffffffff, 1157098112, 1112098112)
+
+        if common_basic.dlfreq in known_bad_freq:
+            dlfreq_str = '-'
+        else:
+            dlfreq_str = 'DL {:.2f} MHz'.format(common_basic.dlfreq / 1000000)
+
+        if common_basic.ulfreq in known_bad_freq:
+            ulfreq_str = '-'
+        else:
+            if self.icd_ver[0] >= 6 and common_basic.rat in (0x12, 0x14):
+                ulfreq_str = 'UL UARFCN {}'.format(int(common_basic.ulfreq / 100000))
+            else:
+                ulfreq_str = 'UL {:.2f} MHz'.format(common_basic.ulfreq / 1000000)
+
+
+        stdout = 'Common Basic Info: RAT {}, Status {}, MIMO {}, Frequency {}/{}{}'.format(
+            rat_str, common_basic.status, common_basic.mimo, dlfreq_str, ulfreq_str, extra_str)
 
         return {'stdout': stdout}
 
