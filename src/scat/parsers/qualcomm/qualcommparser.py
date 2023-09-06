@@ -516,8 +516,8 @@ class QualcommParser:
             log_content = pkt_body[0].decode(errors='backslashreplace')
 
         # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x'}
-        cfmt = re.compile('(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxX])|%%)')
-        cfmt_nums = re.compile('%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxX]')
+        cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxX])|%%)')
+        cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxX]')
         fmt_strs = cfmt.findall(log_content)
         formatted_strs = []
         log_content_pyfmt = cfmt.sub('{}', log_content)
