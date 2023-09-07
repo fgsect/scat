@@ -15,7 +15,7 @@ class SdmEdgeParser:
 
         self.process = {
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_NCELL_INFO: lambda x: self.sdm_edge_dummy(x, 0x06),
+            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_NCELL_INFO: lambda x: self.sdm_edge_ncell_info(x),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
             (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_handover_history_info(x),
@@ -52,7 +52,43 @@ class SdmEdgeParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_edge_ncell_info(self, pkt):
-        return {'stdout': ''}
+        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+        stdout = ''
+        num_identified_cells = pkt[0]
+        num_ncells = pkt[109]
+
+        if num_identified_cells > 6:
+            num_identified_cells = 6
+        if num_ncells > 10:
+            num_ncells = 10
+
+        stdout += 'EDGE Neighbor Cell Info: Identified: {}, Neighbor: {}\n'.format(
+            num_identified_cells, num_ncells)
+
+        pos = 1
+        identified_meas = namedtuple('SdmEdgeNCellIdCell', 'arfcn bsic rxlev c1 c2 c31 c32 unk lai gprs_raclr')
+        for i in range(num_identified_cells):
+            identified_meas_pkt = identified_meas._make(struct.unpack('<HBBbbhhH5sb', pkt[pos:pos+18]))
+            lai_str = 'MCC/MNC {:x}/{:x}, LAC {:#x}'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
+                                                        struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+            stdout += "EDGE Neighbor Cell Info: Identified Cell {}: ARFCN {}, RxLev {} (RSSI {}), C1 {}, C2 {}, C31 {}, C32 {}, {}, GPRS RA Colour {}\n".format(
+                i, identified_meas_pkt.arfcn, identified_meas_pkt.rxlev, identified_meas_pkt.rxlev - 110, identified_meas_pkt.c1, identified_meas_pkt.c2,
+                identified_meas_pkt.c31, identified_meas_pkt.c32,
+                lai_str, identified_meas_pkt.gprs_raclr
+            )
+            pos += 18
+
+        pos = 110
+        n_meas = namedtuple('SdmEdgeNCellNCell', 'arfcn rxlev')
+        for i in range(num_ncells):
+            n_meas_pkt = n_meas._make(struct.unpack('<HB', pkt[pos:pos+3]))
+            stdout += "EDGE Neighbor Cell Info: Neighbor Cell {}: ARFCN {}, RxLev {} (RSSI {})\n".format(
+                i, n_meas_pkt.arfcn, n_meas_pkt.rxlev, n_meas_pkt.rxlev - 110
+            )
+            pos += 3
+
+        return {'stdout': stdout.rstrip()}
 
     def sdm_edge_3g_ncell_info(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
