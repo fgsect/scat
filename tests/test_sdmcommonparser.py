@@ -95,7 +95,7 @@ class TestSdmCommonParser(unittest.TestCase):
         payload = binascii.unhexlify('2004036076e13820d13236006f30c300ffffffffffffff')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x03fd31c2)
         result = self.parser.sdm_common_basic_info(packet)
-        expected = {'stdout': 'Common Basic Info: RAT UNKNOWN (0x20), Status 4, MIMO 3, Frequency DL 954.30 MHz/UL 909.30 MHz, Extra: 0xc3306f00, Num cells: 0'}
+        expected = {'stdout': 'Common Basic Info: RAT NR NSA, Status 4, MIMO 3, Frequency DL 954.30 MHz/UL 909.30 MHz, Extra: 0xc3306f00, Num cells: 0'}
         self.assertDictEqual(result, expected)
 
         self.parser.icd_ver = (8, 0)
@@ -120,7 +120,7 @@ class TestSdmCommonParser(unittest.TestCase):
         payload = binascii.unhexlify('200405c0b32e6c00000000001e85660000000086000000020503ffffffffff')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x03fd31c2)
         result = self.parser.sdm_common_basic_info(packet)
-        expected = {'stdout': 'Common Basic Info: RAT UNKNOWN (0x20), Status 4, MIMO 5, Frequency DL 1815.00 MHz/UL 1720.00 MHz, Extra: 0x00000086, Num cells: 2 (5, 3)'}
+        expected = {'stdout': 'Common Basic Info: RAT NR NSA, Status 4, MIMO 5, Frequency DL 1815.00 MHz/UL 1720.00 MHz, Extra: 0x00000086, Num cells: 2 (5, 3)'}
         self.assertDictEqual(result, expected)
 
     def test_sdm_common_signaling(self):
