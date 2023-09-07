@@ -39,7 +39,23 @@ class TestSdmEdgeParser(unittest.TestCase):
         payload = binascii.unhexlify('067300ff35f9f9ffffffff00000000000000ff7600ff28f9f9ffffffff00000000000000ff5400ff26f9f9ffffffff00000000000000ff5200ff23f9f9ffffffff00000000000000ff4100ff1cf9f9ffffffff00000000000000ff4b00ff1df9f9ffffffff00000000000000ff0a73002954002252001f4b001e3a001d76001d41001c430018380018350016000000005ce79b417c061d43fd061d4311071d4300068114620000002875e44600204000020001000000000020282543060100001e0000007c426a413b5936417c426a417c000f1200060062f210140601418d0001000100000200')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_ncell_info(packet)
-        expected = {'stdout': ''}
+        expected = {'stdout': '''EDGE Neighbor Cell Info: Identified: 6, Neighbor: 10
+EDGE Neighbor Cell Info: Identified Cell 0: ARFCN 115, RxLev 53 (RSSI -57), C1 -7, C2 -7, C31 -1, C32 -1, MCC/MNC 0/0, LAC 0x0, GPRS RA Colour -1
+EDGE Neighbor Cell Info: Identified Cell 1: ARFCN 118, RxLev 40 (RSSI -70), C1 -7, C2 -7, C31 -1, C32 -1, MCC/MNC 0/0, LAC 0x0, GPRS RA Colour -1
+EDGE Neighbor Cell Info: Identified Cell 2: ARFCN 84, RxLev 38 (RSSI -72), C1 -7, C2 -7, C31 -1, C32 -1, MCC/MNC 0/0, LAC 0x0, GPRS RA Colour -1
+EDGE Neighbor Cell Info: Identified Cell 3: ARFCN 82, RxLev 35 (RSSI -75), C1 -7, C2 -7, C31 -1, C32 -1, MCC/MNC 0/0, LAC 0x0, GPRS RA Colour -1
+EDGE Neighbor Cell Info: Identified Cell 4: ARFCN 65, RxLev 28 (RSSI -82), C1 -7, C2 -7, C31 -1, C32 -1, MCC/MNC 0/0, LAC 0x0, GPRS RA Colour -1
+EDGE Neighbor Cell Info: Identified Cell 5: ARFCN 75, RxLev 29 (RSSI -81), C1 -7, C2 -7, C31 -1, C32 -1, MCC/MNC 0/0, LAC 0x0, GPRS RA Colour -1
+EDGE Neighbor Cell Info: Neighbor Cell 0: ARFCN 115, RxLev 41 (RSSI -69)
+EDGE Neighbor Cell Info: Neighbor Cell 1: ARFCN 84, RxLev 34 (RSSI -76)
+EDGE Neighbor Cell Info: Neighbor Cell 2: ARFCN 82, RxLev 31 (RSSI -79)
+EDGE Neighbor Cell Info: Neighbor Cell 3: ARFCN 75, RxLev 30 (RSSI -80)
+EDGE Neighbor Cell Info: Neighbor Cell 4: ARFCN 58, RxLev 29 (RSSI -81)
+EDGE Neighbor Cell Info: Neighbor Cell 5: ARFCN 118, RxLev 29 (RSSI -81)
+EDGE Neighbor Cell Info: Neighbor Cell 6: ARFCN 65, RxLev 28 (RSSI -82)
+EDGE Neighbor Cell Info: Neighbor Cell 7: ARFCN 67, RxLev 24 (RSSI -86)
+EDGE Neighbor Cell Info: Neighbor Cell 8: ARFCN 56, RxLev 24 (RSSI -86)
+EDGE Neighbor Cell Info: Neighbor Cell 9: ARFCN 53, RxLev 22 (RSSI -88)'''}
         self.assertDictEqual(result, expected)
 
     def test_sdm_edge_3g_ncell_info(self):
