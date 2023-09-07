@@ -59,6 +59,7 @@ class QualcommParser:
         self.log_id_range = {}
         self.cacombos = False
         self.combine_stdout = False
+        self.check_crc = True
 
         self.name = 'qualcomm'
         self.shortname = 'qc'
@@ -116,6 +117,8 @@ class QualcommParser:
                 self.cacombos = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
+            elif p == 'disable-crc-check':
+                self.check_crc = not params[p]
 
     def sanitize_radio_id(self, radio_id):
         if radio_id <= 0:
@@ -272,11 +275,13 @@ class QualcommParser:
 
         # Check and strip CRC if existing
         if has_crc:
-            crc = util.dm_crc16(pkt[:-2])
-            crc_pkt = (pkt[-1] << 8) | pkt[-2]
-            if crc != crc_pkt:
-                self.logger.log(logging.WARNING, "CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
-                self.logger.log(logging.DEBUG, util.xxd(pkt))
+            # Check CRC only if check_crc is enabled
+            if self.check_crc:
+                crc = util.dm_crc16(pkt[:-2])
+                crc_pkt = (pkt[-1] << 8) | pkt[-2]
+                if crc != crc_pkt:
+                    self.logger.log(logging.WARNING, "CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
+                    self.logger.log(logging.DEBUG, util.xxd(pkt))
             pkt = pkt[:-2]
 
         if pkt[0] == diagcmd.DIAG_LOG_F:

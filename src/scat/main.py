@@ -79,6 +79,7 @@ def scat_main():
         qc_group.add_argument('--events', action='store_true', help='Decode Events as GSMTAP logging')
         qc_group.add_argument('--msgs', action='store_true', help='Decode Extended Message Reports and QSR Message Reports as GSMTAP logging')
         qc_group.add_argument('--cacombos', action='store_true', help='Display raw values of UE CA combo information on 4G/5G (0xB0CD/0xB826)')
+        qc_group.add_argument('--disable-crc-check', action='store_true', help='Disable CRC mismatch checks. Improves performance by avoiding CRC calculations.')
 
     if 'sec' in parser_dict.keys():
         sec_group = parser.add_argument_group('Samsung specific settings')
@@ -90,6 +91,7 @@ def scat_main():
         hisi_group = parser.add_argument_group('HiSilicon specific settings')
         try:
             hisi_group.add_argument('--msgs', action='store_true', help='Decode debug messages GSMTAP logging')
+            hisi_group.add_argument('--disable-crc-check', action='store_true', help='Disable CRC mismatch checks. Improves performance by avoiding CRC calculations.')
         except argparse.ArgumentError:
             pass
 
@@ -164,7 +166,8 @@ def scat_main():
             'events': args.events,
             'msgs': args.msgs,
             'cacombos': args.cacombos,
-            'combine-stdout': args.combine_stdout})
+            'combine-stdout': args.combine_stdout,
+            'disable-crc-check': args.disable_crc_check})
     elif args.type == 'sec':
         current_parser.set_parameter({
             'model': args.model,
@@ -173,7 +176,8 @@ def scat_main():
     elif args.type == 'hisi':
         current_parser.set_parameter({
             'msgs': args.msgs,
-            'combine-stdout': args.combine_stdout})
+            'combine-stdout': args.combine_stdout,
+            'disable-crc-check': args.disable_crc_check})
 
     # Run process
     if args.serial or args.usb:
