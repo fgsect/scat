@@ -88,14 +88,14 @@ class HisiliconParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, args = None):
+    def parse_diag(self, pkt, hdlc_encoded = True, has_crc = True, args = None):
         if len(pkt) < 3:
             return
 
         if hdlc_encoded:
             pkt = util.unwrap(pkt)
 
-        if check_crc:
+        if has_crc:
             crc = util.dm_crc16(pkt[:-2])
             crc_pkt = (pkt[-1] << 8) | pkt[-2]
             if crc != crc_pkt:

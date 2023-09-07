@@ -258,7 +258,7 @@ class QualcommParser:
         else:
             self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_lte()), 0x1000, False)
 
-    def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, args = None):
+    def parse_diag(self, pkt, hdlc_encoded = True, has_crc = True, args = None):
         # Should contain DIAG command and CRC16
         # pkt should not contain trailing 0x7E, and either HDLC encoded or not
         # When the pkt is not HDLC encoded, hdlc_encoded should be set to True
@@ -271,7 +271,7 @@ class QualcommParser:
             pkt = util.unwrap(pkt)
 
         # Check and strip CRC if existing
-        if check_crc:
+        if has_crc:
             crc = util.dm_crc16(pkt[:-2])
             crc_pkt = (pkt[-1] << 8) | pkt[-2]
             if crc != crc_pkt:
@@ -359,7 +359,7 @@ class QualcommParser:
                 # DLF lacks CRC16/other fancy stuff
                 pkt = buf[0:pkt_len]
                 pkt = b'\x10\x00' + pkt[0:2] + pkt
-                parse_result = self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
+                parse_result = self.parse_diag(pkt, has_crc=False, hdlc_encoded=False)
 
                 if parse_result is not None:
                     self.postprocess_parse_result(parse_result)
@@ -405,7 +405,7 @@ class QualcommParser:
             body += self.io_device.read(pkt_len - 2)
             pkt = header + body
 
-            parse_result = self.parse_diag(pkt, check_crc=False, hdlc_encoded=False)
+            parse_result = self.parse_diag(pkt, has_crc=False, hdlc_encoded=False)
             if parse_result is not None:
                 self.postprocess_parse_result(parse_result)
 
@@ -585,7 +585,7 @@ class QualcommParser:
         pkt_header = self.multisim_header._make(struct.unpack('<BBHL', pkt[0:8]))
         pkt_body = pkt[8:]
 
-        ret = self.parse_diag(pkt_body, hdlc_encoded=False, check_crc=False, args={'radio_id': self.sanitize_radio_id(pkt_header.radio_id)})
+        ret = self.parse_diag(pkt_body, hdlc_encoded=False, has_crc=False, args={'radio_id': self.sanitize_radio_id(pkt_header.radio_id)})
         if type(ret) == dict:
             ret['radio_id'] = self.sanitize_radio_id(pkt_header.radio_id)
         return ret
