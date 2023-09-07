@@ -70,9 +70,9 @@ class SdmCommonParser:
             # 4G
             0x17: 'LTE',
             # 0x19: 'LTE+',
-            # 0x20: '',
-            # 0x21: '',
             # 5G
+            0x20: 'NR NSA',
+            0x21: 'NR SA',
         }
         header = namedtuple('SdmCommonBasicInfo', 'rat status mimo dlfreq ulfreq')
 
