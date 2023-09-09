@@ -6,6 +6,11 @@ import datetime
 import sys
 import string
 from enum import IntEnum, unique
+try:
+    import libscrc
+    has_libscrc = True
+except ModuleNotFoundError:
+    has_libscrc = False
 
 XXD_SET = string.ascii_letters + string.digits + string.punctuation
 
@@ -45,10 +50,13 @@ crc_table = [
     ]
 
 def dm_crc16(arr):
-    ret = 0xffff
-    for b in arr:
-        ret = (ret >> 8) ^ crc_table[(ret ^ b) & 0xff]
-    return ret ^ 0xffff
+    if has_libscrc:
+        return libscrc.x25(arr)
+    else:
+        ret = 0xffff
+        for b in arr:
+            ret = (ret >> 8) ^ crc_table[(ret ^ b) & 0xff]
+        return ret ^ 0xffff
 
 def wrap(arr):
     t = arr.replace(b'\x7d', b'\x7d\x5d')

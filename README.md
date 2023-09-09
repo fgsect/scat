@@ -37,12 +37,17 @@ page](https://github.com/fgsect/scat/wiki/Baseband-Dumps) for details.
 Install SCAT through pip using:
 
 ```
+# If you want fast CRC calculation (for Qualcomm and HiSilicon)
+$ pip install "scat[fastcrc] @ git+https://github.com/fgsect/scat"
+
+# If you don't want or can't build libscrc
 $ pip install https://github.com/fgsect/scat
 ```
 
 Please note that the name SCAT is taken in the PyPI, I will find further solution.
 
-For development purposes, please use `pip install -e .` on your checkout directory.
+For development purposes, please use `pip install -e .[fastcrc]` or `pip install
+-e .` on your checkout directory.
 The older `scat.py` is moved to `src/scat/main.py`.
 
 ## Usage
@@ -76,7 +81,7 @@ please file an issue with the debug output (`--debug`) attached:
 
 SCAT version up to 1.1.0 required specifying the Samsung baseband type manually
 using `-m`. As SCAT now autodetects the Samsung baseband type, This option will
-be deprecated in future releases.
+be deprecated in SCAT 1.2.0, and may be removed in SCAT >= 2.0.0.
 
 ### USB
 Accessing the baseband diagnostics via USB:

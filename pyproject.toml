@@ -1,6 +1,6 @@
 [project]
 name = "scat"
-version = "1.0.0"
+version = "1.1.0"
 authors = [
     { name="Shinjo Park", email="peremen@gmail.com" },
 ]
@@ -15,6 +15,10 @@ requires-python = ">=3.7"
 dependencies = [
     "pyusb>=1.0.2",
     "pyserial>=3.3"
+]
+[project.optional-dependencies]
+fastcrc = [
+    "libscrc>=1.8.0",
 ]
 
 [project.urls]
