@@ -37,6 +37,7 @@ class HisiliconParser:
         self.io_device = None
         self.writer = None
         self.combine_stdout = False
+        self.check_crc = True
 
         self.name = 'hisilicon'
         self.shortname = 'hisi'
@@ -81,6 +82,8 @@ class HisiliconParser:
                 self.msgs = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
+            elif p == 'disable-crc-check':
+                self.check_crc = not params[p]
 
     def init_diag(self):
         pass
@@ -88,19 +91,21 @@ class HisiliconParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt, hdlc_encoded = True, check_crc = True, args = None):
+    def parse_diag(self, pkt, hdlc_encoded = True, has_crc = True, args = None):
         if len(pkt) < 3:
             return
 
         if hdlc_encoded:
             pkt = util.unwrap(pkt)
 
-        if check_crc:
-            crc = util.dm_crc16(pkt[:-2])
-            crc_pkt = (pkt[-1] << 8) | pkt[-2]
-            if crc != crc_pkt:
-                self.logger.log(logging.WARNING, "CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
-                self.logger.log(logging.DEBUG, util.xxd(pkt))
+        if has_crc:
+            # Check CRC only if check_crc is enabled
+            if self.check_crc:
+                crc = util.dm_crc16(pkt[:-2])
+                crc_pkt = (pkt[-1] << 8) | pkt[-2]
+                if crc != crc_pkt:
+                    self.logger.log(logging.WARNING, "CRC mismatch: expected 0x{:04x}, got 0x{:04x}".format(crc, crc_pkt))
+                    self.logger.log(logging.DEBUG, util.xxd(pkt))
             pkt = pkt[:-2]
 
         return self.parse_diag_log(pkt)
