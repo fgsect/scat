@@ -56,51 +56,45 @@ class UnisocParser:
     def parse_diag(self, pkt):
         pkt = pkt[2:-4]
 
-        pkt_9c01_header_Struct = namedtuple('Unisoc9c01Header', 'id magic cmdid seqnr len')
+        # drivers/unisoc_platform/sprdwcn/platform/wcn_txrx.h
+        pkt_header_struct = namedtuple('UnisocPktHeader', 'chan_num pkt_type magic csum')
+        pkt_tag_header_struct = namedtuple('UnisocPktTagHeader', 'seqnr len type subtype')
 
-        if pkt[0:2] == b'\x01\x9c':
-            pkt_019c_header = pkt_9c01_header_Struct._make(struct.unpack('<HHH LH', pkt[0:12]))
-            pkt_rest = pkt[12:]
-            # print("SeqNr: {:#010x}, CMD_ID: {:#06x}, Len: {:3}, Body: {}".format(pkt_019c_header.seqnr, pkt_019c_header.cmdid, pkt_019c_header.len, binascii.hexlify(pkt_rest).decode()))
+        pkt_header = pkt_header_struct._make(struct.unpack('<BBHH', pkt[0:6]))
+        assert(pkt_header.magic == 0x5a5a)
+        if pkt_header.chan_num == 0x01:
+            # pkt_type
+            # 0x9c:
+            # 0x9d: SMP_DSP_TYPE
+            pkt_tag_header = pkt_tag_header_struct._make(struct.unpack('<LHBB', pkt[6:14]))
+            print('Chan: {:#04x}, Type: {:#04x}, CSum: {:#06x}, (SeqNr: {:#010x}/{:10d}, Type: {:#04x}, Subtype: {:#04x}): {}'.format(
+                pkt_header.chan_num, pkt_header.pkt_type, pkt_header.csum,
+                pkt_tag_header.seqnr, pkt_tag_header.seqnr, pkt_tag_header.type, pkt_tag_header.subtype,
+                binascii.hexlify(pkt[14:]).decode()
+            ))
+            if len(pkt[14:]) + 8 != pkt_tag_header.len:
+                self.logger.log(logging.WARNING, "Length mismatch: expected {}, got {}".format(pkt_tag_header.len, len(pkt[14:]) + 8))
 
-            if len(pkt_rest) + 6 != pkt_019c_header[4]:
-                self.logger.log(logging.WARNING, "Length mismatch: expected {}, got {}".format(pkt_019c_header[4], len(pkt_rest) + 6))
+            if pkt_tag_header.type == 0xf8:
+                pkt_0xf8_struct = namedtuple('Unisoc0xf8Header', 'zero type len')
+                pkt_0xf8 = pkt_0xf8_struct._make(struct.unpack('>HHH', pkt[14:20]))
+                assert(pkt_0xf8.zero == 0)
+                assert(pkt_0xf8.len == len(pkt[20:]))
 
-            body_cmdid = struct.unpack('<L', pkt_rest[0:4])[0]
-            if body_cmdid == 0x0198:
-                log_header_struct = namedtuple('UnisocLogHeader', 'cmdid cmd_subid len')
-                log_header = log_header_struct._make(struct.unpack('<LHH', pkt_rest[0:8]))
-
-                if len(pkt_rest[8:]) + 4 != log_header.len:
-                    self.logger.log(logging.WARNING, "Length mismatch: expected {}, got {}".format(log_header.len, len(pkt_rest[8:]) + 4))
-
-                if log_header.cmd_subid == 0x9104:
-                    print('Log 0x9104: {}'.format(pkt_rest[8:].decode()))
-                # 9100, 9101, 910e
-                # elif log_header.cmd_subid == 0x910e:
-                #     # print('Log 0x910e: {}'.format(pkt_rest[8:]))
-                #     pass
-                # elif log_header.cmd_subid == 0x9100:
-                #     pass
-                else:
-                    print('Unknown cmd_subid {:#x}, body: {}'.format(log_header.cmd_subid, binascii.hexlify(pkt_rest[8:]).decode()))
-                pass
-            elif body_cmdid == 0x01f8:
-                pass
-            else:
-                pass
-
-        elif pkt[0:2] == b'\x01\x9d':
-            pkt_019c_header = pkt_9c01_header_Struct._make(struct.unpack('<HHH LL', pkt[0:14]))
-            # print(pkt_019c_header)
-            pkt_rest = pkt[14:]
-
-            # if pkt_019c_header.cmdid != 196:
-                # print(binascii.hexlify(pkt))
-            # if len(pkt_rest) + 8 != pkt_019c_header[4]:
-            #     self.logger.log(logging.WARNING, "Length mismatch: expected {}, got {}".format(pkt_019c_header[4], len(pkt_rest) + 8))
+                if pkt_0xf8.type == 0x1200:
+                    pkt_0xf8_0x1200 = struct.unpack('>LL', pkt[20:28])
+                    pkt_0xf8_0x1200_rest = pkt[28:]
+                    assert(len(pkt_0xf8_0x1200_rest) == pkt_0xf8_0x1200[1])
+                    print('Log ID: {:#010x}, Args: {} {}'.format(pkt_0xf8_0x1200[0], pkt_0xf8_0x1200[1], binascii.hexlify(pkt_0xf8_0x1200_rest).decode()))
+            elif pkt_tag_header.type == 0x98:
+                pkt_0x98_struct = namedtuple('Unisoc0x98Header', 'zero type len')
+                pkt_0x98 = pkt_0x98_struct._make(struct.unpack('<HHH', pkt[14:20]))
+                assert(pkt_0x98.zero == 0)
+                assert(pkt_0x98.len == len(pkt[20:]) + 4)
+                if pkt_0x98.type == 0x9104:
+                    print('Log 0x9104: {}'.format(pkt[20:].decode(errors='replacebackslash')))
         else:
-            self.logger.log(logging.WARNING, "Unknown command type {:#06x}".format(struct.unpack('<H', pkt[0:2])[0]))
+            self.logger.log(logging.WARNING, "Unknown channel number {:#04x}".format(pkt_header.chan_num))
             return
 
     def run_diag(self):
@@ -213,45 +207,7 @@ class UnisocParser:
                         print('Radio {}: {}'.format(radio_id, l))
 
     def parse_diag_log(self, pkt, args=None):
-        if pkt[0] == 0x00:
-            if len(pkt) < 25:
-                return
-            pkt_header = self.log_header._make(struct.unpack('<LQLLL', pkt[1:25]))
-            pkt_data = pkt[25:]
-
-            if pkt_header.len != len(pkt_data):
-                if self.logger:
-                    self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.len, len(pkt_data)))
-
-            if pkt_header.cmd in self.process.keys():
-                return self.process[pkt_header.cmd](pkt_header, pkt_data, args)
-            else:
-                # print(binascii.hexlify(pkt_data))
-                return None
-        elif pkt[0] == 0x01:
-            if len(pkt) < 29:
-                return
-            pkt_header = self.type_0x01_header._make(struct.unpack('<LLLHLHQ', pkt[1:29]))
-            pkt_data = pkt[29:-4]
-            magic_2 = struct.unpack('<L', pkt[-4:])[0]
-
-            if not (pkt_header.magic == 0xaaaa5555 and magic_2 == 0x5555aaaa):
-                if self.logger:
-                    self.logger.log(logging.WARNING, "Packet magic mismatch: expected wrapping of 0x5555aaaa and aaaa5555")
-
-            if pkt_header.nested_len1 != pkt_header.nested_len2 + 8:
-                if self.logger:
-                    self.logger.log(logging.WARNING, "Packet length mismatch: {} and {}".format(pkt_header.nested_len1, pkt_header.nested_len2))
-
-            if pkt_header.cmd in self.process_nested.keys():
-                return self.process_nested[pkt_header.cmd](pkt_header, pkt_data, args)
-            else:
-                # print(binascii.hexlify(pkt_data))
-                return None
-        else:
-            self.logger.log(logging.INFO, 'Unknown packet type {:#04x}'.format(pkt[0]))
-            # print(binascii.hexlify(pkt))
-            return None
+        pass
 
 __entry__ = UnisocParser
 
