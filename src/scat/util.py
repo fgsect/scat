@@ -82,7 +82,7 @@ def parse_qxdm_ts(ts):
     ts_upper = (ts >> 16)
     ts_lower = ts & 0xffff
 
-    epoch = datetime.datetime(1980, 1, 6, 0, 0, 0)
+    epoch = datetime.datetime(1980, 1, 6, 0, 0, 0, tzinfo=datetime.timezone.utc)
 
     try:
         ts_delta = datetime.timedelta(0, 0, 0, ts_upper * 1.25 + ts_lower * (1 / 40960), 0, 0, 0)
