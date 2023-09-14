@@ -274,7 +274,7 @@ class DiagLteLogParser:
 
                             pos_meas += 128
                             stdout += 'LTE ML1 SCell Meas Response (Cell {}): PCI {}, Serving cell index {}, is_serving_cell = {}\n'.format(y, pci, scell_idx, is_scell)
-                    elif subpkt_header.version == 48:
+                    elif subpkt_header.version == 48 or subpkt_header.version == 50:
                         # EARFCN, num of cell, valid RX data
                         subpkt_scell_meas_v48_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV48', 'earfcn num_cells valid_rx rx_map')
                         subpkt_scell_meas_v48 = subpkt_scell_meas_v48_struct._make(struct.unpack('<LHHL', subpkt_body[0:12]))
