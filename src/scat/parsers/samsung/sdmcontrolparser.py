@@ -40,19 +40,19 @@ class SdmControlParser:
         version_str = pkt[2:27]
         if version_str[0:6] == b'LibVer':
             version_str = "LibVer: {}, ASN: {}".format(
-                binascii.hexlify(version_str[6:12]).decode(),
-                binascii.hexlify(version_str[15:25]).decode(),
+                binascii.hexlify(version_str[6:12]).decode(errors='backslashreplace'),
+                binascii.hexlify(version_str[15:25]).decode(errors='backslashreplace'),
             )
         else:
-            version_str = version_str.decode().split('\x00',1)[0]
-        date_str = pkt[27:52].decode().split('\x00',1)[0]
+            version_str = version_str.decode(errors='backslashreplace').split('\x00',1)[0]
+        date_str = pkt[27:52].decode(errors='backslashreplace').split('\x00',1)[0]
         extra_str_len = pkt[54]
         extra_str = pkt[57:]
         rest_str = b''
         if len(extra_str) > extra_str_len:
             rest_str = extra_str[extra_str_len:]
             extra_str = extra_str[:extra_str_len]
-        extra_str = extra_str.decode().split('\x00',1)[0]
+        extra_str = extra_str.decode(errors='backslashreplace').split('\x00',1)[0]
         chip_id = 0
         if len(rest_str) == 4:
             chip_id = struct.unpack('<L', rest_str)[0]
@@ -127,7 +127,7 @@ class SdmControlParser:
         while pos < len(content) and content[pos] != 0x00:
             strlen = content[pos]
             itemstr = content[pos+1:pos+1+strlen]
-            trace_items_list.append(itemstr.decode())
+            trace_items_list.append(itemstr.decode(errors='backslashreplace'))
             pos += (1+strlen)
         self.trace_group[item.trace_group_id] = trace_items_list
 
@@ -157,9 +157,9 @@ class SdmControlParser:
             subitem = content[33*i:33*(i+1)]
             item_hdr = subitem_struct._make(struct.unpack('<BLBBB', subitem[0:8]))
             if item_hdr.text_len > 25:
-                item_str = subitem[8:].decode()
+                item_str = subitem[8:].decode(errors='backslashreplace')
             else:
-                item_str = subitem[8:8+item_hdr.text_len].decode()
+                item_str = subitem[8:8+item_hdr.text_len].decode(errors='backslashreplace')
             self.ilm_group[item_hdr.id] = (item_hdr.unk1, item_hdr.unk2, item_hdr.unk3, item_str)
             self.ilm_cur_count += 1
 
@@ -196,7 +196,7 @@ class SdmControlParser:
 
         for i in range(item.num_items1):
             subitem = subitem_struct._make(struct.unpack('<LL', content[pos:pos+8]))
-            subitem_text = content[pos+8:pos+8+subitem.text_len].decode()
+            subitem_text = content[pos+8:pos+8+subitem.text_len].decode(errors='backslashreplace')
             self.trigger_group[subitem.id] = subitem_text
             pos += (8 + subitem.text_len)
 

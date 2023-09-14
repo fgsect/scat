@@ -32,8 +32,7 @@ class SdmEdgeParser:
     def sdm_edge_scell_info(self, pkt):
         sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
-        header = namedtuple('SdmEdgeSCellInfo', '''arfcn bsic rxlev nco crh nmo
-        lai rac cid''')
+        header = namedtuple('SdmEdgeSCellInfo', '''arfcn bsic rxlev nco crh nmo lai rac cid''')
         struct_str = '<HBBBBB 5s BH'
 
         scell_info = header._make(struct.unpack(struct_str, pkt[0:struct.calcsize(struct_str)]))
