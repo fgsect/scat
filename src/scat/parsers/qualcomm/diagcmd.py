@@ -78,7 +78,18 @@ def diag_log_get_wcdma_item_id(x):
 
 @unique
 class diag_log_code_wcdma(IntEnum):
+    # Layer 1
     LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C = 0x5 # 0x4005 WCDMA Search Cell Reselection Rank
+
+    # Layer 2
+    LOG_WCDMA_RLC_DL_AM_SIGNALING_PDU_C   = 0x135 # 0x4135 WCDMA RLC DL AM Signaling PDU
+    LOG_WCDMA_RLC_UL_AM_SIGNALING_PDU_C   = 0x13c # 0x413C WCDMA RLC UL AM Signaling PDU
+    LOG_WCDMA_RLC_UL_AM_CONTROL_PDU_LOG_C = 0x145 # 0x4145 WCDMA RLC UL AM Control PDU Log
+    LOG_WCDMA_RLC_DL_AM_CONTROL_PDU_LOG_C = 0x146 # 0x4146 WCDMA RLC DL AM Control PDU Log
+    LOG_WCDMA_RLC_DL_PDU_CIPHER_PACKET_C  = 0x168 # 0x4168 WCDMA RLC DL PDU Cipher Packet
+    LOG_WCDMA_RLC_UL_PDU_CIPHER_PACKET_C  = 0x169 # 0x4169 WCDMA RLC DL PDU Cipher Packet
+
+    # RRC
     LOG_WCDMA_CELL_ID_C = 0x127                    # 0x4127 WCDMA Cell ID
     LOG_WCDMA_SIB_C = 0x12b                        # 0x412B WCDMA SIB
     LOG_WCDMA_SIGNALING_MSG_C = 0x12f              # 0x412F WCDMA Signaling Messages
@@ -144,6 +155,7 @@ class diag_log_code_lte(IntEnum):
     # Management Layer 1
     LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL = 0x17F # 0xB17F LTE ML1 Serving Cell Meas and Eval
     LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS = 0x180      # 0xB180 LTE ML1 Neighbor Measurements
+    LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE = 0x193 # 0xB193 LTE ML1 Serving Cell Meas Response
     LOG_LTE_ML1_SERVING_CELL_INFO = 0x197          # 0xB197 LTE ML1 Serving Cell Information
 
     # MAC

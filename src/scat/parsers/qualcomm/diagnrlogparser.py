@@ -127,6 +127,7 @@ class DiagNrLogParser:
         return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_mib_info(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
 
         item_struct = namedtuple('QcDiagNrMibInfo', 'pci nrarfcn props')
@@ -159,9 +160,10 @@ class DiagNrLogParser:
             stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}, SCS: {}'.format(item.nrarfcn, item.pci, sfn, scs_str)
         else:
             stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}'.format(item.nrarfcn, item.pci, sfn)
-        return {'stdout': stdout}
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_rrc_scell_info(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
 
         item_struct = namedtuple('QcDiagNrScellInfo', 'pci dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
@@ -190,17 +192,18 @@ class DiagNrLogParser:
         else:
             stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
                 item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
-        return {'stdout': stdout}
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_rrc_conf_info(self, pkt_header, pkt_body, args):
         pass
 
     def parse_nr_cacombos(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         if self.parent:
             if not self.parent.cacombos:
                 return None
 
-        return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode())}
+        return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode()), 'ts': pkt_ts}
 
     # NAS
     def parse_nr_nas(self, pkt_header, pkt_body, args, cmd_id):
@@ -226,7 +229,8 @@ class DiagNrLogParser:
 
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_nr_mm_state(self, pkt_heaer, pkt_body, args):
+    def parse_nr_mm_state(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
 
         if pkt_ver == 0x01: # Version 1
@@ -248,7 +252,7 @@ class DiagNrLogParser:
             stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
                 item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
             )
-            return {'stdout': stdout}
+            return {'stdout': stdout, 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR MM State packet version %s' % pkt_ver)

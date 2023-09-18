@@ -75,6 +75,7 @@ class DiagLteLogParser:
     # LTE
 
     def parse_lte_ml1_scell_meas(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
 
         item_struct = namedtuple('QcDiagLteMl1ScellMeas', 'rrc_rel reserved1 earfcn pci_serv_layer_prio meas_rsrp avg_rsrp rsrq rssi rxlev s_search')
@@ -135,9 +136,11 @@ class DiagLteLogParser:
         real_rssi = -110 + meas_rssi * 0.0625
         real_rsrq = -30 + meas_rsrq * 0.0625
 
-        return {'stdout': 'LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi)}
+        return {'stdout': 'LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi),
+                'ts': pkt_ts}
 
     def parse_lte_ml1_ncell_meas(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         stdout = ''
 
@@ -192,9 +195,10 @@ class DiagLteLogParser:
             n_real_rsrq = -30 + n_meas_rsrq * 0.0625
 
             stdout += '└── Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi)
-        return {'stdout': stdout.rstrip()}
+        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_lte_ml1_scell_meas_response(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         stdout = ''
 
@@ -342,7 +346,7 @@ class DiagLteLogParser:
                     if self.parent:
                         self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas subpacket ID 0x{:02x}'.format(subpkt_header.id))
 
-            return {'stdout': stdout.rstrip()}
+            return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas Response packet version 0x{:02x}'.format(pkt_version))
@@ -401,6 +405,7 @@ class DiagLteLogParser:
         return {'cp': [gsmtap_hdr + mib_payload], 'ts': pkt_ts, 'stdout': stdout}
 
     def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         num_subpacket = pkt_body[1]
 
@@ -1074,6 +1079,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP UL SRB packet version 0x{:02x}'.format(pkt_version))
 
     def parse_lte_mib(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         prb_to_mhz = {6: 1.4, 15: 3, 25: 5, 50: 10, 75: 15, 100: 20}
 
@@ -1102,9 +1108,10 @@ class DiagLteLogParser:
             # MIB for NB-IoT (only 1 PRB)
             stdout = 'LTE MIB-NB Info: EARFCN {}, SFN {:4}, TX antennas {}'.format(item.earfcn, item.sfn, item.tx_antenna)
 
-        return {'stdout': stdout}
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_lte_rrc_cell_info(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         prb_to_mhz = {6: 1.4, 15: 3, 25: 5, 50: 10, 75: 15, 100: 20}
         radio_id = 0
@@ -1144,7 +1151,7 @@ class DiagLteLogParser:
         else:
             stdout = 'LTE RRC SCell Info: EARFCN {}/{}, Band {}, Bandwidth {}, PCI {}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {}'.format(item.dl_earfcn,
                 item.ul_earfcn, item.band, bw_str, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
-        return {'stdout': stdout}
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_lte_rrc(self, pkt_header, pkt_body, args):
         pkt_version = pkt_body[0]
@@ -1317,8 +1324,9 @@ class DiagLteLogParser:
         return {'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
 
     def parse_lte_cacombos(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         if self.parent:
             if not self.parent.cacombos:
                 return None
 
-        return {'stdout': 'LTE UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode())}
+        return {'stdout': 'LTE UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode()), 'ts': pkt_ts}

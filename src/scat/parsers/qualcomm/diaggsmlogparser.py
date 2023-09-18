@@ -52,6 +52,7 @@ class DiagGsmLogParser:
     # GSM
 
     def parse_gsm_fcch(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         radio_id = 0
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
@@ -64,13 +65,14 @@ class DiagGsmLogParser:
 
         if self.parent:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
-        return {'stdout': 'GSM FCCH acquistion: ARFCN {}/Band {}'.format(arfcn, band), 'radio_id': radio_id}
+        return {'stdout': 'GSM FCCH acquistion: ARFCN {}/Band {}'.format(arfcn, band), 'radio_id': radio_id, 'ts': pkt_ts}
 
     def parse_gsm_dsds_fcch(self, pkt_header, pkt_body, args):
         radio_id_pkt = pkt_body[0]
         return self.parse_gsm_fcch(pkt_header, pkt_body[1:], {'radio_id': self.parent.sanitize_radio_id(radio_id_pkt)})
 
     def parse_gsm_sch(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         radio_id = 0
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
@@ -85,13 +87,14 @@ class DiagGsmLogParser:
 
         if self.parent:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
-        return {'stdout': 'GSM SCH acquistion: ARFCN {}/Band {}, Data: {:025b}'.format(arfcn, band, sch_data), 'radio_id': radio_id}
+        return {'stdout': 'GSM SCH acquistion: ARFCN {}/Band {}, Data: {:025b}'.format(arfcn, band, sch_data), 'radio_id': radio_id, 'ts': pkt_ts}
 
     def parse_gsm_dsds_sch(self, pkt_header, pkt_body, args):
         radio_id_pkt = pkt_body[0]
         return self.parse_gsm_sch(pkt_header, pkt_body[1:], {'radio_id': self.parent.sanitize_radio_id(radio_id_pkt)})
 
     def parse_gsm_l1_new_burst_metric(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         item_struct_v4 = namedtuple('QcDiagGsmL1NewBurstMetricV4', 'sfn arfcn_band rssi rxpwr dcoff_i dcoff_q freq_offset time_offset snr_est gain_state aci q16 aqpsk timeslot jdet_reading_divrx wb_power ll_hl_state')
         stdout = ''
 
@@ -110,9 +113,10 @@ class DiagGsmLogParser:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unsupported GSM Serving Cell L1 New Burst Metric version {}'.format(pkt_version))
 
-        return {'stdout': stdout.rstrip()}
+        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_gsm_l1_burst_metric(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         channel = pkt_body[0]
         # for each 23 bytes
         item_struct = namedtuple('QcDiagGsmL1BurstMetric', 'sfn arfcn_band rssi rxpwr dcoff_i dcoff_q freq_offset time_offset snr_est gain_state')
@@ -127,13 +131,14 @@ class DiagGsmLogParser:
                 c_rxpwr_real = item.rxpwr * 0.0625
                 stdout += 'GSM Serving Cell Burst Metric: ARFCN {}/BC {}, RSSI {}, RxPwr {:.2f}\n'.format(c_arfcn, c_band, item.rssi, c_rxpwr_real)
 
-        return {'stdout': stdout.rstrip()}
+        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_gsm_dsds_l1_burst_metric(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
         return self.parse_gsm_l1_burst_metric(pkt_header, pkt_body[1:], {'radio_id': radio_id_pkt})
 
     def parse_gsm_l1_surround_cell_ba(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         item_struct = namedtuple('QcDiagGsmL1SurroundCellBa', 'arfcn_band rxpwr bsic_valid bsic fn_offset time_offset')
         stdout = ''
         num_cells = pkt_body[0]
@@ -149,23 +154,25 @@ class DiagGsmLogParser:
             else:
                 stdout += 'GSM Surround Cell BA: Cell {}: ARFCN {}/BC {}/BSIC N/A RxPwr {:.2f}\n'.format(i, s_arfcn, s_band, item.bsic, s_rxpwr_real)
 
-        return {'stdout': stdout.rstrip()}
+        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_gsm_dsds_l1_surround_cell_ba(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
         return self.parse_gsm_l1_surround_cell_ba(pkt_header, pkt_body[1:], {'radio_id': radio_id_pkt})
 
     def parse_gsm_l1_serv_aux_meas(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         item_struct = namedtuple('QcDiagGsmL1ServAuxMeas', 'rxpwr snr_is_bad')
         item = item_struct._make(struct.unpack('<hB', pkt_body[0:3]))
         rxpwr_real = item.rxpwr * 0.0625
-        return {'stdout': 'GSM Serving Cell Aux Measurement: RxPwr {:.2f}'.format(rxpwr_real)}
+        return {'stdout': 'GSM Serving Cell Aux Measurement: RxPwr {:.2f}'.format(rxpwr_real), 'ts': pkt_ts}
 
     def parse_gsm_dsds_l1_serv_aux_meas(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
         return self.parse_gsm_l1_serv_aux_meas(pkt_header, pkt_body[1:], {'radio_id': radio_id_pkt})
 
     def parse_gsm_l1_neig_aux_meas(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         stdout = ''
         item_struct = namedtuple('QcDiagGsmL1NeigAuxMeas', 'arfcn_band rxpwr')
 
@@ -178,13 +185,14 @@ class DiagGsmLogParser:
             n_rxpwr_real = item.rxpwr * 0.0625
             stdout += 'GSM Neighbor Cell Aux {}: ARFCN {}/BC {}, RxPwr {:.2f}\n'.format(i, n_arfcn, n_band, n_rxpwr_real)
 
-        return {'stdout': stdout.rstrip()}
+        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_gsm_dsds_l1_neig_aux_meas(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
         return self.parse_gsm_l1_neig_aux_meas(pkt_header, pkt_body[1:], {'radio_id': radio_id_pkt})
 
     def parse_gsm_cell_info(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         radio_id = 0
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
@@ -198,7 +206,8 @@ class DiagGsmLogParser:
         if self.parent:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
             self.parent.gsm_last_cell_id[radio_id] = item.cid
-        return {'stdout': 'GSM RR Cell Info: ARFCN {}/Band {}, BCC {}, NCC {}, xCID {:x}, xLAI {}'.format(arfcn, band, item.bcc, item.ncc, item.cid, binascii.hexlify(item.lai).decode())}
+        return {'stdout': 'GSM RR Cell Info: ARFCN {}/Band {}, BCC {}, NCC {}, xCID {:x}, xLAI {}'.format(arfcn, band, item.bcc, item.ncc, item.cid, binascii.hexlify(item.lai).decode()),
+                'ts': pkt_ts}
 
     def parse_gsm_dsds_cell_info(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
