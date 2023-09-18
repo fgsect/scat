@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-import scat.util as util
-
 import struct
 import logging
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
+import scat.util as util
 
 class SdmTraceParser:
     def __init__(self, parent, icd_ver=(0, 0)):

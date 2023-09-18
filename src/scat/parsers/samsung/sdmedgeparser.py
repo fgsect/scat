@@ -1,25 +1,26 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-import scat.util as util
-
 import struct
-import logging
 import binascii
 from collections import namedtuple
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
+import scat.util as util
 
 class SdmEdgeParser:
     def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
         self.icd_ver = icd_ver
 
+        g = (sdmcmd.sdm_command_group.CMD_EDGE_DATA << 8)
+        c = sdmcmd.sdm_edge_data
         self.process = {
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_NCELL_INFO: lambda x: self.sdm_edge_ncell_info(x),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_handover_history_info(x),
-            (sdm_command_group.CMD_EDGE_DATA << 8) | sdm_edge_data.EDGE_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
+            g | c.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
+            g | c.EDGE_NCELL_INFO: lambda x: self.sdm_edge_ncell_info(x),
+            g | c.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
+            g | c.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
+            g | c.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_handover_history_info(x),
+            g | c.EDGE_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
         }
 
     def set_icd_ver(self, version):
@@ -30,7 +31,6 @@ class SdmEdgeParser:
         print("GSM {:#x}: {}".format(num, binascii.hexlify(pkt).decode()))
 
     def sdm_edge_scell_info(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmEdgeSCellInfo', '''arfcn bsic rxlev nco crh nmo lai rac cid''')
         struct_str = '<HBBBBB 5s BH'
@@ -51,7 +51,6 @@ class SdmEdgeParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_edge_ncell_info(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         stdout = ''
         num_identified_cells = pkt[0]
@@ -90,7 +89,6 @@ class SdmEdgeParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_edge_3g_ncell_info(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         stdout = ''
         num_3g_cells = pkt[0]
@@ -116,7 +114,6 @@ class SdmEdgeParser:
         return {'stdout': ''}
 
     def sdm_edge_handover_history_info(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header_234 = namedtuple('SdmEdgeHandoverHistoryInfo234', 'arfcn bsic uarfcn psc earfcn pci')
         stdout = ''
@@ -147,7 +144,6 @@ class SdmEdgeParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_edge_meas_info(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header_s = namedtuple('SdmEdgeSCellMeasInfo', 'arfcn bsic rxlev rxlev_p rxq_p rxlev_s rxq_s txlev')
         header_n = namedtuple('SdmEdgeNCellMeasInfo', 'arfcn bsic rxlev unk')

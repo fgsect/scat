@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-from collections import namedtuple
-import scat.util as util
-import binascii
-
 import struct
 import logging
+import binascii
+from collections import namedtuple
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
+import scat.util as util
 
 class SdmCommonParser:
     def __init__(self, parent, icd_ver=(0, 0)):
@@ -15,14 +15,16 @@ class SdmCommonParser:
         self.multi_message_chunk = {}
         self.ip_id = 0
 
+        g = (sdmcmd.sdm_command_group.CMD_COMMON_DATA << 8)
+        c = sdmcmd.sdm_common_data
         self.process = {
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
-            # (sdm_command_group.CMD_COMMON_DATA << 8) | 0x01: lambda x: self.sdm_common_dummy(x, 0x01),
-            # (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_DATA_INFO: lambda x: self.sdm_common_dummy(x, 0x02),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
-            # (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_SMS_INFO: lambda x: self.sdm_common_dummy(x, 0x04),
-            # (sdm_command_group.CMD_COMMON_DATA << 8) | 0x05: lambda x: self.sdm_common_dummy(x, 0x05),
-            (sdm_command_group.CMD_COMMON_DATA << 8) | sdm_common_data.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
+            g | c.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
+            # g | 0x01: lambda x: self.sdm_common_dummy(x, 0x01),
+            # g | c.COMMON_DATA_INFO: lambda x: self.sdm_common_dummy(x, 0x02),
+            g | c.COMMON_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
+            # g | c.COMMON_SMS_INFO: lambda x: self.sdm_common_dummy(x, 0x04),
+            # g | 0x05: lambda x: self.sdm_common_dummy(x, 0x05),
+            g | c.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
         }
 
     def set_icd_ver(self, version):
@@ -247,7 +249,7 @@ class SdmCommonParser:
             return None
 
     def sdm_common_signaling(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
         header = namedtuple('SdmCommonSignalingHeader', 'type subtype direction length')
@@ -257,7 +259,7 @@ class SdmCommonParser:
         return self._parse_sdm_common_signaling(sdm_pkt_hdr, pkt_header.type, pkt_header.subtype, pkt_header.direction, pkt_header.length, msg_content)
 
     def sdm_common_multi_signaling(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
         # num_chunk is base 1, should be <= total_chunks

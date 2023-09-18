@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-import scat.util as util
-
 import struct
 import logging
 import binascii
-import ipaddress
 from collections import namedtuple
+import ipaddress
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
+import scat.util as util
 
 class SdmLteParser:
     def __init__(self, parent, icd_ver=(0, 0)):
@@ -15,35 +15,37 @@ class SdmLteParser:
         self.icd_ver = icd_ver
         self.multi_message_chunk = {}
 
+        g = (sdmcmd.sdm_command_group.CMD_LTE_DATA << 8)
+        c = sdmcmd.sdm_lte_data
         self.process = {
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
+            g | c.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
+            g | c.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
 
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_L2_RNTI_INFO: lambda x: self.sdm_lte_l2_rnti_info(x),
+            g | c.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
+            g | c.LTE_L2_RNTI_INFO: lambda x: self.sdm_lte_l2_rnti_info(x),
 
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_SERVING_CELL: lambda x: self.sdm_lte_rrc_serving_cell(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_STATUS: lambda x: self.sdm_lte_rrc_state(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_OTA_PACKET: lambda x: self.sdm_lte_rrc_ota_packet(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_RRC_RACH_MSG: lambda x: self.sdm_lte_rrc_rach_msg(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | 0x57: lambda x: self.sdm_lte_dummy(x, 0x57),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_PLMN_SELECTION: lambda x: self.sdm_lte_nas_plmn_selection(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_SECURITY: lambda x: self.sdm_lte_nas_security(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_PDP: lambda x: self.sdm_lte_nas_pdp(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_IP: lambda x: self.sdm_lte_nas_ip(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
+            g | c.LTE_RRC_SERVING_CELL: lambda x: self.sdm_lte_rrc_serving_cell(x),
+            g | c.LTE_RRC_STATUS: lambda x: self.sdm_lte_rrc_state(x),
+            g | c.LTE_RRC_OTA_PACKET: lambda x: self.sdm_lte_rrc_ota_packet(x),
+            g | c.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
+            g | c.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
+            g | c.LTE_RRC_RACH_MSG: lambda x: self.sdm_lte_rrc_rach_msg(x),
+            g | 0x57: lambda x: self.sdm_lte_dummy(x, 0x57),
+            g | c.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
+            g | c.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
+            g | c.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
+            g | c.LTE_NAS_PLMN_SELECTION: lambda x: self.sdm_lte_nas_plmn_selection(x),
+            g | c.LTE_NAS_SECURITY: lambda x: self.sdm_lte_nas_security(x),
+            g | c.LTE_NAS_PDP: lambda x: self.sdm_lte_nas_pdp(x),
+            g | c.LTE_NAS_IP: lambda x: self.sdm_lte_nas_ip(x),
+            g | c.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
 
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_TX_PACKET_INFO: lambda x: self.sdm_lte_volte_rtp_packet(x, 0x70),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_RX_PACKET_INFO: lambda x: self.sdm_lte_volte_rtp_packet(x, 0x71),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_TX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_tx_stats(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_rx_stats(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_tx_rtp_stats(x),
-            (sdm_command_group.CMD_LTE_DATA << 8) | sdm_lte_data.LTE_VOLTE_RX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_rx_rtp_stats(x),
+            g | c.LTE_VOLTE_TX_PACKET_INFO: lambda x: self.sdm_lte_volte_rtp_packet(x, 0x70),
+            g | c.LTE_VOLTE_RX_PACKET_INFO: lambda x: self.sdm_lte_volte_rtp_packet(x, 0x71),
+            g | c.LTE_VOLTE_TX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_tx_stats(x),
+            g | c.LTE_VOLTE_RX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_rx_stats(x),
+            g | c.LTE_VOLTE_TX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_tx_rtp_stats(x),
+            g | c.LTE_VOLTE_RX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_rx_rtp_stats(x),
         }
 
     def set_icd_ver(self, version):
@@ -54,7 +56,6 @@ class SdmLteParser:
         return {'stdout': 'LTE {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode())}
 
     def sdm_lte_phy_status(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
         if len(pkt) != 2:
@@ -67,7 +68,7 @@ class SdmLteParser:
         return {'stdout': stdout}
 
     def sdm_lte_phy_cell_info(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2 reserved1 reserved2 rsrp rsrq num_ncell')
         ncell_header = namedtuple('SdmLtePhyCellInfoNCellMeas', 'type earfcn pci zero1 reserved1 rsrp rsrq reserved2')
@@ -260,7 +261,7 @@ class SdmLteParser:
         return {'cp': [gsmtap_hdr + msg]}
 
     def sdm_lte_rrc_ota_packet(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
         if len(pkt) < 4:
@@ -283,7 +284,7 @@ class SdmLteParser:
 
     def sdm_lte_rrc_asn_version(self, pkt):
         # Always 01? 1b - only for old revision
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         if len(pkt) < 5:
             return {'stdout': 'LTE RRC ASN Version: {}'.format(binascii.hexlify(pkt).decode())}

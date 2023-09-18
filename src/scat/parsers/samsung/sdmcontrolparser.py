@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-import scat.util as util
-
 import struct
 import logging
 import binascii
+from collections import namedtuple
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
 
 class SdmControlParser:
     def __init__(self, parent, icd_ver=(0, 0)):
@@ -17,18 +17,20 @@ class SdmControlParser:
         self.ilm_cur_count = 0
         self.trigger_group = {}
 
+        g = (sdmcmd.sdm_command_group.CMD_CONTROL_MESSAGE << 8)
+        c = sdmcmd.sdm_control_message
         self.process = {
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CONTROL_START_RESPONSE: lambda x: self.sdm_control_start_response(x),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CHANGE_UPDATE_PERIOD_RESPONSE: lambda x: self.sdm_control_change_update_period_response(x),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.COMMON_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x10),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.LTE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x20),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.EDGE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x30),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.HSPA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x40),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.CDMA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x44),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
-            (sdm_command_group.CMD_CONTROL_MESSAGE << 8) | sdm_control_message.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
+            g | c.CONTROL_START_RESPONSE: lambda x: self.sdm_control_start_response(x),
+            g | c.CHANGE_UPDATE_PERIOD_RESPONSE: lambda x: self.sdm_control_change_update_period_response(x),
+            g | c.COMMON_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x10),
+            g | c.LTE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x20),
+            g | c.EDGE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x30),
+            g | c.HSPA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x40),
+            g | c.CDMA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x44),
+            g | c.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
+            g | c.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
+            g | c.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
+            g | c.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
         }
 
     def set_icd_ver(self, version):
@@ -97,13 +99,13 @@ class SdmControlParser:
             item_name = ''
             try:
                 if group == 0x10:
-                    item_name = '{:#04x} {}'.format(index, sdm_common_data(index).name)
+                    item_name = '{:#04x} {}'.format(index, sdmcmd.sdm_common_data(index).name)
                 elif group == 0x20:
-                    item_name = '{:#04x} {}'.format(index, sdm_lte_data(index).name)
+                    item_name = '{:#04x} {}'.format(index, sdmcmd.sdm_lte_data(index).name)
                 elif group == 0x30:
-                    item_name = '{:#04x} {}'.format(index, sdm_edge_data(index).name)
+                    item_name = '{:#04x} {}'.format(index, sdmcmd.sdm_edge_data(index).name)
                 elif group == 0x40:
-                    item_name = '{:#04x} {}'.format(index, sdm_hspa_data(index).name)
+                    item_name = '{:#04x} {}'.format(index, sdmcmd.sdm_hspa_data(index).name)
                 elif group == 0x44:
                     item_name = '{:#04x} ITEM_{:02x}'.format(index, index)
             except ValueError:

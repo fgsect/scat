@@ -1,21 +1,21 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-import scat.util as util
-
 import struct
 import logging
 import binascii
 from collections import namedtuple
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
 
 class SdmIpParser:
     def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
         self.icd_ver = icd_ver
 
+        g = (sdmcmd.sdm_command_group.CMD_IP_DATA << 8)
         self.process = {
-            (sdm_command_group.CMD_IP_DATA << 8) | 0x00: lambda x: self.sdm_ip_data(x),
-            (sdm_command_group.CMD_IP_DATA << 8) | 0x10: lambda x: self.sdm_0x0710(x),
+            g | 0x00: lambda x: self.sdm_ip_data(x),
+            g | 0x10: lambda x: self.sdm_0x0710(x),
         }
 
     def set_icd_ver(self, version):

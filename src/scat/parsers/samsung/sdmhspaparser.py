@@ -1,33 +1,34 @@
 #!/usr/bin/env python3
 
-from scat.parsers.samsung.sdmcmd import *
-import scat.util as util
-import binascii
-
 import struct
 import logging
+import binascii
 from collections import namedtuple
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
+import scat.util as util
 
 class SdmHspaParser:
     def __init__(self, parent, icd_ver=(0, 0)):
         self.parent = parent
         self.icd_ver = icd_ver
 
+        g = (sdmcmd.sdm_command_group.CMD_HSPA_DATA << 8)
+        c = sdmcmd.sdm_hspa_data
         self.process = {
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO: lambda x: self.sdm_hspa_ul1_rf_info(x),
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_SERV_CELL: lambda x: self.sdm_hspa_ul1_serving_cell(x),
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL: lambda x: self.sdm_hspa_ul1_intra_freq_resel(x),
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_UL1_INTER_FREQ_RESEL: lambda x: self.sdm_hspa_ul1_inter_freq_resel(x),
+            g | c.HSPA_UL1_UMTS_RF_INFO: lambda x: self.sdm_hspa_ul1_rf_info(x),
+            g | c.HSPA_UL1_SERV_CELL: lambda x: self.sdm_hspa_ul1_serving_cell(x),
+            g | c.HSPA_UL1_INTRA_FREQ_RESEL: lambda x: self.sdm_hspa_ul1_intra_freq_resel(x),
+            g | c.HSPA_UL1_INTER_FREQ_RESEL: lambda x: self.sdm_hspa_ul1_inter_freq_resel(x),
 
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_RRC_STATUS: lambda x: self.sdm_hspa_wcdma_rrc_status(x),
-            (sdm_command_group.CMD_HSPA_DATA << 8) | sdm_hspa_data.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
+            g | c.HSPA_URRC_RRC_STATUS: lambda x: self.sdm_hspa_wcdma_rrc_status(x),
+            g | c.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
         }
 
     def set_icd_ver(self, version):
         self.icd_ver = version
 
     def sdm_hspa_ul1_rf_info_icd_4(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1RfInfoOld', 'uarfcn zero rssi txpwr')
 
@@ -45,7 +46,6 @@ class SdmHspaParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_hspa_ul1_rf_info_icd_5(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1RfInfo', 'uarfcn psc rssi ecno rscp txpwr')
 
@@ -71,7 +71,6 @@ class SdmHspaParser:
             return self.sdm_hspa_ul1_rf_info_icd_4(pkt)
 
     def sdm_hspa_ul1_serving_cell(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1ServingCell', 'psc cpich_rscp cpich_delta_rscp cpich_ecno drx_cycle')
 
@@ -91,7 +90,6 @@ class SdmHspaParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_hspa_ul1_intra_freq_resel(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1IntraFreqResel', 'psc cpich_rscp cpich_ecno')
 
@@ -118,7 +116,6 @@ class SdmHspaParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_hspa_ul1_inter_freq_resel(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1InterFreqResel', 'uarfcn psc cpich_rscp cpich_ecno')
         num_meas = struct.unpack('<H', pkt[0:2])[0]
@@ -147,7 +144,6 @@ class SdmHspaParser:
     def sdm_hspa_wcdma_rrc_status(self, pkt):
         # uint8: channel
         # 0x00 - DISCONNECTED, 0x01: CELL_DCH, 0x02: CELL_FACH, 0x03: CELL_PCH, 0x04: URA_PCH
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         stdout = ''
         rrc_state_map = {
@@ -180,7 +176,7 @@ class SdmHspaParser:
         return {'stdout': stdout}
 
     def sdm_hspa_wcdma_serving_cell(self, pkt):
-        sdm_pkt_hdr = parse_sdm_header(pkt[1:15])
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
         if len(pkt) < 8:
