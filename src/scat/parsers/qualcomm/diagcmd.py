@@ -80,6 +80,8 @@ def diag_log_get_wcdma_item_id(x):
 class diag_log_code_wcdma(IntEnum):
     # Layer 1
     LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C = 0x5 # 0x4005 WCDMA Search Cell Reselection Rank
+    LOG_WCDMA_PN_SEARCH_EDITION_2_C          = 0x179 # 0x4179 WCDMA PN Search Edition 2
+    LOG_WCDMA_FREQ_SCAN_C                    = 0x1b0 # 0x41B0 WCDMA Freq Scan
 
     # Layer 2
     LOG_WCDMA_RLC_DL_AM_SIGNALING_PDU_C   = 0x135 # 0x4135 WCDMA RLC DL AM Signaling PDU
@@ -153,32 +155,53 @@ def diag_log_get_lte_item_id(x):
 @unique
 class diag_log_code_lte(IntEnum):
     # Management Layer 1
-    LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL = 0x17F # 0xB17F LTE ML1 Serving Cell Meas and Eval
-    LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS = 0x180      # 0xB180 LTE ML1 Neighbor Measurements
-    LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE = 0x193 # 0xB193 LTE ML1 Serving Cell Meas Response
-    LOG_LTE_ML1_SERVING_CELL_INFO = 0x197          # 0xB197 LTE ML1 Serving Cell Information
+    LOG_LTE_ML1_CONNECTED_MODE_INTRA_FREQ_MEAS  = 0x179 # 0xB179 LTE ML1 Connected Mode LTE Intra-Freq Measurements
+    LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL      = 0x17f # 0xB17F LTE ML1 Serving Cell Meas and Eval
+    LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS           = 0x180 # 0xB180 LTE ML1 Neighbor Measurements
+    LOG_LTE_ML1_INTRA_FREQ_CELL_RESELECTION     = 0x181 # 0xB181 LTE ML1 Intra Frequency Cell Reselection
+    LOG_LTE_ML1_NEIGHBOR_CELL_MEAS_REQ_RESPONSE = 0x192 # B192 LTE ML1 Neighbor Cell Meas Request/Response
+    LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE      = 0x193 # 0xB193 LTE ML1 Serving Cell Meas Response
+    LOG_LTE_ML1_SEARCH_REQ_RESPONSE             = 0x194 # 0xB194 LTE ML1 Search Request/Response
+    LOG_LTE_ML1_CONNECTED_MODE_NEIGHBOR_MEAS_REQ_RESPONSE = 0x195 # 0xB195 LTE ML1 Connected Neighbor Meas Request/Response
+    LOG_LTE_ML1_SERVING_CELL_INFO               = 0x197 # 0xB197 LTE ML1 Serving Cell Information
 
     # MAC
-    LOG_LTE_MAC_RACH_TRIGGER = 0x61       # 0xB061 LTE MAC RACH Trigger
-    LOG_LTE_MAC_RACH_RESPONSE = 0x62      # 0xB062 LTE MAC Rach Attempt
+    LOG_LTE_MAC_RACH_TRIGGER       = 0x61 # 0xB061 LTE MAC RACH Trigger
+    LOG_LTE_MAC_RACH_RESPONSE      = 0x62 # 0xB062 LTE MAC Rach Attempt
     LOG_LTE_MAC_DL_TRANSPORT_BLOCK = 0x63 # 0xB063 LTE MAC DL Transport Block
     LOG_LTE_MAC_UL_TRANSPORT_BLOCK = 0x64 # 0xB064 LTE MAC UL Transport Block
+    LOG_LTE_MAC_RAR_MSG1_REPORT    = 0x67 # 0xB067 LTE MAC RAR (Msg1) Report
+    LOG_LTE_MAC_RAR_MSG2_REPORT    = 0x68 # 0xB068 LTE MAC RAR (Msg2) Report
+    LOG_LTE_MAC_UE_IDENTIFICATION_MESSAGE_MSG3_REPORT     = 0x69 # 0xB069 LTE MAC RAR (Msg3) Report
+    LOG_LTE_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT = 0x6A # 0xB06A LTE MAC RAR (Msg4) Report
+
+    # PDCP
+    LOG_LTE_PDCP_DL_CONFIG                 = 0xa0 # 0xB0A0 LTE PDCP DL Config
+    LOG_LTE_PDCP_UL_CONFIG                 = 0xb0 # 0xB0B0 LTE PDCP UL Config
+    LOG_LTE_PDCP_DL_DATA_PDU               = 0xa1 # 0xB0A1 LTE PDCP DL Data PDU
+    LOG_LTE_PDCP_UL_DATA_PDU               = 0xb1 # 0xB0B1 LTE PDCP UL Data PDU
+    LOG_LTE_PDCP_DL_CONTROL_PDU            = 0xa2 # 0xB0A2 LTE PDCP DL Ctrl PDU
+    LOG_LTE_PDCP_UL_CONTROL_PDU            = 0xb2 # 0xB0B2 LTE PDCP UL Ctrl PDU
+    LOG_LTE_PDCP_DL_CIPHER_DATA_PDU        = 0xa3 # 0xB0A3 LTE PDCP DL Cipher Data PDU
+    LOG_LTE_PDCP_UL_CIPHER_DATA_PDU        = 0xb3 # 0xB0B3 LTE PDCP UL Cipher Data PDU
+    LOG_LTE_PDCP_DL_SRB_INTEGRITY_DATA_PDU = 0xa5 # 0xB0A5 LTE PDCP DL SRB Integrity Data PDU
+    LOG_LTE_PDCP_UL_SRB_INTEGRITY_DATA_PDU = 0xb5 # 0xB0B5 LTE PDCP UL SRB Integrity Data PDU
 
     # RRC
-    LOG_LTE_RRC_OTA_MESSAGE = 0xC0 # 0xB0C0 LTE RRC OTA Packet
-    LOG_LTE_RRC_MIB_MESSAGE = 0xC1 # 0xB0C1 LTE RRC MIB Message Log Packet
-    LOG_LTE_RRC_SERVING_CELL_INFO = 0xC2 # 0xB0C2 LTE RRC Serving Cell Info Log Pkt
-    LOG_LTE_RRC_SUPPORTED_CA_COMBOS = 0xCD # 0xB0CD LTE RRC Supported CA Combos
+    LOG_LTE_RRC_OTA_MESSAGE         = 0xc0 # 0xB0C0 LTE RRC OTA Packet
+    LOG_LTE_RRC_MIB_MESSAGE         = 0xc1 # 0xB0C1 LTE RRC MIB Message Log Packet
+    LOG_LTE_RRC_SERVING_CELL_INFO   = 0xc2 # 0xB0C2 LTE RRC Serving Cell Info Log Pkt
+    LOG_LTE_RRC_SUPPORTED_CA_COMBOS = 0xcD # 0xB0CD LTE RRC Supported CA Combos
 
     # NAS
-    LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE   = 0xE0 # 0xB0E0 LTE NAS EMM Security Protected Incoming Msg
-    LOG_LTE_NAS_ESM_SEC_OTA_OUTGOING_MESSAGE   = 0xE1 # 0xB0E1 LTE NAS EMM Security Protected Outgoing Msg
-    LOG_LTE_NAS_ESM_PLAIN_OTA_INCOMING_MESSAGE = 0xE2 # 0xB0E2 LTE NAS EMM Plain OTA Incoming Message
-    LOG_LTE_NAS_ESM_PLAIN_OTA_OUTGOING_MESSAGE = 0xE3 # 0xB0E3 LTE NAS EMM Plain OTA Outgoing Message
-    LOG_LTE_NAS_EMM_SEC_OTA_INCOMING_MESSAGE   = 0xEA # 0xB0EA LTE NAS EMM Security Protected Incoming Msg
-    LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE   = 0xEB # 0xB0EB LTE NAS EMM Security Protected Outgoing Msg
-    LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE = 0xEC # 0xB0EC LTE NAS EMM Plain OTA Incoming Message
-    LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE = 0xED # 0xB0ED LTE NAS EMM Plain OTA Outgoing Message
+    LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE   = 0xe0 # 0xB0E0 LTE NAS EMM Security Protected Incoming Msg
+    LOG_LTE_NAS_ESM_SEC_OTA_OUTGOING_MESSAGE   = 0xe1 # 0xB0E1 LTE NAS EMM Security Protected Outgoing Msg
+    LOG_LTE_NAS_ESM_PLAIN_OTA_INCOMING_MESSAGE = 0xe2 # 0xB0E2 LTE NAS EMM Plain OTA Incoming Message
+    LOG_LTE_NAS_ESM_PLAIN_OTA_OUTGOING_MESSAGE = 0xe3 # 0xB0E3 LTE NAS EMM Plain OTA Outgoing Message
+    LOG_LTE_NAS_EMM_SEC_OTA_INCOMING_MESSAGE   = 0xea # 0xB0EA LTE NAS EMM Security Protected Incoming Msg
+    LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE   = 0xeb # 0xB0EB LTE NAS EMM Security Protected Outgoing Msg
+    LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE = 0xec # 0xB0EC LTE NAS EMM Plain OTA Incoming Message
+    LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE = 0xed # 0xB0ED LTE NAS EMM Plain OTA Outgoing Message
 
 @unique
 class diag_log_code_5gnr(IntEnum):

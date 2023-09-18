@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
-import scat.util as util
-
 import struct
 import calendar
 import logging
 from collections import namedtuple
 import binascii
+
+import scat.util as util
+import scat.parsers.qualcomm.diagcmd as diagcmd
 
 class DiagGsmLogParser:
     def __init__(self, parent):
@@ -16,37 +17,37 @@ class DiagGsmLogParser:
             0x5226: 'GPRS MAC Signaling Message',
         }
 
+        i = diagcmd.diag_log_get_gsm_item_id
+        c = diagcmd.diag_log_code_gsm
         self.process = {
-            # GSM
             # L1
-            0x5065: lambda x, y, z: self.parse_gsm_fcch(x, y, z), # GSM L1 FCCH Acquisition
-            0x5066: lambda x, y, z: self.parse_gsm_sch(x, y, z), # GSM L1 SCH Acquisition
-            0x506A: lambda x, y, z: self.parse_gsm_l1_new_burst_metric(x, y, z), # GSM L1 New Burst Metrics
-            0x506C: lambda x, y, z: self.parse_gsm_l1_burst_metric(x, y, z), # GSM L1 Burst Metrics
-            0x5071: lambda x, y, z: self.parse_gsm_l1_surround_cell_ba(x, y, z), # GSM Surround Cell BA List
-            0x507A: lambda x, y, z: self.parse_gsm_l1_serv_aux_meas(x, y, z), # GSM L1 Serving Auxiliary Measurments
-            0x507B: lambda x, y, z: self.parse_gsm_l1_neig_aux_meas(x, y, z), # GSM L1 Neighbor Cell Auxiliary Measurments
+            i(c.LOG_GSM_L1_FCCH_ACQUISITION_C): lambda x, y, z: self.parse_gsm_fcch(x, y, z),
+            i(c.LOG_GSM_L1_SCH_ACQUISITION_C): lambda x, y, z: self.parse_gsm_sch(x, y, z),
+            i(c.LOG_GSM_L1_NEW_BURST_METRICS_C): lambda x, y, z: self.parse_gsm_l1_new_burst_metric(x, y, z),
+            i(c.LOG_GSM_L1_BURST_METRICS_C): lambda x, y, z: self.parse_gsm_l1_burst_metric(x, y, z),
+            i(c.LOG_GSM_L1_SCELL_BA_LIST_C): lambda x, y, z: self.parse_gsm_l1_surround_cell_ba(x, y, z),
+            i(c.LOG_GSM_L1_SCELL_AUX_MEASUREMENTS_C): lambda x, y, z: self.parse_gsm_l1_serv_aux_meas(x, y, z),
+            i(c.LOG_GSM_L1_NCELL_AUX_MEASUREMENTS_C): lambda x, y, z: self.parse_gsm_l1_neig_aux_meas(x, y, z),
 
             # RR
-            0x512F: lambda x, y, z: self.parse_gsm_rr(x, y, z), # GSM RR Signaling Message
-            0x5134: lambda x, y, z: self.parse_gsm_cell_info(x, y, z), # GSM RR Cell Information
+            i(c.LOG_GSM_RR_SIGNALING_MESSAGE_C): lambda x, y, z: self.parse_gsm_rr(x, y, z),
+            i(c.LOG_GSM_RR_CELL_INFORMATION_C): lambda x, y, z: self.parse_gsm_cell_info(x, y, z),
 
             # GPRS
-            0x5226: lambda x, y, z: self.parse_gprs_mac(x, y, z), # GPRS MAC Signaling Message
-            0x5230: lambda x, y, z: self.parse_gprs_ota(x, y, z), # GPRS SM/GMM OTA Signaling Message
+            i(c.LOG_GPRS_MAC_SIGNALING_MESSACE_C): lambda x, y, z: self.parse_gprs_mac(x, y, z),
+            i(c.LOG_GPRS_SM_GMM_OTA_SIGNALING_MESSAGE_C): lambda x, y, z: self.parse_gprs_ota(x, y, z),
 
-            # GSM DSDS
-            # L1
-            0x5A65: lambda x, y, z: self.parse_gsm_dsds_fcch(x, y, z), # GSM DSDS L1 FCCH Acquisition
-            0x5A66: lambda x, y, z: self.parse_gsm_dsds_sch(x, y, z), # GSM DSDS L1 SCH Acquisition
-            0x5A6C: lambda x, y, z: self.parse_gsm_dsds_l1_burst_metric(x, y, z), # GSM DSDS L1 Burst Metrics
-            0x5A71: lambda x, y, z: self.parse_gsm_dsds_l1_surround_cell_ba(x, y, z), # GSM DSDS Surround Cell BA List
-            0x5A7A: lambda x, y, z: self.parse_gsm_dsds_l1_serv_aux_meas(x, y, z), # GSM DSDS L1 Serving Auxiliary Measurments
-            0x5A7B: lambda x, y, z: self.parse_gsm_dsds_l1_neig_aux_meas(x, y, z), # GSM DSDS L1 Neighbor Cell Auxiliary Measurments
+            # DSDS L1
+            i(c.LOG_GSM_DSDS_L1_FCCH_ACQUISITION_C): lambda x, y, z: self.parse_gsm_dsds_fcch(x, y, z),
+            i(c.LOG_GSM_DSDS_L1_SCH_ACQUISITION_C): lambda x, y, z: self.parse_gsm_dsds_sch(x, y, z),
+            i(c.LOG_GSM_DSDS_L1_BURST_METRICS_C): lambda x, y, z: self.parse_gsm_dsds_l1_burst_metric(x, y, z),
+            i(c.LOG_GSM_DSDS_L1_SCELL_BA_LIST_C): lambda x, y, z: self.parse_gsm_dsds_l1_surround_cell_ba(x, y, z),
+            i(c.LOG_GSM_DSDS_L1_SCELL_AUX_MEASUREMENTS_C): lambda x, y, z: self.parse_gsm_dsds_l1_serv_aux_meas(x, y, z),
+            i(c.LOG_GSM_DSDS_L1_NCELL_AUX_MEASUREMENTS_C): lambda x, y, z: self.parse_gsm_dsds_l1_neig_aux_meas(x, y, z),
 
-            # RR
-            0x5B2F: lambda x, y, z: self.parse_gsm_dsds_rr(x, y, z), # GSM DSDS RR Signaling Message
-            0x5B34: lambda x, y, z: self.parse_gsm_dsds_cell_info(x, y, z), # GSM DSDS RR Cell Information
+            # DSDS RR
+            i(c.LOG_GSM_DSDS_RR_SIGNALING_MESSAGE_C): lambda x, y, z: self.parse_gsm_dsds_rr(x, y, z),
+            i(c.LOG_GSM_DSDS_RR_CELL_INFORMATION_C): lambda x, y, z: self.parse_gsm_dsds_cell_info(x, y, z),
         }
 
     # GSM

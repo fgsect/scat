@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-import scat.util as util
-
 import struct
 import calendar
 import logging
@@ -9,29 +7,35 @@ import math
 from collections import namedtuple
 import binascii
 
+import scat.util as util
+import scat.parsers.qualcomm.diagcmd as diagcmd
+
 class DiagWcdmaLogParser:
     def __init__(self, parent):
         self.parent = parent
+
+        i = diagcmd.diag_log_get_wcdma_item_id
+        c = diagcmd.diag_log_code_wcdma
         self.process = {
-            # WCDMA Layer 1
-            0x4005: lambda x, y, z: self.parse_wcdma_search_cell_reselection(x, y, z), # WCDMA Search Cell Reselection Rank
+            # Layer 1
+            i(c.LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C): lambda x, y, z: self.parse_wcdma_search_cell_reselection(x, y, z),
             #0x4179 WCDMA PN Search Edition 2
             # 05 00 01 94 FE 00 02 00 02 00 02 00 FE 00 FE 00 A7 29 FF FF FF FF FF FF 00 00 01 04 01 23 00 00 CB 69 D0 18 C0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5C 51 03 00 AC 4F 03 00 F8 52 03 00 24 51 03 00 18 54 03 00 04 54 03 00 08 02 00 00 78 00 00 00 78 00 00 00 74 00 00 00 71 00 00 00 70 00 00 00
             # 05 00 01 74 FE 00 02 00 02 00 02 00 FE 00 FE 00 A7 29 FF FF FF FF FF FF 00 00 02 04 01 23 00 00 CB 69 D0 18 C0 00 04 01 23 00 00 56 5C 50 12 C0 00 04 00 00 00 00 00 00 00 00 00 00 00 00 5C 51 03 00 48 4F 03 00 88 4E 03 00 4C 51 03 00 2C 52 03 00 6C 52 03 00 BE 03 00 00 86 00 00 00 7E 00 00 00 75 00 00 00 6F 00 00 00 6F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 B8 E5 02 00 3C E6 02 00 24 E8 02 00 08 E3 02 00 9C E3 02 00 80 E5 02 00 98 02 00 00 7F 00 00 00 78 00 00 00 77 00 00 00 77 00 00 00 76 00 00 00
             #0x41B0 WCDMA Freq Scan
             # 01 03 1E FE 01 A3 FF A7 29
 
-            # WCDMA Layer 2
-            0x4135: lambda x, y, z: self.parse_wcdma_rlc_dl_am_signaling_pdu(x, y, z), # WCDMA RLC DL AM Signaling PDU
-            0x413C: lambda x, y, z: self.parse_wcdma_rlc_ul_am_signaling_pdu(x, y, z), # WCDMA RLC UL AM Signaling PDU
-            0x4145: lambda x, y, z: self.parse_wcdma_rlc_ul_am_control_pdu_log(x, y, z), # WCDMA RLC UL AM Control PDU Log
-            0x4146: lambda x, y, z: self.parse_wcdma_rlc_dl_am_control_pdu_log(x, y, z), # WCDMA RLC DL AM Control PDU Log
-            0x4168: lambda x, y, z: self.parse_wcdma_rlc_dl_pdu_cipher_packet(x, y, z), # WCDMA RLC DL PDU Cipher Packet
-            0x4169: lambda x, y, z: self.parse_wcdma_rlc_ul_pdu_cipher_packet(x, y, z), # WCDMA RLC UL PDU Cipher Packet
+            # Layer 2
+            i(c.LOG_WCDMA_RLC_DL_AM_SIGNALING_PDU_C): lambda x, y, z: self.parse_wcdma_rlc_dl_am_signaling_pdu(x, y, z), # WCDMA RLC DL AM Signaling PDU
+            i(c.LOG_WCDMA_RLC_UL_AM_SIGNALING_PDU_C): lambda x, y, z: self.parse_wcdma_rlc_ul_am_signaling_pdu(x, y, z), # WCDMA RLC UL AM Signaling PDU
+            i(c.LOG_WCDMA_RLC_UL_AM_CONTROL_PDU_LOG_C): lambda x, y, z: self.parse_wcdma_rlc_ul_am_control_pdu_log(x, y, z), # WCDMA RLC UL AM Control PDU Log
+            i(c.LOG_WCDMA_RLC_DL_AM_CONTROL_PDU_LOG_C): lambda x, y, z: self.parse_wcdma_rlc_dl_am_control_pdu_log(x, y, z), # WCDMA RLC DL AM Control PDU Log
+            i(c.LOG_WCDMA_RLC_DL_PDU_CIPHER_PACKET_C): lambda x, y, z: self.parse_wcdma_rlc_dl_pdu_cipher_packet(x, y, z), # WCDMA RLC DL PDU Cipher Packet
+            i(c.LOG_WCDMA_RLC_UL_PDU_CIPHER_PACKET_C): lambda x, y, z: self.parse_wcdma_rlc_ul_pdu_cipher_packet(x, y, z), # WCDMA RLC UL PDU Cipher Packet
 
-            # WCDMA RRC
-            0x4127: lambda x, y, z: self.parse_wcdma_cell_id(x, y, z), # WCDMA Cell ID
-            0x412F: lambda x, y, z: self.parse_wcdma_rrc(x, y, z), # WCDMA Signaling Messages
+            # RRC
+            i(c.LOG_WCDMA_CELL_ID_C): lambda x, y, z: self.parse_wcdma_cell_id(x, y, z),
+            i(c.LOG_WCDMA_SIGNALING_MSG_C): lambda x, y, z: self.parse_wcdma_rrc(x, y, z),
         }
 
     def get_real_rscp(self, rscp):

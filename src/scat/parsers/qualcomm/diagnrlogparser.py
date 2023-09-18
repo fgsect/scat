@@ -1,40 +1,42 @@
 #!/usr/bin/env python3
 
-from scat.parsers.qualcomm import diagcmd
-import scat.util as util
-
 import struct
 import calendar
 import logging
 import binascii
 from collections import namedtuple
 
+import scat.util as util
+import scat.parsers.qualcomm.diagcmd as diagcmd
+
 class DiagNrLogParser:
     def __init__(self, parent):
         self.parent = parent
 
+        i = diagcmd.diag_log_get_lte_item_id
+        c = diagcmd.diag_log_code_5gnr
         self.process = {
             # Management Layer 1
-            # 0xB97F: lambda x, y, z: self.parse_nr_ml1_meas_db_update(x, y, z), # NR ML1 Measurement Database Update
+            # i(c.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE): lambda x, y, z: self.parse_nr_ml1_meas_db_update(x, y, z),
 
             # MAC
 
             # RRC
-            0xB821: lambda x, y, z: self.parse_nr_rrc(x, y, z), # NR RRC OTA
-            0xB822: lambda x, y, z: self.parse_nr_mib_info(x, y, z), # NR RRC MIB Info
-            0xB823: lambda x, y, z: self.parse_nr_rrc_scell_info(x, y, z), # NR RRC Serving Cell Info
-            # 0xB825: lambda x, y, z: self.parse_nr_rrc_conf_info(x, y, z), # NR RRC Configuration Info
-            0xB826: lambda x, y, z: self.parse_nr_cacombos(x, y, z), # NR RRC Supported CA Combos
+            i(c.LOG_5GNR_RRC_OTA_MESSAGE): lambda x, y, z: self.parse_nr_rrc(x, y, z),
+            i(c.LOG_5GNR_RRC_MIB_INFO): lambda x, y, z: self.parse_nr_mib_info(x, y, z),
+            i(c.LOG_5GNR_RRC_SERVING_CELL_INFO): lambda x, y, z: self.parse_nr_rrc_scell_info(x, y, z),
+            # i(c.LOG_5GNR_RRC_CONFIGURATION_INFO): lambda x, y, z: self.parse_nr_rrc_conf_info(x, y, z),
+            i(c.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS): lambda x, y, z: self.parse_nr_cacombos(x, y, z),
 
             # NAS
-            0xB800: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB800), # NR NAS 5GSM Plain OTA Incoming
-            0xB801: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB801), # NR NAS 5GSM Plain OTA Outgoing
-            0xB808: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB808), # NR NAS 5GMM Encrypted OTA Incoming
-            0xB809: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB809), # NR NAS 5GMM Encrypted OTA Outgoing
-            0xB80A: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80A), # NR NAS 5GMM Plain OTA Incoming
-            0xB80B: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80B), # NR NAS 5GMM Plain OTA Outgoing
-            0xB814: lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB814), # NR NAS
-            0xB80C: lambda x, y, z: self.parse_nr_mm_state(x, y, z), # NR NAS MM5G State - According to MobileInsight
+            i(c.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB800),
+            i(c.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB801),
+            i(c.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB808),
+            i(c.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB809),
+            i(c.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80A),
+            i(c.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB80B),
+            i(c.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE): lambda x, y, z: self.parse_nr_nas(x, y, z, 0xB814),
+            i(c.LOG_5GNR_NAS_5GMM_STATE): lambda x, y, z: self.parse_nr_mm_state(x, y, z),
         }
 
     # ML1

@@ -1,20 +1,23 @@
 #!/usr/bin/env python3
 
-import scat.util as util
-
 import struct
 import calendar
 import logging
 from collections import namedtuple
 
+import scat.util as util
+import scat.parsers.qualcomm.diagcmd as diagcmd
+
 class DiagUmtsLogParser:
     def __init__(self, parent):
         self.parent = parent
 
+        i = diagcmd.diag_log_get_umts_item_id
+        c = diagcmd.diag_log_code_umts
         self.process = {
             # UMTS (3G NAS)
-            0x713A: lambda x, y, z: self.parse_umts_ue_ota(x, y, z), # UMTS UE OTA
-            0x7B3A: lambda x, y, z: self.parse_umts_ue_ota_dsds(x, y, z), # UMTS DSDS NAS Signaling Messages
+            i(c.LOG_UMTS_NAS_OTA_MESSAGE_LOG_PACKET_C): lambda x, y, z: self.parse_umts_ue_ota(x, y, z),
+            i(c.LOG_UMTS_DSDS_NAS_SIGNALING_MESSAGE): lambda x, y, z: self.parse_umts_ue_ota_dsds(x, y, z),
         }
 
     def parse_umts_ue_ota(self, pkt_header, pkt_body, args):
