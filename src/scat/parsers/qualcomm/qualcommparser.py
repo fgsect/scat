@@ -406,8 +406,13 @@ class QualcommParser:
             # Convert pkt length to int
             pkt_len = struct.unpack('<H', header[2:4])[0]
 
+            body_len = pkt_len - 2
+            
+            if (body_len < 1):
+                continue
+
             # Read full body
-            body += self.io_device.read(pkt_len - 2)
+            body += self.io_device.read(body_len)
             pkt = header + body
 
             parse_result = self.parse_diag(pkt, has_crc=False, hdlc_encoded=False)
