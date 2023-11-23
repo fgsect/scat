@@ -99,7 +99,7 @@ class SdmLteParser:
             if len(extra) == ncell_len * cell_info.num_ncell:
                 for i in range(cell_info.num_ncell):
                     ncell = ncell_header._make(struct.unpack(ncell_header_format, extra[i*ncell_len:(i+1)*ncell_len]))
-                    if self.icd_ver[0] >= 8:
+                    if self.icd_ver[0] >= 8 or (self.icd_ver[0] == 7 and self.icd_ver[1] > 2):
                         if ncell.type == 0:
                             stdout += 'LTE PHY Cell Info: NCell {} (GSM): ARFCN {}, BSIC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
                                 ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
