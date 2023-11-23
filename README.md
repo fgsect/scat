@@ -80,8 +80,9 @@ please file an issue with the debug output (`--debug`) attached:
 * LTE RRC Serving Cell
 
 SCAT version up to 1.1.0 required specifying the Samsung baseband type manually
-using `-m`. As SCAT now autodetects the Samsung baseband type, This option will
-be deprecated in SCAT 1.2.0, and may be removed in SCAT >= 2.0.0.
+using `-m`. As SCAT now autodetects the Samsung baseband type, for SCAT 1.2.0
+and above this option is only required when analyzing the raw SDM file without
+start response.
 
 ### USB
 Accessing the baseband diagnostics via USB:
