@@ -269,7 +269,9 @@ class SamsungParser:
 
     def run_logger(self):
         self.logger.log(logging.INFO, 'Starting diag from logger output')
-        logger_header_struct = namedtuple('SdmLoggerHeader', 'magic streamid logger_version seqnr direction group command timestamp')
+        # logger_ts is a timestamp added by application logger, it's stored as 48 bits unsigned int representing milliseconds since epoch.
+        # the timezone is specified in sdm file header, that header isn't supported by this parser.
+        logger_header_struct = namedtuple('SdmLoggerHeader', 'magic logger_ts_low logger_ts_up seqnr direction group command timestamp')
 
         oldbuf = b''
         loop = True
@@ -303,13 +305,14 @@ class SamsungParser:
                     if len(pkt) < 17:
                         self.logger.log(logging.INFO, 'Skipping packet as shorter than expected')
                         continue
-                    logger_header = logger_header_struct._make(struct.unpack('<HLHHBBBL', pkt[0:17]))
+                    logger_header = logger_header_struct._make(struct.unpack('<HHLHBBBL', pkt[0:17]))
                     if not (logger_header.magic == 0x7f39):
                         self.logger.log(logging.INFO, 'Skipping packet as magic does not match')
                         continue
                     payload = pkt[17:]
                     parse_result = self.parse_diag(generate_sdm_packet(logger_header.direction, logger_header.group, logger_header.command, payload, logger_header.timestamp))
                     if parse_result is not None:
+                        parse_result['ts'] = util.parse_sdm_ts(logger_header.logger_ts_up, logger_header.logger_ts_low)
                         self.postprocess_parse_result(parse_result)
 
                 if cur_pos == len(buf):
@@ -336,7 +339,11 @@ class SamsungParser:
         else:
             radio_id = 0
 
-        ts = datetime.datetime.now()
+        if 'ts' in parse_result:
+            # ts is set only for .sdm dumps
+            ts = parse_result['ts']
+        else:
+            ts = datetime.datetime.now()
 
         if 'cp' in parse_result:
             for sock_content in parse_result['cp']:

@@ -119,6 +119,22 @@ def xxd_oneline(buf, stdout = False):
     else:
         return 'Hexdump: \n' + xxd_str
 
+def parse_sdm_ts(ts_upper_32bits, ts_lower_16bits):
+    # ts_upper_32bits + ts_lower_16bits = 48bits unsigned int = milliseconds since epoch
+    ts_upper = ts_upper_32bits << 16
+    ts_ms = ts_upper + ts_lower_16bits
+    ts_s = ts_ms / 1000.0
+
+    if ts_s == 0:
+      return datetime.datetime.now()
+    
+    try:
+        date = datetime.datetime.utcfromtimestamp(ts_s)
+    except OverflowError:
+        date = datetime.datetime.now()
+    
+    return date
+
 # Definition copied from libosmocore's include/osmocom/core/gsmtap.h
 
 @unique
