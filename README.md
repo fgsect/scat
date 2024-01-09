@@ -41,7 +41,7 @@ Install SCAT through pip using:
 $ pip install "scat[fastcrc] @ git+https://github.com/fgsect/scat"
 
 # If you don't want or can't build libscrc
-$ pip install https://github.com/fgsect/scat
+$ pip install git+https://github.com/fgsect/scat
 ```
 
 Please note that the name SCAT is taken in the PyPI, I will find further solution.
