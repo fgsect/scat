@@ -327,14 +327,12 @@ class SdmLteParser:
                 self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
             return None
 
-        header = namedtuple('SdmLteRrcRachMessage', 'direction val1 preamble_group preamble_id val4 tc_rnti')
-        # val1: 1, 5, 6, 7
-        # val4: 1-7
+        header = namedtuple('SdmLteRrcRachMessage', 'direction cause preamble_group preamble_id ta tc_rnti')
         rach_message = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
 
-        stdout = 'LTE RRC RACH Message: Direction: {}, {}, Preamble Group: {:#x}, Preamble ID: {:#x}, {}, TC-RNTI: {:#x}'.format(
-            rach_message.direction, rach_message.val1, rach_message.preamble_group,
-            rach_message.preamble_id, rach_message.val4, rach_message.tc_rnti)
+        stdout = 'LTE RRC RACH Message: Direction: {}, Cause: {}, Preamble Group: {:#x}, Preamble ID: {:#x}, TA: {}, TC-RNTI: {:#x}'.format(
+            rach_message.direction, rach_message.cause, rach_message.preamble_group,
+            rach_message.preamble_id, rach_message.ta, rach_message.tc_rnti)
         return {'stdout': stdout}
 
     def sdm_lte_0x57(self, pkt):
