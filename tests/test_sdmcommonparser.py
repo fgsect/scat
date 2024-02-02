@@ -10,14 +10,14 @@ class TestSdmCommonParser(unittest.TestCase):
     parser = SdmCommonParser(parent=None)
 
     def test_sdm_common_basic_info(self):
-        self.parser.icd_ver = (4, 54)
+        self.parser.icd_ver = (4, 36)
         payload = binascii.unhexlify('170003002cac6d40960268')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x0f01614f)
         result = self.parser.sdm_common_basic_info(packet)
         expected = {'stdout': 'Common Basic Info: RAT LTE, Status 0, MIMO 3, Frequency DL 1840.00 MHz/UL 1745.00 MHz'}
         self.assertDictEqual(result, expected)
 
-        self.parser.icd_ver = (4, 128)
+        self.parser.icd_ver = (4, 80)
         payload = binascii.unhexlify('170403002cac6d4096026841000000')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x057687c3)
         result = self.parser.sdm_common_basic_info(packet)
@@ -42,7 +42,7 @@ class TestSdmCommonParser(unittest.TestCase):
         expected = {'stdout': 'Common Basic Info: RAT LTE, Status 4, MIMO 2, Frequency DL 2630.00 MHz/UL 2510.00 MHz, Extra: 0x00001a7f'}
         self.assertDictEqual(result, expected)
 
-        self.parser.icd_ver = (5, 128)
+        self.parser.icd_ver = (5, 80)
         payload = binascii.unhexlify('120501000000000000000075240096')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x03ecaac6)
         result = self.parser.sdm_common_basic_info(packet)
@@ -67,7 +67,7 @@ class TestSdmCommonParser(unittest.TestCase):
         expected = {'stdout': 'Common Basic Info: RAT UNKNOWN (0x19), Status 0, MIMO 0, Frequency -/-, Extra: 0x00002100'}
         self.assertDictEqual(result, expected)
 
-        self.parser.icd_ver = (6, 34)
+        self.parser.icd_ver = (6, 22)
         payload = binascii.unhexlify('12040040b9fe7fe0c6553a006f30c300ffffffffffffff')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x03ecaac6)
         result = self.parser.sdm_common_basic_info(packet)

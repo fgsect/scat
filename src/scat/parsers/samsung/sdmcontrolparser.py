@@ -41,9 +41,12 @@ class SdmControlParser:
 
         version_str = pkt[2:27]
         if version_str[0:6] == b'LibVer':
-            version_str = "LibVer: {}, ASN: {}".format(
+            version_str = "LibVer: {}, ASN: LTE Release {}.{}.{} ({:02d}.{:02d}), NR Release {}.{}.{} ({:02d}.{:02d})".format(
                 binascii.hexlify(version_str[6:12]).decode(errors='backslashreplace'),
-                binascii.hexlify(version_str[15:25]).decode(errors='backslashreplace'),
+                version_str[15], version_str[16], version_str[17],
+                version_str[18], version_str[19],
+                version_str[20], version_str[21], version_str[22],
+                version_str[23], version_str[24],
             )
         else:
             version_str = version_str.decode(errors='backslashreplace').split('\x00',1)[0]
@@ -61,7 +64,7 @@ class SdmControlParser:
         elif len(rest_str) == 2:
             chip_id = struct.unpack('<H', rest_str)[0]
 
-        icd_ver_min = pkt[55]
+        icd_ver_min = (pkt[55] & 0xf) + ((pkt[55] & 0xf0) >> 4) * 10
         icd_ver_maj = pkt[56]
 
         if icd_ver_maj > 0:

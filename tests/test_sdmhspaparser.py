@@ -7,12 +7,12 @@ from scat.parsers.samsung import sdmcmd
 from scat.parsers.samsung.sdmhspaparser import SdmHspaParser
 
 class TestSdmHspaParser(unittest.TestCase):
-    parser = SdmHspaParser(parent=None, icd_ver = (6, 34))
+    parser = SdmHspaParser(parent=None, icd_ver = (6, 22))
     maxDiff = None
 
     def test_sdm_hspa_ul1_rf_info(self):
         # cmc221s:
-        self.parser.icd_ver = (4, 54)
+        self.parser.icd_ver = (4, 36)
         payload = binascii.unhexlify('3c2a0000b4ffa8e4')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
@@ -20,7 +20,7 @@ class TestSdmHspaParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
         # e333:
-        self.parser.icd_ver = (4, 128)
+        self.parser.icd_ver = (4, 80)
         payload = binascii.unhexlify('44290000adff7cfc')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
@@ -28,7 +28,7 @@ class TestSdmHspaParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
         # e355:
-        self.parser.icd_ver = (5, 23)
+        self.parser.icd_ver = (5, 17)
         payload = binascii.unhexlify('3c2a4f01202a2d3b')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)

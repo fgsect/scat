@@ -7,10 +7,10 @@ from scat.parsers.samsung.sdmlteparser import SdmLteParser
 from scat.parsers.samsung import sdmcmd
 
 class TestSdmLteParser(unittest.TestCase):
-    parser = SdmLteParser(parent=None, icd_ver=(6, 34))
+    parser = SdmLteParser(parent=None, icd_ver=(6, 22))
 
     def test_sdm_lte_phy_cell_info(self):
-        self.parser.icd_ver = (4, 128)
+        self.parser.icd_ver = (4, 80)
         payload = binascii.unhexlify('7f3c0000390087ffa002020b418b35d0af0000000000000e067b010000ecc850fb14370000d007000001000e0615010000bc1bcc290000a406000000007e')
         result = self.parser.sdm_lte_phy_cell_info(payload)
         expected = 'LTE PHY Cell Info: EARFCN 1550, PCI 379, PLMN 45008, RSRP: -141.00, RSRQ: -20.00\nLTE PHY Cell Info: NCell 0: EARFCN 1550, PCI 277, RSRP: -107.00, RSRQ: -17.00'
@@ -26,7 +26,7 @@ class TestSdmLteParser(unittest.TestCase):
         expected = 'LTE PHY Cell Info: EARFCN 50, PCI 11, PLMN 45006, RSRP: -106.00, RSRQ: -6.00'
         self.assertEqual(result['stdout'], expected)
 
-        self.parser.icd_ver = (6, 34)
+        self.parser.icd_ver = (6, 22)
         payload = binascii.unhexlify('ceaf000000000000640000000b00000050e21405d8270000e803000000')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_PHY_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_lte_phy_cell_info(packet)
@@ -40,21 +40,21 @@ class TestSdmLteParser(unittest.TestCase):
         self.assertEqual(result['stdout'], expected)
 
     def test_sdm_lte_l2_rnti_info(self):
-        self.parser.icd_ver = (4, 96)
+        self.parser.icd_ver = (4, 60)
         payload = binascii.unhexlify('7f1a00001700f308a1223a4dd70803fffffefff4ff95ea0200f4ff7e')
         result = self.parser.sdm_lte_l2_rnti_info(payload)
         expected = {'stdout': 'LTE L2 RNTI Info: SI: 0xffff P: 0xfffe TC: 0xfff4 C: 0xea95 RA: 0x2 0xfff4'}
         self.assertDictEqual(result, expected)
 
     def test_sdm_lte_rrc_serving_cell(self):
-        self.parser.icd_ver = (4, 96)
+        self.parser.icd_ver = (4, 60)
         payload = binascii.unhexlify('7f2000001d00fe5ba0025092190c22110692000100000000000000ceaf000090017e')
         result = self.parser.sdm_lte_rrc_serving_cell(payload)
         expected = 'LTE RRC Serving Cell: xTAC/xCID 9001/920611, PLMN 45006'
         self.assertEqual(result['stdout'], expected)
 
     def test_sdm_lte_rrc_state(self):
-        self.parser.icd_ver = (6, 34)
+        self.parser.icd_ver = (6, 22)
         payload = binascii.unhexlify('7f0f00000c002bffa00251f4c3882e007e')
         result = self.parser.sdm_lte_rrc_state(payload)
         expected = 'LTE RRC State: IDLE'
@@ -77,7 +77,7 @@ class TestSdmLteParser(unittest.TestCase):
 
     def test_sdm_lte_rrc_ota_packet(self):
         # PCCH
-        self.parser.icd_ver = (6, 34)
+        self.parser.icd_ver = (6, 22)
         payload = binascii.unhexlify('7f1900001600bbffa00252701ebd2f0100070040031e080597e07e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
         expected = {'cp': [binascii.unhexlify('02040d0000000000000000000600000040031e080597e0')]}

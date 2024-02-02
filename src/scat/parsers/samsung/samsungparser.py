@@ -82,15 +82,15 @@ class SamsungParser:
     @staticmethod
     def model_to_icd_ver(model):
         if model == 'cmc221s':
-            return (4, 54)
+            return (4, 36)
         elif model == 'e303':
-            return (4, 64)
+            return (4, 40)
         elif model == 'e333':
-            return (4, 128)
+            return (4, 80)
         elif model == 'e335':
-            return (5, 23)
+            return (5, 17)
         elif model == 'e5123':
-            return (6, 22)
+            return (6, 16)
         elif model == 'e5300':
             return (7, 2)
         else:

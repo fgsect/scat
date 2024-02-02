@@ -78,7 +78,7 @@ class SdmCommonParser:
         }
         header = namedtuple('SdmCommonBasicInfo', 'rat status mimo dlfreq ulfreq')
 
-        if self.icd_ver[0] >= 8:
+        if self.icd_ver >= (8, 0):
             common_basic = header._make(struct.unpack('<BBBQQ', pkt[0:19]))
             extra = pkt[19:]
         else:
@@ -107,7 +107,7 @@ class SdmCommonParser:
         if common_basic.ulfreq in known_bad_freq:
             ulfreq_str = '-'
         else:
-            if self.icd_ver[0] >= 6 and common_basic.rat in (0x12, 0x14):
+            if self.icd_ver >= (6, 0) and common_basic.rat in (0x12, 0x14):
                 ulfreq_str = 'UL UARFCN {}'.format(int(common_basic.ulfreq / 100000))
             else:
                 ulfreq_str = 'UL {:.2f} MHz'.format(common_basic.ulfreq / 1000000)

@@ -73,7 +73,7 @@ class SdmLteParser:
         header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2 reserved1 reserved2 rsrp rsrq num_ncell')
         ncell_header = namedtuple('SdmLtePhyCellInfoNCellMeas', 'type earfcn pci zero1 reserved1 rsrp rsrq reserved2')
 
-        if self.icd_ver[0] >= 6:
+        if self.icd_ver >= (5, 40):
             struct_format = '<IIIHHHHLLB'
         else:
             struct_format = '<IIHHHHHLLB'
@@ -91,7 +91,7 @@ class SdmLteParser:
         stdout = 'LTE PHY Cell Info: EARFCN {}, PCI {}, PLMN {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(cell_info.arfcn, cell_info.pci, cell_info.plmn, cell_info.rsrp / -100.0, cell_info.rsrq / -100.0)
 
         if cell_info.num_ncell > 0:
-            if self.icd_ver[0] >= 6:
+            if self.icd_ver >= (5, 40):
                 ncell_header_format = '<BLHHHLLH'
             else:
                 ncell_header_format = '<BHHHHLLH'
@@ -99,7 +99,7 @@ class SdmLteParser:
             if len(extra) == ncell_len * cell_info.num_ncell:
                 for i in range(cell_info.num_ncell):
                     ncell = ncell_header._make(struct.unpack(ncell_header_format, extra[i*ncell_len:(i+1)*ncell_len]))
-                    if self.icd_ver[0] >= 8 or (self.icd_ver[0] == 7 and self.icd_ver[1] > 2):
+                    if self.icd_ver >= (7, 2):
                         if ncell.type == 0:
                             stdout += 'LTE PHY Cell Info: NCell {} (GSM): ARFCN {}, BSIC {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
                                 ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
@@ -177,7 +177,7 @@ class SdmLteParser:
             "tac", '>H',  2 bytes, pos:20
         '''
         pkt = pkt[15:-1]
-        if self.icd_ver[0] >= 6:
+        if self.icd_ver >= (5, 41):
             struct_format = '<IQIHH'
         else:
             struct_format = '<IQIH'
@@ -188,7 +188,7 @@ class SdmLteParser:
 
         header = namedtuple('SdmLteRrcServingCell', 'cid band_bits plmn tac')
         header_e5123 = namedtuple('SdmLteRrcServingCellE5123', 'cid band_bits plmn tac band_indicator')
-        if self.icd_ver[0] >= 6:
+        if self.icd_ver >= (5, 41):
             cell_info = header_e5123._make(struct.unpack(struct_format, pkt[0:expected_len]))
             tac_real = struct.unpack('<H', struct.pack('>H', cell_info.tac))[0]
             stdout = 'LTE RRC Serving Cell: xTAC/xCID {:x}/{:x}, PLMN {}, Band {}'.format(tac_real, cell_info.cid, cell_info.plmn, cell_info.band_indicator)

@@ -65,7 +65,7 @@ class SdmHspaParser:
         return {'stdout': stdout.rstrip()}
 
     def sdm_hspa_ul1_rf_info(self, pkt):
-        if self.icd_ver[0] >= 5:
+        if self.icd_ver >= (5, 0):
             return self.sdm_hspa_ul1_rf_info_icd_5(pkt)
         else:
             return self.sdm_hspa_ul1_rf_info_icd_4(pkt)
