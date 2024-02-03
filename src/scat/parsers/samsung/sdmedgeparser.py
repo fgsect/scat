@@ -31,6 +31,7 @@ class SdmEdgeParser:
         print("GSM {:#x}: {}".format(num, binascii.hexlify(pkt).decode()))
 
     def sdm_edge_scell_info(self, pkt):
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmEdgeSCellInfo', '''arfcn bsic rxlev nco crh nmo lai rac cid''')
         struct_str = '<HBBBBB 5s BH'
@@ -48,6 +49,9 @@ class SdmEdgeParser:
             scell_info.arfcn, scell_info.bsic, scell_info.rxlev, scell_info.rxlev - 110, plmn_str[0], plmn_str[1], lac, scell_info.rac, cid
         )
 
+        if self.parent:
+            self.parent.gsm_last_arfcn[sdm_pkt_hdr.radio_id] = scell_info.arfcn
+
         return {'stdout': stdout.rstrip()}
 
     def sdm_edge_ncell_info(self, pkt):
@@ -61,8 +65,9 @@ class SdmEdgeParser:
         if num_ncells > 10:
             num_ncells = 10
 
-        stdout += 'EDGE Neighbor Cell Info: Identified: {}, Neighbor: {}\n'.format(
-            num_identified_cells, num_ncells)
+        if (num_identified_cells + num_ncells) > 0:
+            stdout += 'EDGE Neighbor Cell Info: Identified: {}, Neighbor: {}\n'.format(
+                num_identified_cells, num_ncells)
 
         pos = 1
         identified_meas = namedtuple('SdmEdgeNCellIdCell', 'arfcn bsic rxlev c1 c2 c31 c32 unk lai gprs_raclr')
@@ -96,7 +101,8 @@ class SdmEdgeParser:
         if num_3g_cells > 10:
             num_3g_cells = 10
 
-        stdout += 'EDGE 3G Neighbor Cell Info: {} Cells\n'.format(num_3g_cells)
+        if num_3g_cells > 0:
+            stdout += 'EDGE 3G Neighbor Cell Info: {} Cells\n'.format(num_3g_cells)
 
         pos = 1
         n_meas = namedtuple('SdmEdge3GNCellNCell', 'uarfcn psc rssi rscp ecno')
@@ -151,7 +157,7 @@ class SdmEdgeParser:
         scell_meas_info = header_s._make(struct.unpack('<HHHHHHHH', pkt[0:16]))
         extra = pkt[16:]
 
-        if scell_meas_info.arfcn < 1024:
+        if scell_meas_info.arfcn < 1024 and scell_meas_info.rxlev > 0:
             stdout = 'EDGE Measurement Info (Serving Cell): ARFCN {}, BSIC {:#04x}, RxLev {} (RSSI {}), TxLev {}\n'.format(
                 scell_meas_info.arfcn, scell_meas_info.bsic,
                 scell_meas_info.rxlev, scell_meas_info.rxlev - 110, scell_meas_info.txlev)
@@ -160,7 +166,7 @@ class SdmEdgeParser:
 
         for i in range(int(len(extra)/10)):
             ncell_meas_info = header_n._make(struct.unpack('<HHHL', extra[i*10:(i+1)*10]))
-            if ncell_meas_info.arfcn < 1024:
+            if ncell_meas_info.arfcn < 1024 and ncell_meas_info.rxlev > 0:
                 stdout += 'EDGE Measurement Info (Neighbor Cell): ARFCN {}, BSIC {:#04x}, RxLev {} (RSSI {})\n'.format(
                     ncell_meas_info.arfcn, ncell_meas_info.bsic & 0b111111,
                     ncell_meas_info.rxlev, ncell_meas_info.rxlev - 110)

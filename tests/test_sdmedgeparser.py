@@ -62,7 +62,7 @@ EDGE Neighbor Cell Info: Neighbor Cell 9: ARFCN 53, RxLev 22 (RSSI -88)'''}
         payload = binascii.unhexlify('00000000a843c745989153645c99d5420f0000000200000054b6c5455003c84279181642000000002c003d2200080162f2200134989153647d02000000000000420000004838e4')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_3G_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_3g_ncell_info(packet)
-        expected = {'stdout': 'EDGE 3G Neighbor Cell Info: 0 Cells'}
+        expected = {'stdout': ''}
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('0a542a4f01015a3c542a2500016bf0542a4000016bf0542a6700016bf0542a7100016bf0542ac300016bf0542ad900016bf0542aef00016bf0542afa00016bf0542a0501016bf0')

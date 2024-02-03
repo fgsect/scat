@@ -138,13 +138,13 @@ class SdmCommonParser:
             if direction == 2:
                 gsmtap_subtype = chan_map_dl[subtype]
                 if self.parent:
-                    arfcn = self.parent.umts_last_uarfcn_dl[0]
+                    arfcn = self.parent.umts_last_uarfcn_dl[sdm_pkt_hdr.radio_id]
                 else:
                     arfcn = 0
             elif direction == 1:
                 gsmtap_subtype = chan_map_ul[subtype]
                 if self.parent:
-                    arfcn = self.parent.umts_last_uarfcn_ul[0]
+                    arfcn = self.parent.umts_last_uarfcn_ul[sdm_pkt_hdr.radio_id]
                 else:
                     arfcn = 0
             else:
@@ -173,7 +173,10 @@ class SdmCommonParser:
             return {'cp': [gsmtap_hdr + msg]}
         elif type == 0x20: # GSM RR
             # direction: 1: UL, 2: DL
-            arfcn = 0
+            if self.parent:
+                arfcn = self.parent.gsm_last_arfcn[sdm_pkt_hdr.radio_id]
+            else:
+                arfcn = 0
             if direction == 1:
                 arfcn = arfcn | (1 << 14)
 
@@ -213,7 +216,10 @@ class SdmCommonParser:
             return {'cp': [gsmtap_hdr + msg]}
         elif type == 0x21: # GSM RLC/MAC
             # direction: 1: UL, 2: DL
-            arfcn = 0
+            if self.parent:
+                arfcn = self.parent.gsm_last_arfcn[sdm_pkt_hdr.radio_id]
+            else:
+                arfcn = 0
             if direction == 1:
                 arfcn = arfcn | (1 << 14)
 
