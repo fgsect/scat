@@ -10,9 +10,11 @@ import argparse
 import signal
 import faulthandler
 import logging
+import importlib.metadata
 
 current_parser = None
 logger = logging.getLogger('scat')
+__version__ = importlib.metadata.version(__package__ or 'scat')
 
 if os.name != 'nt':
     faulthandler.register(signal.SIGUSR1)
@@ -53,6 +55,7 @@ def scat_main():
     parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
     parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: %s' % parsers_desc, required=True)
     parser.add_argument('-l', '--list-devices', help='List USB devices and exit', nargs=0, action='listusb')
+    parser.add_argument('-V', '--version', action='version', version='SCAT {}'.format(__version__))
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
