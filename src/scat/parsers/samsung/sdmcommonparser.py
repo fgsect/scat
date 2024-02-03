@@ -78,7 +78,10 @@ class SdmCommonParser:
         }
         header = namedtuple('SdmCommonBasicInfo', 'rat status mimo dlfreq ulfreq')
 
-        if self.icd_ver >= (8, 0):
+        if self.icd_ver >= (9, 0):
+            common_basic = header._make(struct.unpack('<BBBLL', pkt[0:11]))
+            extra = pkt[11:]
+        elif self.icd_ver >= (8, 0):
             common_basic = header._make(struct.unpack('<BBBQQ', pkt[0:19]))
             extra = pkt[19:]
         else:

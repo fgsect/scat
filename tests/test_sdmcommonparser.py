@@ -123,6 +123,13 @@ class TestSdmCommonParser(unittest.TestCase):
         expected = {'stdout': 'Common Basic Info: RAT NR NSA, Status 4, MIMO 5, Frequency DL 1815.00 MHz/UL 1720.00 MHz, Extra: 0x00000086, Num cells: 2 (5, 3)'}
         self.assertDictEqual(result, expected)
 
+        self.parser.icd_ver = (9, 0)
+        payload = binascii.unhexlify('170003002ca33040c814330000000000ffffffffffffff')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_BASIC_INFO, payload, timestamp=0x03fd31c2)
+        result = self.parser.sdm_common_basic_info(packet)
+        expected = {'stdout': 'Common Basic Info: RAT LTE, Status 0, MIMO 3, Frequency DL 816.00 MHz/UL 857.00 MHz, Extra: 0x00000000, Num cells: 0'}
+        self.assertDictEqual(result, expected)
+
     def test_sdm_common_signaling(self):
         # UMTS NAS
         payload = binascii.unhexlify('01ff0225000512015abc10a19d3a136b8240e4b9795537c82010d2fea6dac1e87fff23883f052940131d')
