@@ -129,7 +129,7 @@ def parse_sdm_ts(ts_upper_32bits, ts_lower_16bits):
       return datetime.datetime.now()
     
     try:
-        date = datetime.datetime.utcfromtimestamp(ts_s)
+        date = datetime.datetime.fromtimestamp(ts_s, tz=datetime.timezone.utc)
     except OverflowError:
         date = datetime.datetime.now()
     
