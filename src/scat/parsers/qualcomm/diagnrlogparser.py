@@ -197,7 +197,7 @@ class DiagNrLogParser:
         elif pkt_ver == 0x30000:
             # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
             item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
-        elif pkt_ver == 0x30002:
+        elif pkt_ver in (0x30002, 0x30003, ):
             # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
             item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
         else:
@@ -256,7 +256,7 @@ class DiagNrLogParser:
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
 
-        if pkt_ver == 0x01: # Version 1
+        if pkt_ver in (0x01, 0x30000, ): # Version 1 and 196608
             item_struct = namedtuple('QcDiagNrNasMmState', 'mm_state mm_substate plmn_id guti_5gs mm_update_status tac')
             item = item_struct._make(struct.unpack('<BH3s12sb3s', pkt_body[4:26]))
             plmn_id = util.unpack_mcc_mnc(item.plmn_id)
