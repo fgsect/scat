@@ -61,6 +61,12 @@ class DiagNrLogParser:
         elif pkt_ver in (0x11, ): # Version 17
             item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIH', pkt_body[4:31]))
             msg_content = pkt_body[31:]
+        elif pkt_ver in (0x13, ): # Version 19
+            item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIHx', pkt_body[4:32]))
+            msg_content = pkt_body[32:]
+        elif pkt_ver in (0x17, ): # Version 23
+            item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIH4x', pkt_body[4:35]))
+            msg_content = pkt_body[35:]
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR RRC OTA Message packet version {:#x}'.format(pkt_ver))
@@ -99,7 +105,7 @@ class DiagNrLogParser:
                 32: "UE_NR_CAPABILITY",
                 33: "UE_NR_CAPABILITY",
             }
-        elif pkt_ver in (0x11, ):
+        elif pkt_ver in (0x11, 0x13, ):
             rrc_type_map = {
                 1: "BCCH_BCH",
                 2: "BCCH_DL_SCH",
@@ -111,6 +117,21 @@ class DiagNrLogParser:
                 8: "UL_DCCH",
                 9: "RRC_RECONFIGURATION",
                 10: "RRC_RECONFIGURATION_COMPLETE",
+                29: "nr-RadioBearerConfig",
+            }
+        elif pkt_ver in (0x17, ):
+           rrc_type_map = {
+                1: "BCCH_BCH",
+                2: "BCCH_DL_SCH",
+                3: "DL_CCCH",
+                4: "DL_DCCH",
+                5: "MCCH",
+                6: "PCCH",
+                7: "UL_CCCH",
+                8: "UL_CCCH1",
+                9: "UL_DCCH",
+                10: "RRC_RECONFIGURATION",
+                11: "RRC_RECONFIGURATION_COMPLETE",
                 29: "nr-RadioBearerConfig",
             }
 
