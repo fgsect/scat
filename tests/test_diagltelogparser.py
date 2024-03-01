@@ -136,6 +136,15 @@ class TestDiagLteLogParser(unittest.TestCase):
 
     # LTE RRC
     def test_parse_lte_rrc(self):
+        # V30
+        payload = binascii.unhexlify('1e112011400132001914000016ad090000000002000000004c10')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
+        result = self.parser.parse_lte_rrc(pkt_header, payload, None)
+        expected = {'cp': [binascii.unhexlify('03070d001419000000000ad1010006000000000012d53d80000000004c10')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected)
+ 
         # V27
         # payload = binascii.unhexlify('1b10100f9000b10186a00000d50700000000070005') # ...
         # pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0xb0c0, timestamp=0)

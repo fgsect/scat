@@ -1169,7 +1169,11 @@ class DiagLteLogParser:
         item_struct_v25 = namedtuple('QcDiagLteRrcOtaPacketV25', 'rrc_rel_maj rrc_rel_min nr_rrc_rel_maj nr_rrc_rel_min rbid pci earfcn sfn_subfn pdu_num sib_mask len')
         item = None
 
-        if pkt_version >= 25:
+        if pkt_version >= 30:
+            # Version 30
+            item = item_struct_v25._make(struct.unpack('<BBBB BHLH BLH3x', pkt_body[1:24]))
+            msg_content = pkt_body[24:]
+        elif pkt_version >= 25:
             # Version 25, 26, 27
             item = item_struct_v25._make(struct.unpack('<BBBB BHLH BLH', pkt_body[1:21]))
             msg_content = pkt_body[21:]
@@ -1242,8 +1246,8 @@ class DiagLteLogParser:
                 8: util.gsmtap_lte_rrc_types.UL_CCCH,
                 9: util.gsmtap_lte_rrc_types.UL_DCCH
             }
-        elif pkt_version in (0x13, 0x1a, 0x1b):
-            # RRC Packet v19, v26, v27
+        elif pkt_version in (0x13, 0x1a, 0x1b, 0x1e):
+            # RRC Packet v19, v26, v27, v30
             rrc_subtype_map = {
                 1: util.gsmtap_lte_rrc_types.BCCH_BCH,
                 3: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
