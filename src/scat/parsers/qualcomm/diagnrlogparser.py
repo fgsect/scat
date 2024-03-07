@@ -132,7 +132,7 @@ class DiagNrLogParser:
                 9: "UL_DCCH",
                 10: "RRC_RECONFIGURATION",
                 11: "RRC_RECONFIGURATION_COMPLETE",
-                29: "nr-RadioBearerConfig",
+                36: "nr-RadioBearerConfig",
             }
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
