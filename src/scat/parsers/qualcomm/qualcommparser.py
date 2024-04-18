@@ -60,6 +60,7 @@ class QualcommParser:
         self.cacombos = False
         self.combine_stdout = False
         self.check_crc = True
+        self.layers = []
 
         self.name = 'qualcomm'
         self.shortname = 'qc'
@@ -119,6 +120,8 @@ class QualcommParser:
                 self.combine_stdout = params[p]
             elif p == 'disable-crc-check':
                 self.check_crc = not params[p]
+            elif p == 'layer':
+                self.layers = params[p]
 
     def sanitize_radio_id(self, radio_id):
         if radio_id <= 0:
@@ -407,7 +410,7 @@ class QualcommParser:
             pkt_len = struct.unpack('<H', header[2:4])[0]
 
             body_len = pkt_len - 2
-            
+
             if (body_len < 1):
                 continue
 
@@ -445,12 +448,22 @@ class QualcommParser:
             ts = datetime.datetime.now()
 
         if 'cp' in parse_result:
-            for sock_content in parse_result['cp']:
-                self.writer.write_cp(sock_content, radio_id, ts)
+            if 'layer' in parse_result:
+                if parse_result['layer'] in self.layers:
+                    for sock_content in parse_result['cp']:
+                        self.writer.write_cp(sock_content, radio_id, ts)
+            else:
+                for sock_content in parse_result['cp']:
+                    self.writer.write_cp(sock_content, radio_id, ts)
 
         if 'up' in parse_result:
-            for sock_content in parse_result['up']:
-                self.writer.write_up(sock_content, radio_id, ts)
+            if 'layer' in parse_result:
+                if parse_result['layer'] in self.layers:
+                    for sock_content in parse_result['up']:
+                        self.writer.write_up(sock_content, radio_id, ts)
+            else:
+                for sock_content in parse_result['up']:
+                    self.writer.write_up(sock_content, radio_id, ts)
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:

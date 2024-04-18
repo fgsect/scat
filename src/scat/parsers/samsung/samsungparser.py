@@ -63,6 +63,7 @@ class SamsungParser:
         self.icd_ver_min = 0
         self.icd_ver = (0, 0)
         self.combine_stdout = False
+        self.layers = []
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -121,6 +122,8 @@ class SamsungParser:
                 self.start_magic = int(params[p], base=16)
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
+            elif p == 'layer':
+                self.layers = params[p]
 
     def init_diag(self):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))
@@ -346,12 +349,22 @@ class SamsungParser:
             ts = datetime.datetime.now()
 
         if 'cp' in parse_result:
-            for sock_content in parse_result['cp']:
-                self.writer.write_cp(sock_content, radio_id, ts)
+            if 'layer' in parse_result:
+                if parse_result['layer'] in self.layers:
+                    for sock_content in parse_result['cp']:
+                        self.writer.write_cp(sock_content, radio_id, ts)
+            else:
+                for sock_content in parse_result['cp']:
+                    self.writer.write_cp(sock_content, radio_id, ts)
 
         if 'up' in parse_result:
-            for sock_content in parse_result['up']:
-                self.writer.write_up(sock_content, radio_id, ts)
+            if 'layer' in parse_result:
+                if parse_result['layer'] in self.layers:
+                    for sock_content in parse_result['up']:
+                        self.writer.write_up(sock_content, radio_id, ts)
+            else:
+                for sock_content in parse_result['up']:
+                    self.writer.write_up(sock_content, radio_id, ts)
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:

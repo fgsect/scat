@@ -47,19 +47,20 @@ def scat_main():
             c = getattr(scat.parsers, parser_module)()
             parser_dict[c.shortname] = c
 
-    parsers_desc = ', '.join(parser_dict.keys())
+    valid_layers = ['ip', 'nas', 'rrc', 'pdcp', 'rlc', 'mac']
 
     parser = argparse.ArgumentParser(description='Reads diagnostic messages from smartphone baseband.')
     parser.register('action', 'listusb', ListUSBAction)
 
     parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
-    parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: %s' % parsers_desc, required=True)
+    parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: {}'.format(', '.join(parser_dict.keys())), required=True)
     parser.add_argument('-l', '--list-devices', help='List USB devices and exit', nargs=0, action='listusb')
     parser.add_argument('-V', '--version', action='version', version='SCAT {}'.format(__version__))
+    parser.add_argument('-L', '--layer', help='Specify the layers to see as GSMTAP packets (comma separated).\nAvailable layers: {}, Default: "ip,nas,rrc"'.format(', '.join(valid_layers)), type=str, default='ip,nas,rrc')
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
-    input_group.add_argument('-u', '--usb', action='store_true', help='Use USB diagnostics port')
+    input_group.add_argument('-u', '--usb', action='store_true', help='Use USB diagnostic port')
     input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL, SDM, LPD)', nargs='*')
 
     serial_group = parser.add_argument_group('Serial device settings')
@@ -113,8 +114,14 @@ def scat_main():
     IP_OVER_UDP_PORT = args.port_up
 
     if not args.type in parser_dict.keys():
-        print('Error: invalid baseband type specified. Available modules: {}'.format(parsers_desc))
+        print('Error: invalid baseband type {} specified. Available modules: {}'.format(args.type, ', '.join(parser_dict.keys())))
         sys.exit(0)
+
+    layers = args.layer.split(',')
+    for l in layers:
+        if not l in valid_layers:
+            print('Error: invalid layer {} specified. Available layers: {}'.format(l, ', '.join(valid_layers)))
+            sys.exit(0)
 
     # Device preparation
     io_device = None
@@ -170,17 +177,20 @@ def scat_main():
             'msgs': args.msgs,
             'cacombos': args.cacombos,
             'combine-stdout': args.combine_stdout,
-            'disable-crc-check': args.disable_crc_check})
+            'disable-crc-check': args.disable_crc_check,
+            'layer': layers})
     elif args.type == 'sec':
         current_parser.set_parameter({
             'model': args.model,
             'start-magic': args.start_magic,
-            'combine-stdout': args.combine_stdout})
+            'combine-stdout': args.combine_stdout,
+            'layer': layers})
     elif args.type == 'hisi':
         current_parser.set_parameter({
             'msgs': args.msgs,
             'combine-stdout': args.combine_stdout,
-            'disable-crc-check': args.disable_crc_check})
+            'disable-crc-check': args.disable_crc_check,
+            'layer': layers})
 
     # Run process
     if args.serial or args.usb:
