@@ -41,7 +41,7 @@ class DiagUmtsLogParser:
         # msg_hdr[1] == L3 message length
         # Rest of content: L3 message
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.ABIS,
             arfcn = 0,
             device_sec = ts_sec,

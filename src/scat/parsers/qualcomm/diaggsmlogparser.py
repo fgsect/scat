@@ -283,7 +283,7 @@ class DiagGsmLogParser:
         # SACCH DL/Measurement Information: Short PD format
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.UM,
             arfcn = arfcn,
             sub_type = channel_type,
@@ -327,7 +327,7 @@ class DiagGsmLogParser:
         ts_usec = pkt_ts.microsecond
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = payload_type,
             arfcn = arfcn,
             sub_type = channel_type,
@@ -355,7 +355,7 @@ class DiagGsmLogParser:
         ts_usec = pkt_ts.microsecond
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.ABIS,
             arfcn = arfcn,
             device_sec = ts_sec,

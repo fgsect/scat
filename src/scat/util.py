@@ -127,12 +127,12 @@ def parse_sdm_ts(ts_upper_32bits, ts_lower_16bits):
 
     if ts_s == 0:
       return datetime.datetime.now()
-    
+
     try:
         date = datetime.datetime.fromtimestamp(ts_s, tz=datetime.timezone.utc)
     except OverflowError:
         date = datetime.datetime.now()
-    
+
     return date
 
 # Definition copied from libosmocore's include/osmocom/core/gsmtap.h
@@ -269,7 +269,6 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
     device_sec = 0, device_usec = 0):
 
     gsmtap_v2_hdr_def = '!BBBBHBBLBBBB'
-    gsmtap_v3_hdr_def = '!BBBBHBBLBBBBQL'
     gsmtap_hdr = b''
 
     # Sanity check - Wireshark GSMTAP dissector accepts only 14 bits of ARFCN
@@ -296,21 +295,7 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             0                            # Reserved
             )
     elif version == 3:
-        gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
-            3,                           # Version
-            7,                           # Header Length
-            payload_type,                # Type
-            timeslot,                    # GSM Timeslot
-            arfcn,                       # ARFCN
-            signal_dbm,                  # Signal dBm
-            snr_db,                      # SNR dB
-            frame_number,                # Frame Number
-            sub_type,                    # Subtype
-            antenna_nr,                  # Antenna Number
-            sub_slot,                    # Subslot
-            0,                           # Reserved
-            device_sec,
-            device_usec)
+        assert False, "New GSMTAPv3 is WIP"
     else:
         assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
 

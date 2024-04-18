@@ -392,7 +392,7 @@ class DiagWcdmaLogParser:
         ts_usec = pkt_ts.microsecond
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.UMTS_RRC,
             arfcn = arfcn,
             sub_type = subtype,

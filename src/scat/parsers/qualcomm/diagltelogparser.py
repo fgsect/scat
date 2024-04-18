@@ -396,7 +396,7 @@ class DiagLteLogParser:
         ts_usec = pkt_ts.microsecond
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.LTE_RRC,
             arfcn = item.earfcn,
             sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH,
@@ -508,7 +508,7 @@ class DiagLteLogParser:
                     util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
                 gsmtap_hdr = util.create_gsmtap_header(
-                    version = 3,
+                    version = 2,
                     payload_type = util.gsmtap_type.LTE_MAC,
                     arfcn = 0,
                     device_sec = ts_sec,
@@ -568,7 +568,7 @@ class DiagLteLogParser:
             util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.LTE_MAC,
             arfcn = 0,
             device_sec = ts_sec,
@@ -1302,7 +1302,7 @@ class DiagLteLogParser:
         gsmtap_subtype = rrc_subtype_map[item.pdu_num]
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.LTE_RRC,
             arfcn = item.earfcn,
             frame_number = sfn,
@@ -1335,7 +1335,7 @@ class DiagLteLogParser:
         ts_usec = pkt_ts.microsecond
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
+            version = 2,
             payload_type = util.gsmtap_type.LTE_NAS,
             arfcn = 0,
             sub_type = 0 if plain else 1,
