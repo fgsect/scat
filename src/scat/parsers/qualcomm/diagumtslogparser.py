@@ -47,7 +47,7 @@ class DiagUmtsLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + msg_content], 'radio_id': radio_id, 'ts': pkt_ts}
+        return {'layer': 'nas', 'cp': [gsmtap_hdr + msg_content], 'radio_id': radio_id, 'ts': pkt_ts}
 
     def parse_umts_ue_ota_dsds(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])

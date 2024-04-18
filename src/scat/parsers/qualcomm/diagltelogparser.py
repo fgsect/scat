@@ -403,7 +403,7 @@ class DiagLteLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + mib_payload], 'ts': pkt_ts, 'stdout': stdout}
+        return {'layer': 'rrc', 'cp': [gsmtap_hdr + mib_payload], 'ts': pkt_ts, 'stdout': stdout}
 
     # MAC
 
@@ -538,7 +538,7 @@ class DiagLteLogParser:
 
                 packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
 
-                return {'cp': [packet_mac_rar, packet_mac_pdu], 'ts': pkt_ts}
+                return {'layer': 'mac', 'cp': [packet_mac_rar, packet_mac_pdu], 'ts': pkt_ts}
             else:
                 self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
 
@@ -625,7 +625,7 @@ class DiagLteLogParser:
                         'rlc_pdus': subpkt_mac_dl_tb.rlc_pdus, 'padding': subpkt_mac_dl_tb.padding},
                         mac_hdr))
 
-        return {'cp': mac_pkts, 'ts': pkt_ts}
+        return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
 
     def parse_lte_mac_ul_block(self, pkt_header, pkt_body, args):
         pkt_version = pkt_body[0]
@@ -678,7 +678,7 @@ class DiagLteLogParser:
                         'padding': subpkt_mac_ul_tb.padding},
                         mac_hdr))
 
-        return {'cp': mac_pkts, 'ts': pkt_ts}
+        return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
 
     # PDCP
 
@@ -768,7 +768,7 @@ class DiagLteLogParser:
                             self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL Cipher Data Subpacket version %s' % subpkt_version)
                         pos += subpkt_size
                         continue
-            return {'up': pdcp_pkts, 'ts': pkt_ts}
+            return {'layer': 'pdcp', 'up': pdcp_pkts, 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL Cipher Data packet version {:02x}'.format(pkt_version))
@@ -859,7 +859,7 @@ class DiagLteLogParser:
                         pos += subpkt_size
                         continue
 
-            return {'up': pdcp_pkts, 'ts': pkt_ts}
+            return {'layer': 'pdcp', 'up': pdcp_pkts, 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL Cipher Data packet version 0x{:02x}'.format(pkt_version))
@@ -974,7 +974,7 @@ class DiagLteLogParser:
                         pos += subpkt_size
                         continue
 
-            return {'up': pdcp_pkts, 'ts': pkt_ts}
+            return {'layer': 'pdcp', 'up': pdcp_pkts, 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL SRB packet version 0x{:02x}'.format(pkt_version))
@@ -1078,7 +1078,7 @@ class DiagLteLogParser:
                         pos += subpkt_size
                         continue
 
-            return {'up': pdcp_pkts, 'ts': pkt_ts}
+            return {'layer': 'pdcp', 'up': pdcp_pkts, 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP UL SRB packet version 0x{:02x}'.format(pkt_version))
@@ -1311,7 +1311,7 @@ class DiagLteLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
+        return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
 
     def parse_lte_cacombos(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -1342,4 +1342,4 @@ class DiagLteLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
+        return {'layer': 'nas', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}

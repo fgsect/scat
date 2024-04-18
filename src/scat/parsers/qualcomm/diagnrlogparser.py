@@ -147,7 +147,7 @@ class DiagNrLogParser:
         stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}, Type: {}\n".format(item.nrarfcn, item.pci, type_str)
         stdout += "NR RRC OTA Packet: Body: {}".format(binascii.hexlify(msg_content).decode())
 
-        return {'stdout': stdout, 'ts': pkt_ts}
+        return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_mib_info(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -250,7 +250,7 @@ class DiagNrLogParser:
                 self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
 
-        return {'stdout': stdout, 'ts': pkt_ts}
+        return {'layer': 'nas', 'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_mm_state(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)

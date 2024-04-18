@@ -290,7 +290,7 @@ class DiagGsmLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
+        return {'layer': 'rrc', 'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
 
     def parse_gsm_dsds_rr(self, pkt_header, pkt_body, args):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
@@ -334,7 +334,7 @@ class DiagGsmLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
+        return {'layer': 'mac', 'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
 
     def parse_gprs_ota(self, pkt_header, pkt_body, args):
         radio_id = 0
@@ -361,4 +361,4 @@ class DiagGsmLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
+        return {'layer': 'rrc', 'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}

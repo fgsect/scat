@@ -64,7 +64,7 @@ class HisiLogParser:
                 arfcn = self.parent.lte_last_earfcn_dl[0] if self.parent else 0,
                 sub_type = rrc_subtype_map[rrc_chan_type])
 
-            return {'cp': [gsmtap_hdr + pkt_content]}
+            return {'layer': 'rrc', 'cp': [gsmtap_hdr + pkt_content]}
 
         elif ota_hdr.chan_type == 0xad or ota_hdr[0] == 0xae:
             # NAS-EPS EMM, ESM
@@ -76,7 +76,7 @@ class HisiLogParser:
                 arfcn = 0,
                 sub_type = 0)
 
-            return {'cp': [gsmtap_hdr + pkt_content]}
+            return {'layer': 'nas', 'cp': [gsmtap_hdr + pkt_content]}
 
         else:
             if self.parent:

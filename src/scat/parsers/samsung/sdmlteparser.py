@@ -258,7 +258,7 @@ class SdmLteParser:
             payload_type = util.gsmtap_type.LTE_RRC,
             arfcn = arfcn,
             sub_type = subtype)
-        return {'cp': [gsmtap_hdr + msg]}
+        return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg]}
 
     def sdm_lte_rrc_ota_packet(self, pkt):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
@@ -387,7 +387,7 @@ class SdmLteParser:
             version = 2,
             payload_type = util.gsmtap_type.LTE_NAS,
             arfcn = 0)
-        return {'cp': [gsmtap_hdr + nas_msg]}
+        return {'layer': 'nas', 'cp': [gsmtap_hdr + nas_msg]}
 
     def sdm_lte_nas_plmn_selection(self, pkt):
         # All zeroes?

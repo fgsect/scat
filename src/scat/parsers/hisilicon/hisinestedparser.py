@@ -68,7 +68,7 @@ class HisiNestedParser:
                 arfcn = 0,
                 sub_type = channel_type_map[wcdma_rrc_header.type])
 
-            return {'cp': [gsmtap_hdr + wcdma_rrc_content]}
+            return {'layer': 'rrc', 'cp': [gsmtap_hdr + wcdma_rrc_content]}
         elif pkt_data[0] == 0x03:
             # Abis/L3
             header = namedtuple('HisiL3OtaAbis', 'unk1 unk2 seq unk3 unk4 unk5 len1 len2')
@@ -85,7 +85,7 @@ class HisiNestedParser:
                 arfcn = 0,
                 sub_type = 0)
 
-            return {'cp': [gsmtap_hdr + abis_data[:abis_header.len2]]}
+            return {'layer': 'nas', 'cp': [gsmtap_hdr + abis_data[:abis_header.len2]]}
 
         elif pkt_data[0] == 0x25:
             # GSM
@@ -101,7 +101,7 @@ class HisiNestedParser:
                     payload_type = util.gsmtap_type.ABIS,
                     arfcn = 0)
 
-                return {'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
+                return {'layer': 'rrc', 'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
             else:
                 # 3GPP TS 24.007, Section 11.3 Non standard L3 messages
                 if (ota_data[0] & 0b11 == 0b01) and (ota_data[1] == 0b0110):
@@ -128,7 +128,7 @@ class HisiNestedParser:
                         if self.parent:
                             self.parent.logger.log(logging.WARNING, 'Invalid GSM RR message')
                         return None
-                return {'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
+                return {'layer': 'rrc', 'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown L3 OTA message type {:#04x}'.format(pkt_data[0]))

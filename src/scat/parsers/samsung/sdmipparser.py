@@ -33,7 +33,7 @@ class SdmIpParser:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'IP length mismatch, expected 0x{:04x}, got 0x{:04x}'.format(header.length, len(payload)))
         else:
-            return {'up': [payload]}
+            return {'layer': 'ip', 'up': [payload]}
 
     def sdm_0x0710(self, pkt):
         pkt = pkt[15:-1]

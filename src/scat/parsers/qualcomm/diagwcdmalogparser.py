@@ -133,7 +133,7 @@ class DiagWcdmaLogParser:
 
             packets.append(b'umts-rlc' + ws_hdr + rlc_pdu)
 
-        return {'up': packets, 'ts': pkt_ts}
+        return {'layer': 'rlc', 'up': packets, 'ts': pkt_ts}
 
     def parse_wcdma_rlc_ul_am_signaling_pdu(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -155,7 +155,7 @@ class DiagWcdmaLogParser:
             util.wcdma_rlc_direction_types.DIRECTION_DOWNLINK,
             util.wcdma_rlc_tags.RLC_PAYLOAD_TAG)
 
-        return {'up': [b'umts-rlc' + ws_hdr + rlc_pdu], 'ts': pkt_ts}
+        return {'layer': 'rlc', 'up': [b'umts-rlc' + ws_hdr + rlc_pdu], 'ts': pkt_ts}
 
     def parse_wcdma_rlc_ul_am_control_pdu_log(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -173,7 +173,7 @@ class DiagWcdmaLogParser:
             util.wcdma_rlc_direction_types.DIRECTION_UPLINK,
             util.wcdma_rlc_tags.RLC_PAYLOAD_TAG)
 
-        return {'up': [b'umts-rlc' + ws_hdr + rlc_pdu], 'ts': pkt_ts}
+        return {'layer': 'rlc', 'up': [b'umts-rlc' + ws_hdr + rlc_pdu], 'ts': pkt_ts}
 
     def parse_wcdma_rlc_dl_pdu_cipher_packet(self, pkt_header, pkt_body, args):
         num_packets = struct.unpack('<H', pkt_body[0:2])[0]
@@ -399,4 +399,4 @@ class DiagWcdmaLogParser:
             device_sec = ts_sec,
             device_usec = ts_usec)
 
-        return {'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
+        return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}

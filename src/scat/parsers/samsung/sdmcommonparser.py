@@ -158,7 +158,7 @@ class SdmCommonParser:
                 arfcn = arfcn,
                 sub_type = gsmtap_subtype)
 
-            return {'cp': [gsmtap_hdr + msg]}
+            return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x01: # UMTS NAS
             # direction: 1: UL, 2: DL
             arfcn = 0
@@ -170,7 +170,7 @@ class SdmCommonParser:
                 payload_type = util.gsmtap_type.ABIS,
                 arfcn = arfcn)
 
-            return {'cp': [gsmtap_hdr + msg]}
+            return {'layer': 'nas', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x20: # GSM RR
             # direction: 1: UL, 2: DL
             if self.parent:
@@ -213,7 +213,7 @@ class SdmCommonParser:
                             self.parent.logger.log(logging.WARNING, 'Invalid GSM RR message')
                         return None
 
-            return {'cp': [gsmtap_hdr + msg]}
+            return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x21: # GSM RLC/MAC
             # direction: 1: UL, 2: DL
             if self.parent:
@@ -229,7 +229,7 @@ class SdmCommonParser:
                 arfcn = arfcn,
                 sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
 
-            return {'cp': [gsmtap_hdr + msg]}
+            return {'layer': 'mac', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x40: # SIP
             # subtype: 0x40: request, 0x41: response
             # direction: 1: UL, 2: DL
@@ -251,7 +251,7 @@ class SdmCommonParser:
                 )
             self.ip_id += 1
 
-            return {'up': [ip_hdr+udp_hdr+sip_body]}
+            return {'layer': 'ip', 'up': [ip_hdr+udp_hdr+sip_body]}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(type))
