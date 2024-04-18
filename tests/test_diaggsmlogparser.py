@@ -89,7 +89,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
         payload = binascii.unhexlify('811b1749061b761762f2200141c8010a156544b800004e072b2b')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x512f, timestamp=0)
         result = self.parser.parse_gsm_rr(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('030701000000000000000000010000000000000012d53d800000000049061b761762f2200141c8010a156544b800004e072b2b')],
+        expected = {'cp': [binascii.unhexlify('0204010000000000000000000100000049061b761762f2200141c8010a156544b800004e072b2b')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
             'radio_id': 0}
         self.assertDictEqual(result, expected)
@@ -97,7 +97,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
         payload = binascii.unhexlify('833f1731063f100f707c7f502601010f4f3112050480e02b2b2b')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x512f, timestamp=0)
         result = self.parser.parse_gsm_rr(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('030701000000000000000000020000000000000012d53d800000000031063f100f707c7f502601010f4f3112050480e02b2b2b')],
+        expected = {'cp': [binascii.unhexlify('0204010000000000000000000200000031063f100f707c7f502601010f4f3112050480e02b2b2b')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
             'radio_id': 0}
         self.assertDictEqual(result, expected)
@@ -105,7 +105,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
         payload = binascii.unhexlify('8321171506210001f02b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x512f, timestamp=0)
         result = self.parser.parse_gsm_rr(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('030701000000000000000000020000000000000012d53d80000000001506210001f02b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b')],
+        expected = {'cp': [binascii.unhexlify('020401000000000000000000020000001506210001f02b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b2b')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
             'radio_id': 0}
         self.assertDictEqual(result, expected)
@@ -113,7 +113,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
         payload = binascii.unhexlify('81071705060764a0312aa5d047fbfe01ff04332b2b2b2b2b2b2b')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x512f, timestamp=0)
         result = self.parser.parse_gsm_rr(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('030701000000000000000000010000000000000012d53d800000000005060764a0312aa5d047fbfe01ff04332b2b2b2b2b2b2b')],
+        expected = {'cp': [binascii.unhexlify('0204010000000000000000000100000005060764a0312aa5d047fbfe01ff04332b2b2b2b2b2b2b')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
             'radio_id': 0}
         self.assertDictEqual(result, expected)
