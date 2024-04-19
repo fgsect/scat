@@ -444,6 +444,7 @@ class DiagLteLogParser:
 
     def parse_lte_mac_subpkt_v1(self, pkt_header, pkt_body, args):
         num_subpacket = pkt_body[1]
+        mac_pkts = []
 
         pos = 4
         for i in range(num_subpacket):
@@ -453,9 +454,9 @@ class DiagLteLogParser:
             pos += subpkt_mac.size
 
             if subpkt_mac.id == 0x03:
-                return None
+                continue
             elif subpkt_mac.id == 0x05:
-                return None
+                continue
             elif subpkt_mac.id == 0x06: # RACH Attempt
                 subpkt_mac_rach_attempt_struct = namedtuple('QcDiagLteMacSubpktRachAttempt', 'num_attempt rach_result contention msg_bitmask')
                 subpkt_mac_rach_attempt_struct_v3 = namedtuple('QcDiagLteMacSubpktRachAttemptV3', 'subid cellid num_attempt rach_result contention msg_bitmask')
@@ -532,6 +533,7 @@ class DiagLteLogParser:
                     rach_msg2.tc_rnti)
 
                 packet_mac_rar = gsmtap_hdr + mac_header_rar + rar_body
+                mac_pkts.append(packet_mac_rar)
 
                 # MAC PDU in Msg3
                 mac_header_msg = struct.pack('!BBBBHBBBB',
@@ -546,49 +548,9 @@ class DiagLteLogParser:
                     util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
                 packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
+                mac_pkts.append(packet_mac_pdu)
 
-                return {'layer': 'mac', 'cp': [packet_mac_rar, packet_mac_pdu], 'ts': pkt_ts}
-            else:
-                self.parent.logger.log(logging.WARNING, 'Unexpected LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
-                return None
-
-    def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body, args):
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_version = pkt_body[0]
-
-        if pkt_version == 0x01:
-            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
-        else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
-            return None
-
-    def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
-        pkt_version = pkt_body[0]
-        num_subpacket = pkt_body[1]
-
-        if pkt_version == 0x01:
-            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
-        else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
-            return None
-
-    def parse_lte_mac_dl_block(self, pkt_header, pkt_body, args):
-        pkt_version = pkt_body[0]
-        num_subpacket = pkt_body[1]
-        mac_pkts = []
-
-        if pkt_version != 0x01:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
-            return None
-
-        pos = 4
-        for i in range(num_subpacket):
-            subpkt_mac_struct = namedtuple('QcDiagLteMacSubpkt', 'id version size')
-            subpkt_mac = subpkt_mac_struct._make(struct.unpack('<BBH', pkt_body[pos:pos+4]))
-            subpkt_body = pkt_body[pos+4:pos+4+subpkt_mac.size]
-            pos += subpkt_mac.size
-
-            if subpkt_mac.id == 0x07: # DL Transport Block
+            elif subpkt_mac.id == 0x07: # DL Transport Block
                 n_samples = subpkt_body[0]
                 subpkt_mac_dl_tb_struct = namedtuple('QcDiagLteMacSubpktDlTransportBlock', 'sfn_subfn rnti_type harq_id pmch_id dl_tbs rlc_pdus padding header_len')
                 subpkt_mac_dl_tb_struct_v4 = namedtuple('QcDiagLteMacSubpktDlTransportBlockV4', 'subid cellid sfn_subfn rnti_type harq_id pmch_id dl_tbs rlc_pdus padding header_len')
@@ -620,26 +582,7 @@ class DiagLteLogParser:
                         'pmch_id': subpkt_mac_dl_tb.pmch_id, 'dl_tbs': subpkt_mac_dl_tb.dl_tbs,
                         'rlc_pdus': subpkt_mac_dl_tb.rlc_pdus, 'padding': subpkt_mac_dl_tb.padding},
                         mac_hdr))
-
-        return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
-
-    def parse_lte_mac_ul_block(self, pkt_header, pkt_body, args):
-        pkt_version = pkt_body[0]
-        num_subpacket = pkt_body[1]
-        mac_pkts = []
-
-        if pkt_version != 0x01:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
-            return None
-
-        pos = 4
-        for i in range(num_subpacket):
-            subpkt_mac_struct = namedtuple('QcDiagLteMacSubpkt', 'id version size')
-            subpkt_mac = subpkt_mac_struct._make(struct.unpack('<BBH', pkt_body[pos:pos+4]))
-            subpkt_body = pkt_body[pos+4:pos+4+subpkt_mac.size]
-            pos += subpkt_mac.size
-
-            if subpkt_mac.id == 0x08: # UL Transport Block
+            elif subpkt_mac.id == 0x08: # UL Transport Block
                 n_samples = subpkt_body[0]
                 subpkt_mac_ul_tb_struct = namedtuple('QcDiagLteMacSubpktUlTransportBlock', 'sfn_subfn rnti_type harq_id grant rlc_pdus padding bsr_event bsr_trig header_len')
                 subpkt_mac_ul_tb_struct_v2 = namedtuple('QcDiagLteMacSubpktUlTransportBlockV4', 'subid cellid harq_id rnti_type sfn_subfn grant rlc_pdus padding bsr_event bsr_trig header_len')
@@ -673,8 +616,49 @@ class DiagLteLogParser:
                         'grant': subpkt_mac_ul_tb.grant, 'rlc_pdus': subpkt_mac_ul_tb.rlc_pdus,
                         'padding': subpkt_mac_ul_tb.padding},
                         mac_hdr))
+            else:
+                self.parent.logger.log(logging.WARNING, 'Unhandled LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
+                continue
 
-        return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
+        if len(mac_pkts) > 0:
+            return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
+
+    def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_version = pkt_body[0]
+
+        if pkt_version == 0x01:
+            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
+            return None
+
+    def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
+        pkt_version = pkt_body[0]
+
+        if pkt_version == 0x01:
+            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
+            return None
+
+    def parse_lte_mac_dl_block(self, pkt_header, pkt_body, args):
+        pkt_version = pkt_body[0]
+
+        if pkt_version == 0x01:
+            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
+            return None
+
+    def parse_lte_mac_ul_block(self, pkt_header, pkt_body, args):
+        pkt_version = pkt_body[0]
+
+        if pkt_version == 0x01:
+            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL transport block packet version 0x{:02x}'.format(pkt_version))
+            return None
 
     # PDCP
 
