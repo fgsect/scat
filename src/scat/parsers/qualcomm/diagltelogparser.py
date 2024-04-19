@@ -407,14 +407,43 @@ class DiagLteLogParser:
 
     # MAC
 
-    def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body, args):
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_version = pkt_body[0]
-        num_subpacket = pkt_body[1]
+    def create_lte_mac_gsmtap_packet(self, pkt_ts, is_downlink, header, body):
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
 
-        if pkt_version != 0x01:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
-            return None
+        # RNTI Type: {0: C-RNTI, 2: P-RNTI, 3: RA-RNTI, 4: T-C-RNTI, 5: SI-RNTI}
+        rnti_type_map = {
+            0: util.mac_lte_rnti_types.C_RNTI,
+            2: util.mac_lte_rnti_types.P_RNTI,
+            3: util.mac_lte_rnti_types.RA_RNTI,
+            4: util.mac_lte_rnti_types.C_RNTI,
+            5: util.mac_lte_rnti_types.SI_RNTI}
+        ws_rnti_type = 0
+        if header['rnti_type'] in rnti_type_map:
+            ws_rnti_type = rnti_type_map[header['rnti_type']]
+
+        # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
+        # Additional headers required for each message types
+        mac_hdr = struct.pack('!BBBBHB',
+            util.mac_lte_radio_types.FDD_RADIO,
+            util.mac_lte_direction_types.DIRECTION_DOWNLINK if is_downlink else util.mac_lte_direction_types.DIRECTION_UPLINK,
+            ws_rnti_type,
+            util.mac_lte_tags.MAC_LTE_FRAME_SUBFRAME_TAG,
+            (header['sfn'] << 4) | header['subfn'],
+            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.LTE_MAC,
+            arfcn = 0,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
+
+        return gsmtap_hdr + mac_hdr + body
+
+
+    def parse_lte_mac_subpkt_v1(self, pkt_header, pkt_body, args):
+        num_subpacket = pkt_body[1]
 
         pos = 4
         for i in range(num_subpacket):
@@ -424,30 +453,10 @@ class DiagLteLogParser:
             pos += subpkt_mac.size
 
             if subpkt_mac.id == 0x03:
-                pass
+                return None
             elif subpkt_mac.id == 0x05:
-                pass
-            else:
-                self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH trigger Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
-
-        return None
-
-    def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
-        pkt_version = pkt_body[0]
-        num_subpacket = pkt_body[1]
-
-        if pkt_version != 0x01:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
-            return None
-
-        pos = 4
-        for i in range(num_subpacket):
-            subpkt_mac_struct = namedtuple('QcDiagLteMacSubpkt', 'id version size')
-            subpkt_mac = subpkt_mac_struct._make(struct.unpack('<BBH', pkt_body[pos:pos+4]))
-            subpkt_body = pkt_body[pos+4:pos+4+subpkt_mac.size]
-            pos += subpkt_mac.size
-
-            if subpkt_mac.id == 0x06: # RACH Attempt
+                return None
+            elif subpkt_mac.id == 0x06: # RACH Attempt
                 subpkt_mac_rach_attempt_struct = namedtuple('QcDiagLteMacSubpktRachAttempt', 'num_attempt rach_result contention msg_bitmask')
                 subpkt_mac_rach_attempt_struct_v3 = namedtuple('QcDiagLteMacSubpktRachAttemptV3', 'subid cellid num_attempt rach_result contention msg_bitmask')
                 subpkt_mac_rach_attempt = None
@@ -540,41 +549,28 @@ class DiagLteLogParser:
 
                 return {'layer': 'mac', 'cp': [packet_mac_rar, packet_mac_pdu], 'ts': pkt_ts}
             else:
-                self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
+                self.parent.logger.log(logging.WARNING, 'Unexpected LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
+                return None
 
-    def create_lte_mac_gsmtap_packet(self, pkt_ts, is_downlink, header, body):
-        ts_sec = calendar.timegm(pkt_ts.timetuple())
-        ts_usec = pkt_ts.microsecond
+    def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_version = pkt_body[0]
 
-        # RNTI Type: {0: C-RNTI, 2: P-RNTI, 3: RA-RNTI, 4: T-C-RNTI, 5: SI-RNTI}
-        rnti_type_map = {
-            0: util.mac_lte_rnti_types.C_RNTI,
-            2: util.mac_lte_rnti_types.P_RNTI,
-            3: util.mac_lte_rnti_types.RA_RNTI,
-            4: util.mac_lte_rnti_types.C_RNTI,
-            5: util.mac_lte_rnti_types.SI_RNTI}
-        ws_rnti_type = 0
-        if header['rnti_type'] in rnti_type_map:
-            ws_rnti_type = rnti_type_map[header['rnti_type']]
+        if pkt_version == 0x01:
+            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
+            return None
 
-        # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
-        # Additional headers required for each message types
-        mac_hdr = struct.pack('!BBBBHB',
-            util.mac_lte_radio_types.FDD_RADIO,
-            util.mac_lte_direction_types.DIRECTION_DOWNLINK if is_downlink else util.mac_lte_direction_types.DIRECTION_UPLINK,
-            ws_rnti_type,
-            util.mac_lte_tags.MAC_LTE_FRAME_SUBFRAME_TAG,
-            (header['sfn'] << 4) | header['subfn'],
-            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+    def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
+        pkt_version = pkt_body[0]
+        num_subpacket = pkt_body[1]
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.LTE_MAC,
-            arfcn = 0,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
-
-        return gsmtap_hdr + mac_hdr + body
+        if pkt_version == 0x01:
+            return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        else:
+            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
+            return None
 
     def parse_lte_mac_dl_block(self, pkt_header, pkt_body, args):
         pkt_version = pkt_body[0]
