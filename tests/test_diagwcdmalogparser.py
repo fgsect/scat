@@ -62,6 +62,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x412f, timestamp=0)
         result = self.parser.parse_wcdma_rrc(pkt_header, payload, None)
         expected = {'cp': [binascii.unhexlify('02040c0029a700000000000008000000a143f686e52a22282f36928cc1852026d2519830afacda4a330614909b4944')],
+            'layer': 'rrc',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -69,6 +70,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x412f, timestamp=0)
         result = self.parser.parse_wcdma_rrc(pkt_header, payload, None)
         expected = {'cp': [binascii.unhexlify('02040c0029a70000000000003600000065010240c80ea200618385110030071ba8801819c954400c1a2d7220049e22178885e22178885e2210')],
+            'layer': 'rrc',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
