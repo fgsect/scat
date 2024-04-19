@@ -191,7 +191,7 @@ class diag_log_code_lte(IntEnum):
     LOG_LTE_RRC_OTA_MESSAGE         = 0xc0 # 0xB0C0 LTE RRC OTA Packet
     LOG_LTE_RRC_MIB_MESSAGE         = 0xc1 # 0xB0C1 LTE RRC MIB Message Log Packet
     LOG_LTE_RRC_SERVING_CELL_INFO   = 0xc2 # 0xB0C2 LTE RRC Serving Cell Info Log Pkt
-    LOG_LTE_RRC_SUPPORTED_CA_COMBOS = 0xcD # 0xB0CD LTE RRC Supported CA Combos
+    LOG_LTE_RRC_SUPPORTED_CA_COMBOS = 0xcd # 0xB0CD LTE RRC Supported CA Combos
 
     # NAS
     LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE   = 0xe0 # 0xB0E0 LTE NAS EMM Security Protected Incoming Msg
@@ -255,33 +255,12 @@ def create_log_config_set_mask(equip_id, last_item, *bits):
 def log_mask_empty_1x(num_max_items=0x0fff):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, num_max_items)
 
-def log_mask_scat_1x(num_max_items=0x0847):
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, num_max_items,
+def log_mask_scat_1x(num_max_items=0x0847, layers=[]):
+    log_items = [
         diag_log_code_1x.LOG_UIM_DATA_C,
         diag_log_code_1x.LOG_INTERNAL_CORE_DUMP_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_C,
         diag_log_code_1x.LOG_GENERIC_SIM_TOOLKIT_TASK_C,
         diag_log_code_1x.LOG_UIM_DS_DATA_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_FULL_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C,
-        diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C,
         0x648, # 0x1648   Indoor Info
         0x649, # 0x1649   Indoor RTS CTS Scan
         0x650, # 0x1650   Indoor Active Scan
@@ -289,25 +268,67 @@ def log_mask_scat_1x(num_max_items=0x0847):
         0x652, # 0x1652   Unrecognized
         0x653, # 0x1653   Unrecognized
         0x654, # 0x1654   Unrecognized
-        diag_log_code_1x.LOG_IMS_SIP_MESSAGE,
-        )
+    ]
+
+    if 'ip' in layers:
+        log_items += [
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_FULL_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C,
+            diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C,
+            diag_log_code_1x.LOG_IMS_SIP_MESSAGE,
+        ]
+
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, num_max_items, *log_items)
 
 def log_mask_empty_wcdma(num_max_items=0x0ff7):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, num_max_items)
 
-def log_mask_scat_wcdma(num_max_items=0x0ff7):
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, num_max_items,
+def log_mask_scat_wcdma(num_max_items=0x0ff7, layers=[]):
+    log_items = [
         diag_log_code_wcdma.LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C,
         diag_log_code_wcdma.LOG_WCDMA_CELL_ID_C,
-        diag_log_code_wcdma.LOG_WCDMA_SIB_C,
-        diag_log_code_wcdma.LOG_WCDMA_SIGNALING_MSG_C
-        )
+    ]
+
+    if 'rlc' in layers:
+        log_items += [
+            diag_log_code_wcdma.LOG_WCDMA_RLC_DL_AM_SIGNALING_PDU_C,
+            diag_log_code_wcdma.LOG_WCDMA_RLC_UL_AM_SIGNALING_PDU_C,
+            diag_log_code_wcdma.LOG_WCDMA_RLC_UL_AM_CONTROL_PDU_LOG_C,
+            diag_log_code_wcdma.LOG_WCDMA_RLC_DL_AM_CONTROL_PDU_LOG_C,
+            diag_log_code_wcdma.LOG_WCDMA_RLC_DL_PDU_CIPHER_PACKET_C,
+            diag_log_code_wcdma.LOG_WCDMA_RLC_UL_PDU_CIPHER_PACKET_C,
+        ]
+    if 'rrc' in layers:
+        log_items += [
+            diag_log_code_wcdma.LOG_WCDMA_SIB_C,
+            diag_log_code_wcdma.LOG_WCDMA_SIGNALING_MSG_C,
+        ]
+
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_WCDMA, num_max_items, *log_items)
 
 def log_mask_empty_gsm(num_max_items=0x0ff7):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, num_max_items)
 
-def log_mask_scat_gsm(num_max_items=0x0ff7):
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, num_max_items,
+def log_mask_scat_gsm(num_max_items=0x0ff7, layers=[]):
+    log_items = [
         diag_log_code_gsm.LOG_GSM_L1_FCCH_ACQUISITION_C,
         diag_log_code_gsm.LOG_GSM_L1_SCH_ACQUISITION_C,
         diag_log_code_gsm.LOG_GSM_L1_NEW_BURST_METRICS_C,
@@ -315,34 +336,51 @@ def log_mask_scat_gsm(num_max_items=0x0ff7):
         diag_log_code_gsm.LOG_GSM_L1_SCELL_BA_LIST_C,
         diag_log_code_gsm.LOG_GSM_L1_SCELL_AUX_MEASUREMENTS_C,
         diag_log_code_gsm.LOG_GSM_L1_NCELL_AUX_MEASUREMENTS_C,
-        diag_log_code_gsm.LOG_GSM_RR_SIGNALING_MESSAGE_C,
         diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C,
-        diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_1_C,
-        diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_2_C,
-        diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_3_C,
-        diag_log_code_gsm.LOG_GPRS_MAC_SIGNALING_MESSACE_C,
-        diag_log_code_gsm.LOG_GPRS_SM_GMM_OTA_SIGNALING_MESSAGE_C,
         diag_log_code_gsm.LOG_GSM_DSDS_L1_FCCH_ACQUISITION_C,
         diag_log_code_gsm.LOG_GSM_DSDS_L1_SCH_ACQUISITION_C,
         diag_log_code_gsm.LOG_GSM_DSDS_L1_BURST_METRICS_C,
         diag_log_code_gsm.LOG_GSM_DSDS_L1_SCELL_BA_LIST_C,
         diag_log_code_gsm.LOG_GSM_DSDS_L1_SCELL_AUX_MEASUREMENTS_C,
         diag_log_code_gsm.LOG_GSM_DSDS_L1_NCELL_AUX_MEASUREMENTS_C,
-        diag_log_code_gsm.LOG_GSM_DSDS_RR_SIGNALING_MESSAGE_C,
         diag_log_code_gsm.LOG_GSM_DSDS_RR_CELL_INFORMATION_C,
-        diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_1_C,
-        diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_2_C,
-        diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_3_C,
-    )
+    ]
+
+    if 'mac' in layers:
+        log_items += [
+            diag_log_code_gsm.LOG_GPRS_MAC_SIGNALING_MESSACE_C,
+        ]
+    if 'rrc' in layers:
+        log_items += [
+            diag_log_code_gsm.LOG_GSM_RR_SIGNALING_MESSAGE_C,
+            diag_log_code_gsm.LOG_GSM_DSDS_RR_SIGNALING_MESSAGE_C,
+            diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_1_C,
+            diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_2_C,
+            diag_log_code_gsm.LOG_GPRS_RR_PACKET_SI_3_C,
+            diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_1_C,
+            diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_2_C,
+            diag_log_code_gsm.LOG_GPRS_DSDS_RR_PACKET_SI_3_C,
+        ]
+    if 'nas' in layers:
+        log_items += [
+            diag_log_code_gsm.LOG_GPRS_SM_GMM_OTA_SIGNALING_MESSAGE_C,
+        ]
+
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_GSM, num_max_items, *log_items)
 
 def log_mask_empty_umts(num_max_items=0x0b5e):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, num_max_items)
 
-def log_mask_scat_umts(num_max_items=0x0b5e):
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, num_max_items,
-        diag_log_code_umts.LOG_UMTS_NAS_OTA_MESSAGE_LOG_PACKET_C,
-        diag_log_code_umts.LOG_UMTS_DSDS_NAS_SIGNALING_MESSAGE,
-    )
+def log_mask_scat_umts(num_max_items=0x0b5e, layers=[]):
+    log_items = []
+
+    if 'nas' in layers:
+        log_items += [
+            diag_log_code_umts.LOG_UMTS_NAS_OTA_MESSAGE_LOG_PACKET_C,
+            diag_log_code_umts.LOG_UMTS_DSDS_NAS_SIGNALING_MESSAGE,
+        ]
+
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_UMTS, num_max_items, *log_items)
 
 def log_mask_empty_dtv(num_max_items=0x0392):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_DTV, num_max_items)
@@ -350,42 +388,68 @@ def log_mask_empty_dtv(num_max_items=0x0392):
 def log_mask_empty_lte(num_max_items=0x0209):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items)
 
-def log_mask_scat_lte(num_max_items=0x09ff):
+def log_mask_scat_lte(num_max_items=0x09ff, layers=[]):
     items_lte = [
-        diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
         diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS,
+        diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_INFO,
-        diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE,
         diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE,
         diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO,
         diag_log_code_lte.LOG_LTE_RRC_SUPPORTED_CA_COMBOS,
-        diag_log_code_lte.LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_ESM_SEC_OTA_OUTGOING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_ESM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_ESM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_INCOMING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE,
     ]
 
     items_nr = [
-        diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
         diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
     ]
+
+    if 'mac' in layers:
+        items_lte += [
+            diag_log_code_lte.LOG_LTE_MAC_RACH_TRIGGER,
+            diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE,
+            diag_log_code_lte.LOG_LTE_MAC_DL_TRANSPORT_BLOCK,
+            diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK,
+        ]
+    if 'pdcp' in layers:
+        items_lte += [
+            diag_log_code_lte.LOG_LTE_PDCP_DL_CIPHER_DATA_PDU,
+            diag_log_code_lte.LOG_LTE_PDCP_UL_CIPHER_DATA_PDU,
+            diag_log_code_lte.LOG_LTE_PDCP_DL_SRB_INTEGRITY_DATA_PDU,
+            diag_log_code_lte.LOG_LTE_PDCP_UL_SRB_INTEGRITY_DATA_PDU,
+        ]
+    if 'rrc' in layers:
+        items_lte += [
+            diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE,
+        ]
+        items_nr += [
+            diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
+        ]
+    if 'nas' in layers:
+        items_lte += [
+            diag_log_code_lte.LOG_LTE_NAS_ESM_SEC_OTA_INCOMING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_ESM_SEC_OTA_OUTGOING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_ESM_PLAIN_OTA_INCOMING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_ESM_PLAIN_OTA_OUTGOING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_INCOMING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_EMM_SEC_OTA_OUTGOING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE,
+            diag_log_code_lte.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE,
+        ]
+        items_nr += [
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
+        ]
+
     if num_max_items < 0x0800:
         return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items,
             *items_lte
@@ -398,23 +462,32 @@ def log_mask_scat_lte(num_max_items=0x09ff):
 def log_mask_empty_nr(num_max_items=0x09ff):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items)
 
-def log_mask_scat_nr(num_max_items=0x09ff):
-    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items,
-        diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
+def log_mask_scat_nr(num_max_items=0x09ff, layers=[]):
+    log_items = [
         diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_CONFIGURATION_INFO,
         diag_log_code_5gnr.LOG_5GNR_RRC_SUPPORTED_CA_COMBOS,
         diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
-        diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
         diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE,
-    )
+    ]
+
+    if 'rrc' in layers:
+        log_items += [
+            diag_log_code_5gnr.LOG_5GNR_RRC_OTA_MESSAGE,
+        ]
+    if 'nas' in layers:
+        log_items += [
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_INCOMING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_PLAIN_OTA_OUTGOING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_INCOMING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GSM_SEC_OTA_OUTGOING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_INCOMING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_OUTGOING_MESSAGE,
+            diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE,
+        ]
+
+    return create_log_config_set_mask(DIAG_SUBSYS_ID_LTE, num_max_items, *log_items)
 
 def log_mask_empty_tdscdma(num_max_items=0x0207):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_TDSCDMA, num_max_items)

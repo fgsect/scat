@@ -243,8 +243,8 @@ def scat_sdm_common_selection():
         (sdm_common_data.COMMON_MULTI_SIGNALING_INFO, True),
     )
 
-def scat_sdm_lte_selection():
-    return create_sdm_item_selection(26,
+def scat_sdm_lte_selection(layers=[]):
+    log_items = [
         (sdm_lte_data.LTE_PHY_STATUS, True),
         (sdm_lte_data.LTE_PHY_CELL_SEARCH_MEAS, True),
         (sdm_lte_data.LTE_PHY_NCELL_INFO, True),
@@ -252,28 +252,37 @@ def scat_sdm_lte_selection():
         (sdm_lte_data.LTE_L2_RNTI_INFO, True),
         (sdm_lte_data.LTE_RRC_SERVING_CELL, True),
         (sdm_lte_data.LTE_RRC_STATUS, True),
-        (sdm_lte_data.LTE_RRC_OTA_PACKET, True),
         (sdm_lte_data.LTE_RRC_TIMER, True),
-        (sdm_lte_data.LTE_RRC_ASN_VERSION, True),
         (sdm_lte_data.LTE_RRC_RACH_MSG, True),
         (0x57, True),
         (sdm_lte_data.LTE_NAS_SIM_DATA, True),
         (sdm_lte_data.LTE_NAS_STATUS_VARIABLE, True),
-        (sdm_lte_data.LTE_NAS_EMM_MESSAGE, True),
         (sdm_lte_data.LTE_NAS_PLMN_SELECTION, True),
         (sdm_lte_data.LTE_NAS_SECURITY, True),
         (sdm_lte_data.LTE_NAS_PDP, True),
         (sdm_lte_data.LTE_NAS_IP, True),
-        (sdm_lte_data.LTE_NAS_ESM_MESSAGE, True),
         (sdm_lte_data.LTE_VOLTE_TX_PACKET_INFO, True),
         (sdm_lte_data.LTE_VOLTE_RX_PACKET_INFO, True),
         (sdm_lte_data.LTE_VOLTE_TX_OVERALL_STAT_INFO, True),
         (sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO, True),
         (sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO, True),
         (sdm_lte_data.LTE_VOLTE_RX_RTP_STAT_INFO, True),
-    )
+    ]
 
-def scat_sdm_lte_selection_ext():
+    if 'rrc' in layers:
+        log_items += [
+            (sdm_lte_data.LTE_RRC_OTA_PACKET, True),
+            (sdm_lte_data.LTE_RRC_ASN_VERSION, True),
+        ]
+    if 'nas' in layers:
+        log_items += [
+            (sdm_lte_data.LTE_NAS_EMM_MESSAGE, True),
+            (sdm_lte_data.LTE_NAS_ESM_MESSAGE, True),
+        ]
+
+    return create_sdm_item_selection(len(log_items), *log_items)
+
+def scat_sdm_lte_selection_ext(layers=[]):
     return create_sdm_item_selection(0x58,
         (sdm_lte_data.LTE_PHY_STATUS, True),
         (sdm_lte_data.LTE_PHY_CELL_SEARCH_MEAS, True),
@@ -371,7 +380,7 @@ def scat_sdm_lte_selection_ext():
         (0x83, True)
     )
 
-def scat_sdm_edge_selection():
+def scat_sdm_edge_selection(layers=[]):
     return create_sdm_item_selection(0x06,
         (sdm_edge_data.EDGE_SCELL_INFO, True),
         (sdm_edge_data.EDGE_NCELL_INFO, True),
@@ -381,10 +390,10 @@ def scat_sdm_edge_selection():
         (sdm_edge_data.EDGE_MEAS_INFO, True),
     )
 
-def scat_sdm_edge_selection_ext():
+def scat_sdm_edge_selection_ext(layers=[]):
     return create_sdm_item_selection(0xff)
 
-def scat_sdm_hspa_selection():
+def scat_sdm_hspa_selection(layers=[]):
     return create_sdm_item_selection(0x06,
         (sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, True),
         (sdm_hspa_data.HSPA_UL1_SERV_CELL, True),
@@ -394,7 +403,7 @@ def scat_sdm_hspa_selection():
         (sdm_hspa_data.HSPA_URRC_NETWORK_INFO, True),
     )
 
-def scat_sdm_hspa_selection_ext():
+def scat_sdm_hspa_selection_ext(layers=[]):
     return create_sdm_item_selection(0x30,
         (sdm_hspa_data.HSPA_GP_POWER_CONTROL, True),
         (sdm_hspa_data.HSPA_GP_TRCH_BLE_INFO, True),
