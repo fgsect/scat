@@ -57,20 +57,24 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_lte_ml1_cell_info(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d00051400000000000004000000a9a400')],
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
+        expected = {
             'layer': 'rrc',
-            'stdout': 'LTE ML1 Cell Info: EARFCN 1300, PCI 36, Bandwidth 20 MHz, Num antennas 1'}
+            'cp': [binascii.unhexlify('02040d00051400000000000004000000a9a400')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
+            'stdout': 'LTE ML1 Cell Info: EARFCN 1300, PCI 36, Bandwidth 20 MHz, Num antennas 1'
+        }
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('024BF8002107000003230000000000000F0500002ABD0B17000000000000F88400000100')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_lte_ml1_cell_info(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d0007210000000000000400000084f800')],
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
+        expected = {
             'layer': 'rrc',
-            'stdout': 'LTE ML1 Cell Info: EARFCN 1825, PCI 259, Bandwidth 15 MHz, Num antennas 1'}
+            'cp': [binascii.unhexlify('02040d0007210000000000000400000084f800')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
+            'stdout': 'LTE ML1 Cell Info: EARFCN 1825, PCI 259, Bandwidth 15 MHz, Num antennas 1'
+        }
         self.assertDictEqual(result, expected)
 
     def test_parse_lte_ml1_intra_freq_cell_resel(self):
@@ -90,10 +94,14 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE), timestamp=0)
         result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040e00000000000000000000000000010102091b01015b004c01001a23'),
-            binascii.unhexlify('02040e00000000000000000000000000010003021a23091b010100465c80bd0648000000')],
+        expected = {
             'layer': 'mac',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [
+                binascii.unhexlify('02040e00000000000000000000000000010102091b01015b004c01001a23'),
+                binascii.unhexlify('02040e00000000000000000000000000010003021a23091b010100465c80bd0648000000')
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
         # V3
@@ -101,10 +109,14 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_RACH_RESPONSE), timestamp=0)
         result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040e00000000000000000000000000010102091801015800b2000061c6'),
-            binascii.unhexlify('02040e000000000000000000000000000100030261c60918010120061f423f8d95075800')],
+        expected = {
             'layer': 'mac',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [
+                binascii.unhexlify('02040e00000000000000000000000000010102091801015800b2000061c6'),
+                binascii.unhexlify('02040e000000000000000000000000000100030261c60918010120061f423f8d95075800')
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
     def test_parse_lte_mac_dl_block(self):
@@ -112,26 +124,34 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_DL_TRANSPORT_BLOCK), timestamp=0)
         result = self.parser.parse_lte_mac_dl_block(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040e00000000000000000000000000010102042715015800611418120e7f00'),
-            binascii.unhexlify('02040e00000000000000000000000000010103042728013c201d1f408c61ca51e6'),
-            binascii.unhexlify('02040e00000000000000000000000000010103042745013d1f1f'),
-            binascii.unhexlify('02040e000000000000000000000000000101030427490121021f')],
+        expected = {
             'layer': 'mac',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [
+                binascii.unhexlify('02040e00000000000000000000000000010102042715015800611418120e7f00'),
+                binascii.unhexlify('02040e00000000000000000000000000010103042728013c201d1f408c61ca51e6'),
+                binascii.unhexlify('02040e00000000000000000000000000010103042745013d1f1f'),
+                binascii.unhexlify('02040e000000000000000000000000000101030427490121021f')
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('01011c3607046800060100d91c0003000007000102000324021f0100001d00060000c70301000001040100011d00070000970501000001040100021d00000000a9000106000424809f1f0100061d000400005d000102000324581f0100081d00050000540601000001040000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_DL_TRANSPORT_BLOCK), timestamp=0)
         result = self.parser.parse_lte_mac_dl_block(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040e00000000000000000000000000010103041cd90124021f'),
-            binascii.unhexlify('02040e00000000000000000000000000010103041d000104'),
-            binascii.unhexlify('02040e00000000000000000000000000010103041d010104'),
-            binascii.unhexlify('02040e00000000000000000000000000010103041d020124809f1f'),
-            binascii.unhexlify('02040e00000000000000000000000000010103041d060124581f'),
-            binascii.unhexlify('02040e00000000000000000000000000010103041d080104')],
+        expected = {
             'layer': 'mac',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [
+                binascii.unhexlify('02040e00000000000000000000000000010103041cd90124021f'),
+                binascii.unhexlify('02040e00000000000000000000000000010103041d000104'),
+                binascii.unhexlify('02040e00000000000000000000000000010103041d010104'),
+                binascii.unhexlify('02040e00000000000000000000000000010103041d020124809f1f'),
+                binascii.unhexlify('02040e00000000000000000000000000010103041d060124581f'),
+                binascii.unhexlify('02040e00000000000000000000000000010103041d080104')
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
     def test_parse_lte_mac_ul_block(self):
@@ -140,12 +160,12 @@ class TestDiagLteLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK), timestamp=0)
         result = self.parser.parse_lte_mac_ul_block(pkt_header, payload, None)
         expected = {
+            'layer': 'mac',
             'cp': [
                 binascii.unhexlify('02040e00000000000000000000000000010003042737013e3a21211f00000017'),
                 binascii.unhexlify('02040e00000000000000000000000000010003042746013e1f000000'),
                 binascii.unhexlify('02040e00000000000000000000000000010003042751013e1f000000'),
             ],
-            'layer': 'mac',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -155,6 +175,7 @@ class TestDiagLteLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK), timestamp=0)
         result = self.parser.parse_lte_mac_ul_block(pkt_header, payload, None)
         expected = {
+            'layer': 'mac',
             'cp': [
                 binascii.unhexlify('02040e000000000000000000000000000100030427d30104'),
                 binascii.unhexlify('02040e000000000000000000000000000100030427d40104'),
@@ -177,7 +198,6 @@ class TestDiagLteLogParser(unittest.TestCase):
                 binascii.unhexlify('02040e000000000000000000000000000100030427f1013d24021f00'),
                 binascii.unhexlify('02040e00000000000000000000000000010003042853013d3a24021f000c'),
             ],
-            'layer': 'mac',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -191,9 +211,11 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d001419000000000ad1010006004c10')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d001419000000000ad1010006004c10')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
         # V27
@@ -206,9 +228,11 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d000713000000000000030000001015')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d000713000000000000030000001015')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V25
         # payload = binascii.unhexlify('190f3000000009019c180000455102000000003300') #...
@@ -221,72 +245,88 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d000ce4000000000dc00600090040858ec4e5bfe050dc29151600')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d000ce4000000000dc00600090040858ec4e5bfe050dc29151600')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V20
         payload = binascii.unhexlify('140e300109019c1800000000090000000018000810a7145359a6054368c03bda3004a688028da2009a6840')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d00189c000000000000030000000810a7145359a6054368c03bda3004a688028da2009a6840')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d00189c000000000000030000000810a7145359a6054368c03bda3004a688028da2009a6840')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V19
         payload = binascii.unhexlify('130e22000b00fa090000000032000000000900281840160808800000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d0009fa00000000000010000000281840160808800000')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d0009fa00000000000010000000281840160808800000')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V15
         payload = binascii.unhexlify('0f0d21009e0014050000498c05000000000700400c8ec94289e0') #...
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d0005140000000008c406000900400c8ec94289e0')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d0005140000000008c406000900400c8ec94289e0')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V15
         payload = binascii.unhexlify('0f0d21019e0014050000000009000000001c000810a5346141a31c316804401a0049167c23159f001067c106d9e000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d000514000000000000030000000810a5346141a31c316804401a0049167c23159f001067c106d9e000')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d000514000000000000030000000810a5346141a31c316804401a0049167c23159f001067c106d9e000')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V13
         payload = binascii.unhexlify('0d0c74013200381800000000080000000002002c00')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d001838000000000000030000002c00')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d001838000000000000030000002c00')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V9
         payload = binascii.unhexlify('090b700000011405000009910b000000000700400b8ec1dd13b0') #...
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d00051400000000091006000900400b8ec1dd13b0')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d00051400000000091006000900400b8ec1dd13b0')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
         # V8
         payload = binascii.unhexlify('080a72010e009c180000a933060000000002002e02')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d00189c00000000033a010009002e02')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d00189c00000000033a010009002e02')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
         # V6
@@ -294,9 +334,11 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_OTA_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_rrc(pkt_header, payload, None)
-        expected = {'cp': [binascii.unhexlify('02040d00072c0000000003420500050040498805c09702d3b0981c20a0818c4326d0')],
+        expected = {
             'layer': 'rrc',
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+            'cp': [binascii.unhexlify('02040d00072c0000000003420500050040498805c09702d3b0981c20a0818c4326d0')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
         self.assertDictEqual(result, expected)
 
     def test_parse_lte_mib(self):

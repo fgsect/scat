@@ -80,42 +80,54 @@ class TestSdmLteParser(unittest.TestCase):
         self.parser.icd_ver = (6, 22)
         payload = binascii.unhexlify('7f1900001600bbffa00252701ebd2f0100070040031e080597e07e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
-        expected = {'cp': [binascii.unhexlify('02040d0000000000000000000600000040031e080597e0')],
-            'layer': 'rrc'}
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d0000000000000000000600000040031e080597e0')],
+        }
         self.assertDictEqual(result, expected)
 
         # BCCH DL SCH
         payload = binascii.unhexlify('7f1b0000180061ffa002529ca0892e03000900001101a8f200034f217e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
-        expected = {'cp': [binascii.unhexlify('02040d00000000000000000005000000001101a8f200034f21')],
-            'layer': 'rrc'}
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d00000000000000000005000000001101a8f200034f21')],
+        }
         self.assertDictEqual(result, expected)
 
         # UL CCCH
         payload = binascii.unhexlify('7f180000150034ffa002523f10892e0001060051793604aaa67e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
-        expected = {'cp': [binascii.unhexlify('02040d0000000000000000000200000051793604aaa6')],
-            'layer': 'rrc'}
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d0000000000000000000200000051793604aaa6')],
+        }
         self.assertDictEqual(result, expected)
 
         # DL CCCH
         payload = binascii.unhexlify('7f2b000028004fffa00252de79892e0000190070129813fd94049b7065972ae10c3ece0587600250d08c43007e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
-        expected = {'cp': [binascii.unhexlify('02040d0000000000000000000000000070129813fd94049b7065972ae10c3ece0587600250d08c4300')],
-            'layer': 'rrc'}
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d0000000000000000000000000070129813fd94049b7065972ae10c3ece0587600250d08c4300')],
+        }
         self.assertDictEqual(result, expected)
         # UL DCCH
         payload = binascii.unhexlify('7f1f00001c0043ffa00252d1cbd72f04010d00480144fd96b7b0e7fcfc5a61607e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
-        expected = {'cp': [binascii.unhexlify('02040d00000000000000000003000000480144fd96b7b0e7fcfc5a6160')],
-            'layer': 'rrc'}
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d00000000000000000003000000480144fd96b7b0e7fcfc5a6160')],
+        }
         self.assertDictEqual(result, expected)
 
         # DL DCCH
         payload = binascii.unhexlify('7f2200001f0044ffa002526d4fd82f040010002206005139404663f96ceb25e77880187e')
         result = self.parser.sdm_lte_rrc_ota_packet(payload)
-        expected = {'cp': [binascii.unhexlify('02040d000000000000000000010000002206005139404663f96ceb25e7788018')],
-            'layer': 'rrc'}
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d000000000000000000010000002206005139404663f96ceb25e7788018')],
+        }
         self.assertDictEqual(result, expected)
 
     def test_sdm_lte_volte_rtp_packet(self):
