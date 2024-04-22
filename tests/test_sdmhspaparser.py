@@ -157,12 +157,12 @@ Extra: 61707320496e636f6d696e67205b373731355d204e535f53544154455f4348414e47455f4
         self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('7f1300001000c0ffa004205b942c0f00000000007e')
         result = self.parser.sdm_hspa_wcdma_rrc_status(payload)
-        expected = {'stdout': 'WCDMA RRC State: RRC Status: DISCONNECTED, Domain: IDLE'}
+        expected = {'stdout': 'WCDMA RRC State: RRC Release: UNKNOWN, RRC Status: DISCONNECTED, Domain: IDLE'}
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('7f1300001000acffa0042086648c1001000500007e')
         result = self.parser.sdm_hspa_wcdma_rrc_status(payload)
-        expected = {'stdout': 'WCDMA RRC State: RRC Status: CELL_DCH, Domain: IDLE'}
+        expected = {'stdout': 'WCDMA RRC State: RRC Release: R7, RRC Status: CELL_DCH, Domain: IDLE'}
         self.assertDictEqual(result, expected)
 
     def test_sdm_hspa_wcdma_serving_cell(self):
