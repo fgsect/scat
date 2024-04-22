@@ -20,6 +20,10 @@ class DiagLteLogParser:
         c = diagcmd.diag_log_code_lte
         self.process = {
             # ML1
+            # i(c.LOG_LTE_ML1_MAC_RAR_MSG1_REPORT): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_ML1_MAC_RAR_MSG2_REPORT): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_ML1_MAC_UE_IDENTIFICATION_MESSAGE_MSG3_REPORT): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_ML1_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT): lambda x, y, z: self.parse_lte_dummy(x, y, z),
             # i(c.LOG_LTE_ML1_CONNECTED_MODE_INTRA_FREQ_MEAS): lambda x, y, z: self.parse_lte_ml1_connected_intra_freq_meas(x, y, z),
             i(c.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL): lambda x, y, z: self.parse_lte_ml1_scell_meas(x, y, z),
             i(c.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS): lambda x, y, z: self.parse_lte_ml1_ncell_meas(x, y, z),
@@ -31,10 +35,6 @@ class DiagLteLogParser:
             i(c.LOG_LTE_ML1_SERVING_CELL_INFO): lambda x, y, z: self.parse_lte_ml1_cell_info(x, y, z),
 
             # MAC
-            # i(c.LOG_LTE_MAC_RAR_MSG1_REPORT): lambda x, y, z: parse_lte_msg1_report(x, y, z),
-            # i(c.LOG_LTE_MAC_RAR_MSG2_REPORT): lambda x, y, z: parse_lte_msg2_report(x, y, z),
-            # i(c.LOG_LTE_MAC_UE_IDENTIFICATION_MESSAGE_MSG3_REPORT): lambda x, y, z: parse_lte_msg3_report(x, y, z),
-            # i(c.LOG_LTE_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT): lambda x, y, z: parse_lte_msg3_report(x, y, z),
             i(c.LOG_LTE_MAC_RACH_TRIGGER): lambda x, y, z: self.parse_lte_mac_rach_trigger(x, y, z),
             i(c.LOG_LTE_MAC_RACH_RESPONSE): lambda x, y, z: self.parse_lte_mac_rach_response(x, y, z),
             i(c.LOG_LTE_MAC_DL_TRANSPORT_BLOCK): lambda x, y, z: self.parse_lte_mac_dl_block(x, y, z),
@@ -43,12 +43,12 @@ class DiagLteLogParser:
             # RLC
 
             # PDCP
-            # i(c.LOG_LTE_PDCP_DL_CONFIG): lambda x, y, z: self.parse_lte_pdcp_dl_cfg(x, y, z),
-            # i(c.LOG_LTE_PDCP_UL_CONFIG): lambda x, y, z: self.parse_lte_pdcp_ul_cfg(x, y, z),
-            # i(c.LOG_LTE_PDCP_DL_DATA_PDU): lambda x, y, z: self.parse_lte_pdcp_dl_data(x, y, z),
-            # i(c.LOG_LTE_PDCP_UL_DATA_PDU): lambda x, y, z: self.parse_lte_pdcp_ul_data(x, y, z),
-            # i(c.LOG_LTE_PDCP_DL_CONTROL_PDU): lambda x, y, z: self.parse_lte_pdcp_dl_ctrl(x, y, z),
-            # i(c.LOG_LTE_PDCP_UL_CONTROL_PDU): lambda x, y, z: self.parse_lte_pdcp_ul_ctrl(x, y, z),
+            # i(c.LOG_LTE_PDCP_DL_CONFIG): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_PDCP_UL_CONFIG): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_PDCP_DL_DATA_PDU): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_PDCP_UL_DATA_PDU): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_PDCP_DL_CONTROL_PDU): lambda x, y, z: self.parse_lte_dummy(x, y, z),
+            # i(c.LOG_LTE_PDCP_UL_CONTROL_PDU): lambda x, y, z: self.parse_lte_dummy(x, y, z),
             i(c.LOG_LTE_PDCP_DL_CIPHER_DATA_PDU): lambda x, y, z: self.parse_lte_pdcp_dl_cip(x, y, z),
             i(c.LOG_LTE_PDCP_UL_CIPHER_DATA_PDU): lambda x, y, z: self.parse_lte_pdcp_ul_cip(x, y, z),
             i(c.LOG_LTE_PDCP_DL_SRB_INTEGRITY_DATA_PDU): lambda x, y, z: self.parse_lte_pdcp_dl_srb_int(x, y, z),
@@ -72,6 +72,9 @@ class DiagLteLogParser:
             i(c.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE): lambda x, y, z: self.parse_lte_nas(x, y, z, True),
             i(c.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE): lambda x, y, z: self.parse_lte_nas(x, y, z, True),
         }
+
+    # def parse_lte_dummy(self, pkt_header, pkt_body, args):
+    #     return {'stdout': 'LTE Dummy 0x{:04x}: {}'.format(pkt_header.log_id, binascii.hexlify(pkt_body).decode())}
 
     # ML1
 
@@ -487,7 +490,7 @@ class DiagLteLogParser:
                         rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[17:34]))
                 else:
                     self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version {}'.format(subpkt_mac.version))
-                    self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                     continue
 
                 if subpkt_mac_rach_attempt.rach_result != 0x00: # RACH Failure, 0x00 == Success
@@ -649,6 +652,7 @@ class DiagLteLogParser:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
+            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_mac_ul_block(self, pkt_header, pkt_body, args):
