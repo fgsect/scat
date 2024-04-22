@@ -155,6 +155,10 @@ def diag_log_get_lte_item_id(x):
 @unique
 class diag_log_code_lte(IntEnum):
     # Management Layer 1
+    LOG_LTE_ML1_MAC_RAR_MSG1_REPORT    = 0x167 # 0xB167 LTE MAC RAR (Msg1) Report
+    LOG_LTE_ML1_MAC_RAR_MSG2_REPORT    = 0x168 # 0xB168 LTE MAC RAR (Msg2) Report
+    LOG_LTE_ML1_MAC_UE_IDENTIFICATION_MESSAGE_MSG3_REPORT     = 0x169 # 0xB169 LTE MAC RAR (Msg3) Report
+    LOG_LTE_ML1_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT = 0x16A # 0xB16A LTE MAC RAR (Msg4) Report
     LOG_LTE_ML1_CONNECTED_MODE_INTRA_FREQ_MEAS  = 0x179 # 0xB179 LTE ML1 Connected Mode LTE Intra-Freq Measurements
     LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL      = 0x17f # 0xB17F LTE ML1 Serving Cell Meas and Eval
     LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS           = 0x180 # 0xB180 LTE ML1 Neighbor Measurements
@@ -170,10 +174,6 @@ class diag_log_code_lte(IntEnum):
     LOG_LTE_MAC_RACH_RESPONSE      = 0x62 # 0xB062 LTE MAC Rach Attempt
     LOG_LTE_MAC_DL_TRANSPORT_BLOCK = 0x63 # 0xB063 LTE MAC DL Transport Block
     LOG_LTE_MAC_UL_TRANSPORT_BLOCK = 0x64 # 0xB064 LTE MAC UL Transport Block
-    LOG_LTE_MAC_RAR_MSG1_REPORT    = 0x67 # 0xB067 LTE MAC RAR (Msg1) Report
-    LOG_LTE_MAC_RAR_MSG2_REPORT    = 0x68 # 0xB068 LTE MAC RAR (Msg2) Report
-    LOG_LTE_MAC_UE_IDENTIFICATION_MESSAGE_MSG3_REPORT     = 0x69 # 0xB069 LTE MAC RAR (Msg3) Report
-    LOG_LTE_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT = 0x6A # 0xB06A LTE MAC RAR (Msg4) Report
 
     # PDCP
     LOG_LTE_PDCP_DL_CONFIG                 = 0xa0 # 0xB0A0 LTE PDCP DL Config
@@ -390,6 +390,10 @@ def log_mask_empty_lte(num_max_items=0x0209):
 
 def log_mask_scat_lte(num_max_items=0x09ff, layers=[]):
     items_lte = [
+        diag_log_code_lte.LOG_LTE_ML1_MAC_RAR_MSG1_REPORT,
+        diag_log_code_lte.LOG_LTE_ML1_MAC_RAR_MSG2_REPORT,
+        diag_log_code_lte.LOG_LTE_ML1_MAC_UE_IDENTIFICATION_MESSAGE_MSG3_REPORT,
+        diag_log_code_lte.LOG_LTE_ML1_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
         diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE,
@@ -417,6 +421,12 @@ def log_mask_scat_lte(num_max_items=0x09ff, layers=[]):
         ]
     if 'pdcp' in layers:
         items_lte += [
+            diag_log_code_lte.LOG_LTE_PDCP_DL_CONFIG,
+            diag_log_code_lte.LOG_LTE_PDCP_UL_CONFIG,
+            diag_log_code_lte.LOG_LTE_PDCP_DL_DATA_PDU,
+            diag_log_code_lte.LOG_LTE_PDCP_UL_DATA_PDU,
+            diag_log_code_lte.LOG_LTE_PDCP_DL_CONTROL_PDU,
+            diag_log_code_lte.LOG_LTE_PDCP_UL_CONTROL_PDU,
             diag_log_code_lte.LOG_LTE_PDCP_DL_CIPHER_DATA_PDU,
             diag_log_code_lte.LOG_LTE_PDCP_UL_CIPHER_DATA_PDU,
             diag_log_code_lte.LOG_LTE_PDCP_DL_SRB_INTEGRITY_DATA_PDU,
