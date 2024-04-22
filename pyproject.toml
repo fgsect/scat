@@ -15,7 +15,7 @@ requires-python = ">=3.7"
 dependencies = [
     "pyusb>=1.0.2",
     "pyserial>=3.3",
-    "bitstring>=3.1.5"
+    "bitstring>=3.1.7"
 ]
 [project.optional-dependencies]
 fastcrc = [

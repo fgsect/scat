@@ -5,6 +5,17 @@ import calendar
 import logging
 import binascii
 from collections import namedtuple
+import bitstring
+try:
+    bitstring.options.lsb0 = True
+except AttributeError:
+    try:
+        bitstring.lsb0 = True
+    except AttributeError:
+        try:
+            bitstring.set_lsb0(True)
+        except:
+            pass
 
 import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
@@ -378,10 +389,11 @@ class DiagLteLogParser:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 cell info packet version 0x{:02x}'.format(pkt_version))
             return None
 
-        pci = item.pci_pbch_phich & 0x1ff
-        pbch = (item.pci_pbch_phich >> 9) & 0x1
-        phich_duration = (item.pci_pbch_phich >> 10) & 0x7
-        phich_resource = (item.pci_pbch_phich >> 13) & 0x7
+        pci_pbch_phich_bits = bitstring.Bits(uint=item.pci_pbch_phich, length=16)
+        pci = pci_pbch_phich_bits[0:9].uint
+        pbch = pci_pbch_phich_bits[9:10].uint
+        phich_duration = pci_pbch_phich_bits[10:13].uint
+        phich_resource = pci_pbch_phich_bits[13:16].uint
 
         if self.parent:
             self.parent.lte_last_bw_dl[radio_id] = item.dl_bandwidth
@@ -1179,8 +1191,9 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(msg_content), item.len))
             return None
 
-        sfn = (item.sfn_subfn) >> 4
-        subfn = (item.sfn_subfn) & 0xf
+        sfn_subfn_bits = bitstring.Bits(uint=item.sfn_subfn, length=16)
+        subfn = sfn_subfn_bits[0:4].uint
+        sfn = sfn_subfn_bits[4:16].uint
 
         if pkt_version in (0x02, 0x03, 0x04, 0x06, 0x07, 0x08, 0x0d, 0x16):
             # RRC Packet <v9, v13, v22
