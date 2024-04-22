@@ -203,6 +203,47 @@ class TestDiagLteLogParser(unittest.TestCase):
         self.assertDictEqual(result, expected)
 
     # LTE PDCP
+    def test_parse_lte_pdcp_dl_cip(self):
+        # Packet V1, Subpkt V24
+        payload = binascii.unhexlify('01012200C31848008E578ABFBE9DB23813BE851295189A29554C9B9C2D35A9F8D9284DCF08EB0940030302002140080003001722020000000002F4CE224207000300172200000000000028E0')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_PDCP_DL_CIPHER_DATA_PDU), timestamp=0)
+        result = self.parser.parse_lte_pdcp_dl_cip(pkt_header, payload, None)
+        expected = {
+            'layer': 'pdcp',
+            'up': [
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected)
+
+    def test_parse_lte_pdcp_ul_cip(self):
+        # Packet V1, Subpkt V26
+        payload = binascii.unhexlify('01010000C31A4C008E578ABFBE9DB23813BE851295189A29554C9B9C2D35A9F8D9284DCF08EB09400303020004472E040400102200000000008000600004472E04040018220100000000800160008000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_PDCP_UL_CIPHER_DATA_PDU), timestamp=0)
+        result = self.parser.parse_lte_pdcp_ul_cip(pkt_header, payload, None)
+        expected = {
+            'layer': 'pdcp',
+            'up': [
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected)
+
+    def test_parse_lte_pdcp_ul_srb_int(self):
+        # Packet V1, Subpkt V1
+        payload = binascii.unhexlify('01011861C7015800A397332D66B71076E3F0B985EF0A61313863BC495C4245ED7B5FC4FE2A6462E70302010022421D001D00004000000000BB53CCDA004802A4E98834BDA0FDC45CD12887E711BC73DEA9BC87FC20DACC53BBB00700')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_PDCP_UL_SRB_INTEGRITY_DATA_PDU), timestamp=0)
+        result = self.parser.parse_lte_pdcp_ul_srb_int(pkt_header, payload, None)
+        expected = {
+            'layer': 'pdcp',
+            'up': [
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected)
 
     # LTE RRC
     def test_parse_lte_rrc(self):
