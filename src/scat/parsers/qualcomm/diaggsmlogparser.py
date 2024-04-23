@@ -127,6 +127,7 @@ class DiagGsmLogParser:
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unsupported GSM Serving Cell L1 New Burst Metric version {}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
@@ -243,6 +244,7 @@ class DiagGsmLogParser:
         if item.message_len != len(l3_message):
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(l3_message), item.message_len))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         if self.parent:
@@ -277,6 +279,7 @@ class DiagGsmLogParser:
             if item.message_len > 63:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'message length longer than 63 ({})'.format(item.message_len))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 return None
             lapdm_len = bytes([(item.message_len << 2) | 0x01])
 
@@ -293,6 +296,7 @@ class DiagGsmLogParser:
             if item.message_len > 63:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'message length longer than 63 ({})'.format(item.message_len))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 return None
             lapdm_len = bytes([(item.message_len << 2) | 0x01])
 
@@ -328,6 +332,7 @@ class DiagGsmLogParser:
         if item.message_len != len(l3_message):
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(l3_message), item.message_len))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         arfcn = self.parent.gsm_last_arfcn[radio_id]

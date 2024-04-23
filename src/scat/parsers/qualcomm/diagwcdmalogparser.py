@@ -359,7 +359,9 @@ class DiagWcdmaLogParser:
                 subtype = sib_type_map[pkt_body[4]]
                 msg_content = pkt_body[5:]
             else:
-                self.parent.logger.log(logging.WARNING, "Unknown WCDMA SIB Class {}".format(pkt_body[4]))
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, "Unknown WCDMA SIB Class {}".format(pkt_body[4]))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 return None
         elif item.channel_type in channel_type_map_new.keys():
             # uint16 uarfcn, uint16 psc, uint8 msg[]
@@ -375,11 +377,14 @@ class DiagWcdmaLogParser:
                 subtype = sib_type_map_new[pkt_body[8]]
                 msg_content = pkt_body[9:]
             else:
-                self.parent.logger.log(logging.WARNING, "Unknown WCDMA new SIB Class {}".format(pkt_body[8]))
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, "Unknown WCDMA new SIB Class {}".format(pkt_body[8]))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 return None
         else:
-            self.parent.logger.log(logging.WARNING, "Unknown WCDMA RRC channel type {}".format(pkt_body[0]))
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, "Unknown WCDMA RRC channel type {}".format(pkt_body[0]))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)

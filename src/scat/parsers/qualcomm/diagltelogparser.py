@@ -106,7 +106,9 @@ class DiagLteLogParser:
             # PCI, Serv Layer Priority -> 4 bytes
             item = item_struct._make(struct.unpack('<BHLLLLLLLL', pkt_body[1:36]))
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet version 0x{:02x}'.format(pkt_version))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         pci_serv_layer_prio_bits = bitstring.Bits(uint=item.pci_serv_layer_prio, length=16)
@@ -137,7 +139,9 @@ class DiagLteLogParser:
                 s_intra_search_q = (r9_data_interim >> 14) & 0x3f
                 s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
             else:
-                self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
         elif pkt_version == 5:
             if item.rrc_rel == 0x01: # RRC Rel. 9
                 r9_data_interim = struct.unpack('<L', pkt_body[36:40])[0]
@@ -146,7 +150,9 @@ class DiagLteLogParser:
                 s_intra_search_q = (r9_data_interim >> 14) & 0x3f
                 s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
             else:
-                self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
         real_rsrp = -180 + meas_rsrp * 0.0625
         real_rssi = -110 + meas_rssi * 0.0625
@@ -177,7 +183,9 @@ class DiagLteLogParser:
             item = item_struct._make(struct.unpack('<BHLL', pkt_body[1:12]))
             pos = 12
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Neighbor Meas packet version 0x{:02x}'.format(pkt_version))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Neighbor Meas packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         q_rxlevmin = item.q_rxlevmin_n_cells & 0x3f
@@ -205,7 +213,9 @@ class DiagLteLogParser:
                 r9_info_interim = struct.unpack('<L', n_cell_pkt[28:])
                 n_s_qual = r9_info_interim[0]
             else:
-                self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Neighbor Cell Meas packet - RRC version {}'.format(item.rrc_rel))
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Neighbor Cell Meas packet - RRC version {}'.format(item.rrc_rel))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
             n_real_rsrp = -180 + n_meas_rsrp * 0.0625
             n_real_rssi = -110 + n_meas_rssi * 0.0625
@@ -361,14 +371,17 @@ class DiagLteLogParser:
                     else:
                         if self.parent:
                             self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(subpkt_header.version))
+                            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 else:
                     if self.parent:
                         self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas subpacket ID 0x{:02x}'.format(subpkt_header.id))
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
             return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas Response packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_ml1_cell_info(self, pkt_header, pkt_body, args):
@@ -390,7 +403,9 @@ class DiagLteLogParser:
             # Version, DL BW, SFN, EARFCN, (Cell ID 9, PBCH 1, PHICH Duration 3, PHICH Resource 3), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
             item = item_struct._make(struct.unpack('<BHLLLLQLhH', pkt_body[1:36]))
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 cell info packet version 0x{:02x}'.format(pkt_version))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 cell info packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         pci_pbch_phich_bits = bitstring.Bits(uint=item.pci_pbch_phich, length=16)
@@ -501,16 +516,21 @@ class DiagLteLogParser:
                     if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
                         rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[17:34]))
                 else:
-                    self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version {}'.format(subpkt_mac.version))
-                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+                    if self.parent:
+                        self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version {}'.format(subpkt_mac.version))
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                     continue
 
                 if subpkt_mac_rach_attempt.rach_result != 0x00: # RACH Failure, 0x00 == Success
-                    self.parent.logger.log(logging.WARNING, 'RACH result is not success: {}'.format(subpkt_mac_rach_attempt.rach_result))
+                    if self.parent:
+                        self.parent.logger.log(logging.WARNING, 'RACH result is not success: {}'.format(subpkt_mac_rach_attempt.rach_result))
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                     continue
 
                 if subpkt_mac_rach_attempt.msg_bitmask & 0x07 != 0x07:
-                    self.parent.logger.log(logging.WARNING, 'Not all msgs are present: not generating RAR and MAC PDU')
+                    if self.parent:
+                        self.parent.logger.log(logging.WARNING, 'Not all msgs are present: not generating RAR and MAC PDU')
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                     continue
 
                 pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -585,6 +605,7 @@ class DiagLteLogParser:
                     else:
                         if self.parent:
                             self.parent.logger.log(logging.WARNING, 'Unexpected MAC DL Subpacket version {}'.format(subpkt_mac.version))
+                            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                             return None
 
                     sfn = subpkt_mac_dl_tb.sfn_subfn >> 4
@@ -617,6 +638,7 @@ class DiagLteLogParser:
                     else:
                         if self.parent:
                             self.parent.logger.log(logging.WARNING, 'Unexpected MAC UL Subpacket version {}'.format(subpkt_mac.version))
+                            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                             return None
 
                     sfn = subpkt_mac_ul_tb.sfn_subfn >> 4
@@ -632,8 +654,9 @@ class DiagLteLogParser:
                         'padding': subpkt_mac_ul_tb.padding},
                         mac_hdr))
             else:
-                self.parent.logger.log(logging.WARNING, 'Unhandled LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
-                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unhandled LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 continue
 
         if len(mac_pkts) > 0:
@@ -646,8 +669,9 @@ class DiagLteLogParser:
         if pkt_version == 0x01:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
@@ -656,8 +680,9 @@ class DiagLteLogParser:
         if pkt_version == 0x01:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_mac_dl_block(self, pkt_header, pkt_body, args):
@@ -666,8 +691,9 @@ class DiagLteLogParser:
         if pkt_version == 0x01:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_mac_ul_block(self, pkt_header, pkt_body, args):
@@ -676,8 +702,9 @@ class DiagLteLogParser:
         if pkt_version == 0x01:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL transport block packet version 0x{:02x}'.format(pkt_version))
-            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL transport block packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     # PDCP
@@ -979,7 +1006,9 @@ class DiagLteLogParser:
         elif pkt_version == 17:
             item = item_struct_v17._make(struct.unpack('<HLH BBBBB BHB', pkt_body[1:18]))
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE MIB packet version 0x{:02x}'.format(pkt_version))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE MIB packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         stdout = ''
@@ -1011,7 +1040,9 @@ class DiagLteLogParser:
             # Version, Physical CID, DL EARFCN, UL EARFCN, DL BW, UL BW, Cell ID, TAC, Band, MCC, MNC Digit/MNC, Allowed Access
             item = item_struct._make(struct.unpack('<H LL BB LH L HBH B', pkt_body[1:29]))
         else:
-            self.parent.logger.log(logging.WARNING, 'Unknown LTE RRC cell info packet version 0x{:02x}'.format(pkt_version))
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown LTE RRC cell info packet version 0x{:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         if self.parent:
@@ -1071,6 +1102,7 @@ class DiagLteLogParser:
         if item.len != len(msg_content):
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(msg_content), item.len))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
         sfn_subfn_bits = bitstring.Bits(uint=item.sfn_subfn, length=16)
