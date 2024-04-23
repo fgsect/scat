@@ -468,11 +468,7 @@ class DiagLteLogParser:
             subpkt_body = pkt_body[pos+4:pos+4+subpkt_mac.size]
             pos += (4 + subpkt_mac.size)
 
-            if subpkt_mac.id == 0x03:
-                continue
-            elif subpkt_mac.id == 0x05:
-                continue
-            elif subpkt_mac.id == 0x06: # RACH Attempt
+            if subpkt_mac.id == 0x06: # RACH Attempt
                 subpkt_mac_rach_attempt_struct = namedtuple('QcDiagLteMacSubpktRachAttempt', 'num_attempt rach_result contention msg_bitmask')
                 subpkt_mac_rach_attempt_struct_v3 = namedtuple('QcDiagLteMacSubpktRachAttemptV3', 'subid cellid num_attempt rach_result contention msg_bitmask')
                 subpkt_mac_rach_attempt = None
@@ -633,6 +629,7 @@ class DiagLteLogParser:
                         mac_hdr))
             else:
                 self.parent.logger.log(logging.WARNING, 'Unhandled LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 continue
 
         if len(mac_pkts) > 0:
@@ -646,6 +643,7 @@ class DiagLteLogParser:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH trigger packet version 0x{:02x}'.format(pkt_version))
+            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
@@ -655,6 +653,7 @@ class DiagLteLogParser:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC RACH response packet version 0x{:02x}'.format(pkt_version))
+            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     def parse_lte_mac_dl_block(self, pkt_header, pkt_body, args):
@@ -674,6 +673,7 @@ class DiagLteLogParser:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
         else:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC UL transport block packet version 0x{:02x}'.format(pkt_version))
+            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
     # PDCP
@@ -756,6 +756,7 @@ class DiagLteLogParser:
                 else:
                     if self.parent:
                         self.parent.logger.log(logging.WARNING, 'Unexpected PDCP Cipher Data Subpacket version %s' % subpkt_pdcp.version)
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                     continue
             elif subpkt_pdcp.id == 0xC6: # SRB Integrity DL
                 if subpkt_pdcp.version in (0x01, 0x28):
@@ -788,6 +789,7 @@ class DiagLteLogParser:
                         else:
                             if self.parent:
                                 self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL PDU Subpacket version %s' % subpkt_pdcp.version)
+                                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                             break
 
                         sn_length_map = {
@@ -827,6 +829,7 @@ class DiagLteLogParser:
                 else:
                     if self.parent:
                         self.parent.logger.log(logging.WARNING, 'Unexpected PDCP DL SIB Integrity Protected Data Subpacket version %s' % subpkt_pdcp.version)
+                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                     continue
             elif subpkt_pdcp.id == 0xC7: # SRB Integrity UL
                 if subpkt_pdcp.version in (0x01, 0x28):
@@ -897,6 +900,7 @@ class DiagLteLogParser:
             else:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Unexpected PDCP Subpacket ID 0x{:02x}'.format(subpkt_pdcp.id))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
                 continue
 
         if len(pdcp_pkts) > 0:
@@ -910,6 +914,7 @@ class DiagLteLogParser:
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL Cipher Data packet version {:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
     def parse_lte_pdcp_ul_cip(self, pkt_header, pkt_body, args):
         pkt_version = pkt_body[0]
@@ -919,6 +924,7 @@ class DiagLteLogParser:
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP UL Cipher Data packet version {:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
     # 0x4021: 01|00 000|0 00|10 0001 (valid, bearer id=0, mode=AM, sn=5b, cidx = 33)
     # 0x4222: 01|00 001|0 00|10 0010 (valid, bearer id=1, mode=AM, sn=5b, cidx = 34)
@@ -939,6 +945,7 @@ class DiagLteLogParser:
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL SRB Integrity Protected Data packet version {:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
     def parse_lte_pdcp_ul_srb_int(self, pkt_header, pkt_body, args):
         pkt_version = pkt_body[0]
@@ -948,6 +955,7 @@ class DiagLteLogParser:
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP UL SRB Integrity Protected Data packet version {:02x}'.format(pkt_version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
     # RRC
 
