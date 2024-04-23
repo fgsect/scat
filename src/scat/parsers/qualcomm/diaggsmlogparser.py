@@ -5,6 +5,17 @@ import calendar
 import logging
 from collections import namedtuple
 import binascii
+import bitstring
+try:
+    bitstring.options.lsb0 = True
+except AttributeError:
+    try:
+        bitstring.lsb0 = True
+    except AttributeError:
+        try:
+            bitstring.set_lsb0(True)
+        except:
+            pass
 
 import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
@@ -61,8 +72,9 @@ class DiagGsmLogParser:
         item_struct = namedtuple('QcDiagGsmL1Fcch', 'arfcn_band tone_id msw lsw coarse_freq_offset fine_freq_offset afc_freq snr')
         item = item_struct._make(struct.unpack('<HHHHhhhH', pkt_body[0:16]))
 
-        band = (item.arfcn_band & 0xF000) >> 12
-        arfcn = (item.arfcn_band & 0x0FFF)
+        band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+        arfcn = band_arfcn_bits[0:12].uint
+        band = band_arfcn_bits[12:16].uint
 
         if self.parent:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
@@ -81,8 +93,9 @@ class DiagGsmLogParser:
         item_struct = namedtuple('QcDiagGsmL1Sch', 'arfcn_band tone_id crc_pass dsp_rx bad_frame decoded_data_len decoded_data msw lsw peak_corr_energy freq_offset')
         item = item_struct._make(struct.unpack('<HHHHHHLHHHH', pkt_body[0:24]))
 
-        band = (item.arfcn_band & 0xF000) >> 12
-        arfcn = (item.arfcn_band & 0x0FFF)
+        band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+        arfcn = band_arfcn_bits[0:12].uint
+        band = band_arfcn_bits[12:16].uint
         sch_data = struct.unpack('>L', struct.pack('<L', item.decoded_data))[0]
         # SCH data 25bits: 19b reduced frame number, 6b BSIC
 
@@ -105,8 +118,9 @@ class DiagGsmLogParser:
             for i in range(4):
                 cell_pkt = pkt_body[2+37*i:2+37*(i+1)]
                 item = item_struct_v4._make(struct.unpack('<LHLhhhhhhbbLBBHLB', cell_pkt))
-                c_arfcn = item.arfcn_band & 0xfff
-                c_band = (item.arfcn_band >> 12)
+                c_band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+                c_arfcn = c_band_arfcn_bits[0:12].uint
+                c_band = c_band_arfcn_bits[12:16].uint
                 if item.rxpwr != 0:
                     c_rxpwr_real = item.rxpwr * 0.0625
                     stdout += 'GSM Serving Cell New Burst Metric: ARFCN {}/BC {}, RSSI {}, RxPwr {:.2f}\n'.format(c_arfcn, c_band, item.rssi, c_rxpwr_real)
@@ -126,8 +140,9 @@ class DiagGsmLogParser:
         for i in range(4):
             cell_pkt = pkt_body[1+23*i:1+23*(i+1)]
             item = item_struct._make(struct.unpack('<LHLhhhhhhb', cell_pkt))
-            c_arfcn = item.arfcn_band & 0xfff
-            c_band = (item.arfcn_band >> 12)
+            c_band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+            c_arfcn = c_band_arfcn_bits[0:12].uint
+            c_band = c_band_arfcn_bits[12:16].uint
             if item.rxpwr != 0:
                 c_rxpwr_real = item.rxpwr * 0.0625
                 stdout += 'GSM Serving Cell Burst Metric: ARFCN {}/BC {}, RSSI {}, RxPwr {:.2f}\n'.format(c_arfcn, c_band, item.rssi, c_rxpwr_real)
@@ -147,8 +162,9 @@ class DiagGsmLogParser:
         for i in range(num_cells):
             cell_pkt = pkt_body[1 + 12 * i:1 + 12 * (i + 1)]
             item = item_struct._make(struct.unpack('<HhBBLH', cell_pkt))
-            s_arfcn = item.arfcn_band & 0xfff
-            s_band = (item.arfcn_band >> 12)
+            s_band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+            s_arfcn = s_band_arfcn_bits[0:12].uint
+            s_band = s_band_arfcn_bits[12:16].uint
             s_rxpwr_real = item.rxpwr * 0.0625
             if item.bsic_valid == 1:
                 stdout += 'GSM Surround Cell BA: Cell {}: ARFCN {}/BC {}/BSIC {}, RxPwr {:.2f}\n'.format(i, s_arfcn, s_band, item.bsic, s_rxpwr_real)
@@ -181,8 +197,9 @@ class DiagGsmLogParser:
         stdout += 'GSM Neighbor Cell Aux: {} cells\n'.format(num_cells)
         for i in range(num_cells):
             item = item_struct._make(struct.unpack('<Hh', pkt_body[1+4*i:1+4*(i+1)]))
-            n_arfcn = item.arfcn_band & 0xfff
-            n_band = (item.arfcn_band >> 12)
+            n_band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+            n_arfcn = n_band_arfcn_bits[0:12].uint
+            n_band = n_band_arfcn_bits[12:16].uint
             n_rxpwr_real = item.rxpwr * 0.0625
             stdout += 'GSM Neighbor Cell Aux {}: ARFCN {}/BC {}, RxPwr {:.2f}\n'.format(i, n_arfcn, n_band, n_rxpwr_real)
 
@@ -201,8 +218,9 @@ class DiagGsmLogParser:
         item_struct = namedtuple('QcDiagGsmRrCellInfo', 'arfcn_band bcc ncc cid lai priority ncc_permitted')
         item = item_struct._make(struct.unpack('<HBBH5sBB', pkt_body[0:13]))
 
-        band = (item.arfcn_band & 0xF000) >> 12
-        arfcn = (item.arfcn_band & 0x0FFF)
+        band_arfcn_bits = bitstring.Bits(uint=item.arfcn_band, length=16)
+        arfcn = band_arfcn_bits[0:12].uint
+        band = band_arfcn_bits[12:16].uint
 
         if self.parent:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
@@ -297,7 +315,6 @@ class DiagGsmLogParser:
         return self.parse_gsm_rr(pkt_header, pkt_body[1:], {'radio_id': radio_id_pkt})
 
     def parse_gprs_mac(self, pkt_header, pkt_body, args):
-        self.parent.logger.log(logging.WARNING, "Unhandled XDM Header 0x5226: GPRS MAC Packet")
         radio_id = 0
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
