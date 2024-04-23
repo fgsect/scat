@@ -87,6 +87,15 @@ class DiagLteLogParser:
     # def parse_lte_dummy(self, pkt_header, pkt_body, args):
     #     return {'stdout': 'LTE Dummy 0x{:04x}: {}'.format(pkt_header.log_id, binascii.hexlify(pkt_body).decode())}
 
+    def parse_rsrp(self, rsrp):
+        return -180 + rsrp * 0.0625
+
+    def parse_rsrq(self, rsrq):
+        return -30 + rsrq * 0.0625
+
+    def parse_rssi(self, rssi):
+        return -110 + rssi * 0.0625
+
     # ML1
 
     def parse_lte_ml1_scell_meas(self, pkt_header, pkt_body, args):
@@ -159,11 +168,11 @@ class DiagLteLogParser:
                     self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
                     self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
-        real_rsrp = -180 + meas_rsrp * 0.0625
-        real_rssi = -110 + meas_rssi * 0.0625
-        real_rsrq = -30 + meas_rsrq * 0.0625
+        real_rsrp = self.parse_rsrp(meas_rsrp)
+        real_rssi = self.parse_rssi(meas_rssi)
+        real_rsrq = self.parse_rsrq(meas_rsrq)
 
-        return {'stdout': 'LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi),
+        return {'stdout': 'LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}, Measured RSRQ {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi, real_rsrq),
                 'ts': pkt_ts}
 
     def parse_lte_ml1_ncell_meas(self, pkt_header, pkt_body, args):
@@ -222,12 +231,77 @@ class DiagLteLogParser:
                     self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Neighbor Cell Meas packet - RRC version {}'.format(item.rrc_rel))
                     self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
-            n_real_rsrp = -180 + n_meas_rsrp * 0.0625
-            n_real_rssi = -110 + n_meas_rssi * 0.0625
-            n_real_rsrq = -30 + n_meas_rsrq * 0.0625
+            n_real_rsrp = self.parse_rsrp(n_meas_rsrp)
+            n_real_rssi = self.parse_rssi(n_meas_rssi)
+            n_real_rsrq = self.parse_rsrq(n_meas_rsrq)
 
-            stdout += '└── Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi)
+            stdout += '└── Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}, RSRQ {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi, n_real_rsrq)
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
+
+    def parse_lte_ml1_scell_meas_response_cell_v36(self, cell_id, cell_bytes, rsrp_offset=16, snr_offset=80, sir_cinr_offset=104):
+        interim = struct.unpack('<HHH', cell_bytes[0:6])
+        val0_bits = bitstring.Bits(uint=interim[0], length=16)
+        pci = val0_bits[0:9].uint
+        scell_idx = val0_bits[9:12].uint
+        is_scell = val0_bits[12:13].uint
+
+        val2_bits = bitstring.Bits(uint=interim[2], length=16)
+        sfn = val2_bits[0:10].uint
+        subfn = val2_bits[10:14].uint
+
+        interim = struct.unpack('<LLLLLLLLLLLL', cell_bytes[rsrp_offset:rsrp_offset+48])
+        val_bits = bitstring.Bits().join([bitstring.Bits(uint=x, length=32) for x in interim][::-1])
+
+        rsrp0 = self.parse_rsrp(val_bits[10:22].uint)
+        rsrp1 = self.parse_rsrp(val_bits[44:56].uint)
+        rsrp2 = self.parse_rsrp(val_bits[76:88].uint)
+        rsrp3 = self.parse_rsrp(val_bits[96:108].uint)
+        rsrp = self.parse_rsrp(val_bits[108:120].uint) + 40
+        frsrp = self.parse_rsrp(val_bits[140:152].uint)
+
+        rsrq0 = self.parse_rsrq(val_bits[160:170].uint)
+        rsrq1 = self.parse_rsrq(val_bits[180:190].uint)
+        rsrq2 = self.parse_rsrq(val_bits[202:212].uint)
+        rsrq3 = self.parse_rsrq(val_bits[212:222].uint)
+        rsrq = self.parse_rsrq(val_bits[224:234].uint)
+        frsrq = self.parse_rsrq(val_bits[244:254].uint)
+
+        rssi0 = self.parse_rssi(val_bits[256:267].uint)
+        rssi1 = self.parse_rssi(val_bits[267:278].uint)
+        rssi2 = self.parse_rssi(val_bits[288:299].uint)
+        rssi3 = self.parse_rssi(val_bits[299:310].uint)
+        rssi = self.parse_rssi(val_bits[320:331].uint)
+
+        # resid_freq_error = struct.unpack('<H', cell_bytes[70:72])[0]
+
+        interim = struct.unpack('<LL', cell_bytes[snr_offset:snr_offset+8])
+        val_bits = bitstring.Bits().join([bitstring.Bits(uint=x, length=32) for x in interim][::-1])
+        snr0 = val_bits[0:9].uint * 0.1 - 20.0
+        snr1 = val_bits[9:18].uint * 0.1 - 20.0
+        snr2 = val_bits[32:41].uint * 0.1 - 20.0
+        snr3 = val_bits[42:50].uint * 0.1 - 20.0
+
+        interim = struct.unpack('<LLllll', cell_bytes[sir_cinr_offset:sir_cinr_offset+24])
+        prj_sir = interim[0]
+        if prj_sir & (1 << 31):
+            prj_sir = prj_sir - 4294967296
+        prj_sir = prj_sir / 16
+
+        posticrsrq = (float((interim[1]))) * 0.0625 - 30.0
+
+        cinr0 = interim[2]
+        cinr1 = interim[3]
+        cinr2 = interim[4]
+        cinr3 = interim[5]
+
+        return 'LTE ML1 SCell Meas Response (Cell {}): PCI {}, SFN/SubFN {}/{}, Serving cell index {}, is_serving_cell = {}\n'.format(cell_id, pci, sfn, subfn, scell_idx, is_scell)
+
+    def parse_lte_ml1_scell_meas_response_cell_v48(self, cell_id, cell_bytes):
+        # resid_freq_error = struct.unpack('<H', cell_bytes[84:86])[0]
+        return self.parse_lte_ml1_scell_meas_response_cell_v36(cell_id, cell_bytes, snr_offset=92, sir_cinr_offset=116)
+
+    def parse_lte_ml1_scell_meas_response_cell_v60(self, cell_id, cell_bytes):
+        pass
 
     def parse_lte_ml1_scell_meas_response(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -259,58 +333,8 @@ class DiagLteLogParser:
 
                         pos_meas = 8
                         for y in range(subpkt_scell_meas_v36.num_cells):
-                            interim = struct.unpack('<HHH', subpkt_body[pos_meas:pos_meas+6])
-                            val0_bits = bitstring.Bits(uint=interim[0], length=16)
-                            pci = val0_bits[0:9].uint
-                            scell_idx = val0_bits[9:12].uint
-                            is_scell = val0_bits[12:13].uint
-
-                            sfn = interim[2] & 0x3ff
-                            subfn = (interim[2] >> 10) & 0xf
-
-                            interim = struct.unpack('<LLLLLLLLLLLL', subpkt_body[pos_meas+16:pos_meas+64])
-                            rsrp0 = (float((interim[0] >> 10) & 4095)) * 0.0625 - 180.0
-                            rsrp1 = (float((interim[1] >> 12) & 4095)) * 0.0625 - 180.0
-                            rsrp2 = (float((interim[2] >> 12) & 4095)) * 0.0625 - 180.0
-                            rsrp3 = (float((interim[4]) & 4095)) * 0.0625 - 180.0
-                            rsrp = (float((interim[4] >> 12) & 4095) + 640) * 0.0625 - 180.0
-                            frsrp = (float((interim[5] >> 12) & 4095)) * 0.0625 - 180.0
-
-                            rsrq0 = (float((interim[6]) & 1023)) * 0.0625 - 30.0
-                            rsrq1 = (float((interim[6] >> 20) & 1023)) * 0.0625 - 30.0
-                            rsrq2 = (float((interim[7] >> 10) & 1023)) * 0.0625 - 30.0
-                            rsrq3 = (float((interim[7] >> 20) & 1023)) * 0.0625 - 30.0
-                            rsrq = (float((interim[8]) & 1023)) * 0.0625 - 30.0
-                            frsrq = (float((interim[8] >> 20) & 1023)) * 0.0625 - 30.0
-
-                            rssi0 = (float((interim[9]) & 2047)) * 0.0625 - 110.0
-                            rssi1 = (float((interim[9] >> 11) & 2047)) * 0.0625 - 110.0
-                            rssi2 = (float((interim[10]) & 2047)) * 0.0625 - 110.0
-                            rssi3 = (float((interim[10] >> 11) & 2047)) * 0.0625 - 110.0
-                            rssi = (float((interim[11]) & 1023)) * 0.0625 - 110.0
-                            resid_freq_error = struct.unpack('<H', subpkt_body[pos_meas+70:pos_meas+72])[0]
-
-                            interim = struct.unpack('<LL', subpkt_body[pos_meas+80:pos_meas+88])
-                            snr0 = (float((interim[0]) & 511)) * 0.1 - 20.0
-                            snr1 = (float((interim[0] >> 9) & 511)) * 0.1 - 20.0
-                            snr2 = (float((interim[1]) & 511)) * 0.1 - 20.0
-                            snr3 = (float((interim[1] >> 9) & 511)) * 0.1 - 20.0
-
-                            interim = struct.unpack('<LLllll', subpkt_body[pos_meas+104:pos_meas+128])
-                            prj_sir = interim[0]
-                            if prj_sir & (1 << 31):
-                                prj_sir = prj_sir - 4294967296
-                            prj_sir = prj_sir / 16
-
-                            posticrsrq = (float((interim[1]))) * 0.0625 - 30.0
-
-                            cinr0 = interim[2]
-                            cinr1 = interim[3]
-                            cinr2 = interim[4]
-                            cinr3 = interim[5]
-
+                            stdout += self.parse_lte_ml1_scell_meas_response_cell_v36(y, subpkt_body[pos_meas:pos_meas+128])
                             pos_meas += 128
-                            stdout += 'LTE ML1 SCell Meas Response (Cell {}): PCI {}, Serving cell index {}, is_serving_cell = {}\n'.format(y, pci, scell_idx, is_scell)
                     elif subpkt_header.version == 48 or subpkt_header.version == 50:
                         # EARFCN, num of cell, valid RX data
                         subpkt_scell_meas_v48_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV48', 'earfcn num_cells valid_rx rx_map')
@@ -320,59 +344,18 @@ class DiagLteLogParser:
 
                         pos_meas = 12
                         for y in range(subpkt_scell_meas_v48.num_cells):
-                            interim = struct.unpack('<HHH', subpkt_body[pos_meas:pos_meas+6])
-                            val0_bits = bitstring.Bits(uint=interim[0], length=16)
-                            pci = val0_bits[0:9].uint
-                            scell_idx = val0_bits[9:12].uint
-                            is_scell = val0_bits[12:13].uint
-
-                            sfn = interim[2] & 0x3ff
-                            subfn = (interim[2] >> 10) & 0xf
-
-                            interim = struct.unpack('<LLLLLLLLLLLL', subpkt_body[pos_meas+16:pos_meas+64])
-                            rsrp0 = (float((interim[0] >> 10) & 4095)) * 0.0625 - 180.0
-                            rsrp1 = (float((interim[1] >> 12) & 4095)) * 0.0625 - 180.0
-                            rsrp2 = (float((interim[2] >> 12) & 4095)) * 0.0625 - 180.0
-                            rsrp3 = (float((interim[4]) & 4095)) * 0.0625 - 180.0
-                            rsrp = (float((interim[4] >> 12) & 4095) + 640) * 0.0625 - 180.0
-                            frsrp = (float((interim[5] >> 12) & 4095)) * 0.0625 - 180.0
-
-                            rsrq0 = (float((interim[6]) & 1023)) * 0.0625 - 30.0
-                            rsrq1 = (float((interim[6] >> 20) & 1023)) * 0.0625 - 30.0
-                            rsrq2 = (float((interim[7] >> 10) & 1023)) * 0.0625 - 30.0
-                            rsrq3 = (float((interim[7] >> 20) & 1023)) * 0.0625 - 30.0
-                            rsrq = (float((interim[8]) & 1023)) * 0.0625 - 30.0
-                            frsrq = (float((interim[8] >> 20) & 1023)) * 0.0625 - 30.0
-
-                            rssi0 = (float((interim[9]) & 2047)) * 0.0625 - 110.0
-                            rssi1 = (float((interim[9] >> 11) & 2047)) * 0.0625 - 110.0
-                            rssi2 = (float((interim[10]) & 2047)) * 0.0625 - 110.0
-                            rssi3 = (float((interim[10] >> 11) & 2047)) * 0.0625 - 110.0
-                            rssi = (float((interim[11]) & 1023)) * 0.0625 - 110.0
-                            resid_freq_error = struct.unpack('<H', subpkt_body[pos_meas+84:pos_meas+86])[0]
-
-                            interim = struct.unpack('<LL', subpkt_body[pos_meas+92:pos_meas+100])
-                            snr0 = (float((interim[0]) & 511)) * 0.1 - 20.0
-                            snr1 = (float((interim[0] >> 9) & 511)) * 0.1 - 20.0
-                            snr2 = (float((interim[1]) & 511)) * 0.1 - 20.0
-                            snr3 = (float((interim[1] >> 9) & 511)) * 0.1 - 20.0
-
-                            interim = struct.unpack('<LLllll', subpkt_body[pos_meas+116:pos_meas+140])
-                            prj_sir = interim[0]
-                            if prj_sir & (1 << 31):
-                                prj_sir = prj_sir - 4294967296
-                            prj_sir = prj_sir / 16
-
-                            posticrsrq = (float((interim[1]))) * 0.0625 - 30.0
-
-                            cinr0 = interim[2]
-                            cinr1 = interim[3]
-                            cinr2 = interim[4]
-                            cinr3 = interim[5]
-
+                            stdout += self.parse_lte_ml1_scell_meas_response_cell_v48(y, subpkt_body[pos_meas:pos_meas+140])
                             pos_meas += 140
-                            stdout += 'LTE ML1 SCell Meas Response (Cell {}): PCI {}, Serving cell index {}, is_serving_cell = {}\n'.format(y, pci, scell_idx, is_scell)
+                    elif subpkt_header.version == 60:
+                        subpkt_scell_meas_v60_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV60', 'earfcn num_cells')
+                        subpkt_scell_meas_v60 = subpkt_scell_meas_v60_struct._make(struct.unpack('<LL', subpkt_body[0:8]))
+                        stdout += 'LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}\n'.format(subpkt_scell_meas_v60.earfcn,
+                            subpkt_scell_meas_v60.num_cells)
 
+                        pos_meas = 8
+                        for y in range(subpkt_scell_meas_v60.num_cells):
+                            # stdout += self.parse_lte_ml1_scell_meas_response_cell_v60(y, subpkt_body[pos_meas:pos_meas+148])
+                            pos_meas += 148
                     else:
                         if self.parent:
                             self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(subpkt_header.version))
