@@ -19,11 +19,6 @@ class DiagWcdmaLogParser:
         self.process = {
             # Layer 1
             i(c.LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C): lambda x, y, z: self.parse_wcdma_search_cell_reselection(x, y, z),
-            #0x4179 WCDMA PN Search Edition 2
-            # 05 00 01 94 FE 00 02 00 02 00 02 00 FE 00 FE 00 A7 29 FF FF FF FF FF FF 00 00 01 04 01 23 00 00 CB 69 D0 18 C0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 5C 51 03 00 AC 4F 03 00 F8 52 03 00 24 51 03 00 18 54 03 00 04 54 03 00 08 02 00 00 78 00 00 00 78 00 00 00 74 00 00 00 71 00 00 00 70 00 00 00
-            # 05 00 01 74 FE 00 02 00 02 00 02 00 FE 00 FE 00 A7 29 FF FF FF FF FF FF 00 00 02 04 01 23 00 00 CB 69 D0 18 C0 00 04 01 23 00 00 56 5C 50 12 C0 00 04 00 00 00 00 00 00 00 00 00 00 00 00 5C 51 03 00 48 4F 03 00 88 4E 03 00 4C 51 03 00 2C 52 03 00 6C 52 03 00 BE 03 00 00 86 00 00 00 7E 00 00 00 75 00 00 00 6F 00 00 00 6F 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 B8 E5 02 00 3C E6 02 00 24 E8 02 00 08 E3 02 00 9C E3 02 00 80 E5 02 00 98 02 00 00 7F 00 00 00 78 00 00 00 77 00 00 00 77 00 00 00 76 00 00 00
-            #0x41B0 WCDMA Freq Scan
-            # 01 03 1E FE 01 A3 FF A7 29
 
             # Layer 2
             i(c.LOG_WCDMA_RLC_DL_AM_SIGNALING_PDU_C): lambda x, y, z: self.parse_wcdma_rlc_dl_am_signaling_pdu(x, y, z), # WCDMA RLC DL AM Signaling PDU

@@ -12,6 +12,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
     parser = DiagWcdmaLogParser(parent=None)
     log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
 
+    # Layer 1
     def test_parse_wcdma_cell_search(self):
         payload = binascii.unhexlify('82000000000000f1293200b6a5fff1f5ff000000000000f1293100b39effdedeff040000008000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -20,6 +21,14 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         expected = 'WCDMA Search Cell: 2 3G cells, 0 2G cells\nWCDMA Search Cell: 3G Cell 0: UARFCN 10737, PSC  50, RSCP -95, Ec/Io -7.50\nWCDMA Search Cell: 3G Cell 1: UARFCN 10737, PSC  49, RSCP -98, Ec/Io -17.00'
         self.assertEqual(result['stdout'], expected)
 
+    def test_parse_wcdma_pn_search_edition_2(self):
+        payload = binascii.unhexlify('05000194FE00020002000200FE00FE00A729FFFFFFFFFFFF0000010401230000CB69D018C000000000000000000000000000005C510300AC4F0300F8520300245103001854030004540300080200007800000078000000740000007100000070000000')
+        payload = binascii.unhexlify('05000174FE00020002000200FE00FE00A729FFFFFFFFFFFF0000020401230000CB69D018C0000401230000565C5012C000040000000000000000000000005C510300484F0300884E03004C5103002C5203006C520300BE030000860000007E000000750000006F0000006F000000000000000000000000000000B8E502003CE6020024E8020008E302009CE3020080E50200980200007F00000078000000770000007700000076000000')
+
+    def test_parse_wcdma_freq_scan(self):
+        payload = binascii.unhexlify('01031EFE01A3FFA729')
+
+    # Layer 2
     def test_parse_wcdma_rlc_dl_am_signaling_pdu(self):
         payload = binascii.unhexlify('0111010090000200201400')
         payload = binascii.unhexlify('011101009000020020ca00')
@@ -49,6 +58,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         result = self.parser.parse_wcdma_rlc_ul_pdu_cipher_packet(pkt_header, payload, None)
         self.assertEqual(result['stdout'], 'WCDMA RLC Cipher UL PDU: LCID: 16, CK = 0x1, Algorithm = UEA1, Count C = 0x400c')
 
+    # RRC
     def test_parse_wcdma_cell_id(self):
         payload = binascii.unhexlify('f1250000a729000041852d0800000700d01802060200030f9d9c000001000000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
