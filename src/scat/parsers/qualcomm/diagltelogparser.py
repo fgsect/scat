@@ -109,8 +109,9 @@ class DiagLteLogParser:
             self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet version 0x{:02x}'.format(pkt_version))
             return None
 
-        pci = item.pci_serv_layer_prio & 0x1ff
-        serv_layer_priority = item.pci_serv_layer_prio >> 9
+        pci_serv_layer_prio_bits = bitstring.Bits(uint=item.pci_serv_layer_prio, length=16)
+        pci = pci_serv_layer_prio_bits[0:9].uint
+        serv_layer_priority = pci_serv_layer_prio_bits[9:16].uint
         meas_rsrp = item.meas_rsrp & 0xfff
         avg_rsrp = item.avg_rsrp & 0xfff
 
@@ -187,9 +188,10 @@ class DiagLteLogParser:
             n_cell_pkt = pkt_body[pos + 32 * i:pos + 32 * (i + 1)]
             n_cell = n_cell_struct._make(struct.unpack('<LLLLHHLL', n_cell_pkt[0:28]))
 
-            n_pci = n_cell.val0 & 0x1ff
-            n_meas_rssi = (n_cell.val0 >> 9) & 0x7ff
-            n_meas_rsrp = (n_cell.val0 >> 20)
+            val0_bits = bitstring.Bits(uint=n_cell.val0, length=32)
+            n_pci = val0_bits[0:9].uint
+            n_meas_rssi = val0_bits[9:20].uint
+            n_meas_rsrp = val0_bits[20:32].uint
             n_avg_rsrp = (n_cell.val1 >> 12) & 0xfff
             n_meas_rsrq = (n_cell.val2 >> 12) & 0x3ff
             n_avg_rsrq = n_cell.val3 & 0x3ff
@@ -243,9 +245,10 @@ class DiagLteLogParser:
                         pos_meas = 8
                         for y in range(subpkt_scell_meas_v36.num_cells):
                             interim = struct.unpack('<HHH', subpkt_body[pos_meas:pos_meas+6])
-                            pci = interim[0] & 0x1ff
-                            scell_idx = (interim[0] >> 9) & 7
-                            is_scell = (interim[0] >> 12) & 1
+                            val0_bits = bitstring.Bits(uint=interim[0], length=16)
+                            pci = val0_bits[0:9].uint
+                            scell_idx = val0_bits[9:12].uint
+                            is_scell = val0_bits[12:13].uint
 
                             sfn = interim[2] & 0x3ff
                             subfn = (interim[2] >> 10) & 0xf
@@ -303,9 +306,10 @@ class DiagLteLogParser:
                         pos_meas = 12
                         for y in range(subpkt_scell_meas_v48.num_cells):
                             interim = struct.unpack('<HHH', subpkt_body[pos_meas:pos_meas+6])
-                            pci = interim[0] & 0x1ff
-                            scell_idx = (interim[0] >> 9) & 7
-                            is_scell = (interim[0] >> 12) & 1
+                            val0_bits = bitstring.Bits(uint=interim[0], length=16)
+                            pci = val0_bits[0:9].uint
+                            scell_idx = val0_bits[9:12].uint
+                            is_scell = val0_bits[12:13].uint
 
                             sfn = interim[2] & 0x3ff
                             subfn = (interim[2] >> 10) & 0xf
