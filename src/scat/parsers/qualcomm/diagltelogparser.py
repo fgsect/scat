@@ -117,27 +117,31 @@ class DiagLteLogParser:
         meas_rsrp = item.meas_rsrp & 0xfff
         avg_rsrp = item.avg_rsrp & 0xfff
 
-        meas_rsrq = item.rsrq & 0x3ff
-        avg_rsrq = (item.rsrq >> 20) & 0x3ff
+        rsrq_bits = bitstring.Bits(uint=item.rsrq, length=32)
+        meas_rsrq = rsrq_bits[0:10].uint
+        avg_rsrq = rsrq_bits[20:30].uint
 
         meas_rssi = (item.rssi >> 10) # TODO: get to know exact bit mask
 
-        q_rxlevmin = item.rxlev & 0x3f
-        p_max = (item.rxlev >> 6) & 0x7f
-        max_ue_tx_pwr = (item.rxlev >> 13) & 0x3f
-        s_rxlev = (item.rxlev >> 19) & 0x7f
-        num_drx_s_fail = (item.rxlev >> 26)
+        rxlev_bits = bitstring.Bits(uint=item.rxlev, length=32)
+        q_rxlevmin = rxlev_bits[0:6].uint
+        p_max = rxlev_bits[6:13].uint
+        max_ue_tx_pwr = rxlev_bits[13:19].uint
+        s_rxlev = rxlev_bits[19:26].uint
+        num_drx_s_fail = rxlev_bits[26:32].uint
 
-        s_intra_search = item.s_search & 0x3f
-        s_non_intra_search = (item.s_search >> 6) & 0x3f
+        s_search_bits = bitstring.Bits(uint=item.s_search, length=32)
+        s_intra_search = s_search_bits[0:6].uint
+        s_non_intra_search = s_search_bits[6:12].uint
 
         if pkt_version == 4:
             if item.rrc_rel == 0x01: # RRC Rel. 9
                 r9_data_interim = struct.unpack('<L', pkt_body[32:36])[0]
-                q_qual_min = r9_data_interim & 0x7f
-                s_qual = (r9_data_interim >> 7) & 0x7f
-                s_intra_search_q = (r9_data_interim >> 14) & 0x3f
-                s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
+                r9_data_bits = bitstring.Bits(uint=r9_data_interim, length=32)
+                q_qual_min = r9_data_bits[0:7].uint
+                s_qual = r9_data_bits[7:14].uint
+                s_intra_search_q = r9_data_bits[14:20].uint
+                s_nonintra_search_q = r9_data_bits[20:26].uint
             else:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
@@ -145,10 +149,11 @@ class DiagLteLogParser:
         elif pkt_version == 5:
             if item.rrc_rel == 0x01: # RRC Rel. 9
                 r9_data_interim = struct.unpack('<L', pkt_body[36:40])[0]
-                q_qual_min = r9_data_interim & 0x7f
-                s_qual = (r9_data_interim >> 7) & 0x7f
-                s_intra_search_q = (r9_data_interim >> 14) & 0x3f
-                s_nonintra_search_q = (r9_data_interim >> 20) & 0x3f
+                r9_data_bits = bitstring.Bits(uint=r9_data_interim, length=32)
+                q_qual_min = r9_data_bits[0:7].uint
+                s_qual = r9_data_bits[7:14].uint
+                s_intra_search_q = r9_data_bits[14:20].uint
+                s_nonintra_search_q = r9_data_bits[20:26].uint
             else:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet - RRC version {}'.format(item.rrc_rel))
