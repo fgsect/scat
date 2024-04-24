@@ -6,8 +6,6 @@ import binascii
 from collections import namedtuple
 
 import scat.parsers.samsung.sdmcmd as sdmcmd
-import re
-import math
 import bitstring
 from packaging import version
 
@@ -44,6 +42,7 @@ class SdmControlParser:
             g | c.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
             g | c.TRACE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_dm_trace_item_select_response(x),
             g | c.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
+            g | c.ILM_ITEM_SELECT_RESPONSE: lambda x: self.sdm_ilm_item_select_response(x),
             g | c.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
             g | c.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
         }
@@ -232,6 +231,33 @@ class SdmControlParser:
 
             if self.parent:
                 self.parent.ilm_group = self.ilm_group
+
+        if self.parent:
+            if not self.parent.ilm:
+                return None
+
+        return {'stdout': stdout}
+
+    def sdm_ilm_item_select_response(self, pkt):
+        pkt = pkt[15:-1]
+
+        item_struct = namedtuple('SdmDmTraceItemSelectReponse', 'unk num_items')
+        item = item_struct._make(struct.unpack('<BL', pkt[0:5]))
+        content = pkt[5:]
+
+        items = struct.unpack('<' + 'H' * item.num_items, content)
+        stdout = ''
+        stdout += 'SDM ILM Item Select Response: 0x{:02x}, Number of items: {}\n'.format(item.unk, item.num_items)
+        stdout += 'Enabled items:\n'
+        for i in range(item.num_items):
+            if i in self.ilm_group:
+                stdout += 'Item {} ({}): {:08x}\n'.format(i, self.ilm_group[i][3], items[i])
+            else:
+                stdout += 'Item {}: {:08x}\n'.format(i, items[i])
+
+        if self.parent:
+            if not self.parent.ilm:
+                return None
 
         return {'stdout': stdout}
 

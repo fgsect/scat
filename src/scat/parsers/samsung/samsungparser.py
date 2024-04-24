@@ -64,6 +64,7 @@ class SamsungParser:
         self.icd_ver_min = 0
         self.icd_ver = (0, 0)
         self.trace = False
+        self.ilm = False
         self.combine_stdout = False
         self.layers = []
 
@@ -128,6 +129,8 @@ class SamsungParser:
                 self.start_magic = int(params[p], base=16)
             elif p == 'trace':
                 self.trace = params[p]
+            elif p == 'ilm':
+                self.ilm = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
             elif p == 'layer':
@@ -155,12 +158,23 @@ class SamsungParser:
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'))
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_REFRESH_REQUEST, b'\xff'))
 
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
+        if self.trace:
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_TABLE_GET_REQUEST, b''))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_START_REQUEST, b'\x01'))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_START_REQUEST, b'\x02'))
+        else:
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x01'))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
 
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_STOP_REQUEST, b''))
+        if self.ilm:
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_ENTITY_TAGLE_GET_REQUEST, b''))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_START_REQUEST, b''))
+        else:
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_STOP_REQUEST, b''))
+
+        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRIGGER_TABLE_REQUEST, b''))
 
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)))
 

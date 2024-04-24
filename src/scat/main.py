@@ -91,6 +91,7 @@ def scat_main():
         sec_group.add_argument('--start-magic', help='Magic value provided for starting DM session. Default: 0x41414141', type=str, default='0x41414141')
         sec_group.add_argument('--sdmraw', help='Store log as raw SDM file (Samsung only)')
         sec_group.add_argument('--trace', action='store_true', help='Decode trace')
+        sec_group.add_argument('--ilm', action='store_true', help='Decode ILM')
 
     if 'hisi' in parser_dict.keys():
         hisi_group = parser.add_argument_group('HiSilicon specific settings')
@@ -185,6 +186,7 @@ def scat_main():
             'model': args.model,
             'start-magic': args.start_magic,
             'trace': args.trace,
+            'ilm': args.ilm,
             'combine-stdout': args.combine_stdout,
             'layer': layers})
     elif args.type == 'hisi':

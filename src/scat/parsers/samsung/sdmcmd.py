@@ -59,15 +59,16 @@ class sdm_control_message(IntEnum):
     CDMA_ITEM_REFRESH_REQUEST     = 0x46
     CDMA_ITEM_REFRESH_RESPONSE    = 0x47
 
-    TRACE_ITEM_SELECT_REQUEST     = 0x50
-    TRACE_ITEM_SELECT_RESPONSE    = 0x51
+    TRACE_START_REQUEST           = 0x50
+    TRACE_START_RESPONSE          = 0x51
     TRACE_STOP_REQUEST            = 0x52
     TRACE_STOP_RESPONSE           = 0x53
     TRACE_STATUS_GET_REQUEST      = 0x54
     TRACE_STATUS_GET_RESPONSE     = 0x55
     TRACE_TABLE_GET_REQUEST       = 0x56
     TRACE_TABLE_GET_RESPONSE      = 0x57
-    TRACE_ITEM_SELELECT_2_REQUEST = 0x58
+    TRACE_ITEM_SELECT_REQUEST     = 0x58
+    TRACE_ITEM_SELECT_RESPONSE    = 0x59
 
     ILM_START_REQUEST             = 0x70
     ILM_START_RESPONSE            = 0x71
@@ -232,7 +233,7 @@ def create_sdm_item_selection(item_count, *items):
 
     return ret
 
-def scat_sdm_common_selection():
+def scat_sdm_common_selection(layers=[]):
     return create_sdm_item_selection(0x07,
         (sdm_common_data.COMMON_BASIC_INFO, True),
         (0x01, True),
