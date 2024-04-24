@@ -443,7 +443,7 @@ class SamsungParser:
             self.logger.log(logging.WARNING, "Not handling group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
             parse_result = None
         else:
-            self.logger.log(logging.WARNING, "Skipping group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
+            self.logger.log(logging.DEBUG, "Skipping group 0x{:02x} command 0x{:02x}".format(sdm_pkt_hdr.group, sdm_pkt_hdr.command))
             self.logger.log(logging.DEBUG, binascii.hexlify(pkt[15:-1]).decode())
             parse_result = None
 
