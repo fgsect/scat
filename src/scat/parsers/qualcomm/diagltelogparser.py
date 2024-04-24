@@ -6,16 +6,17 @@ import logging
 import binascii
 from collections import namedtuple
 import bitstring
-try:
+from packaging import version
+
+bitstring_ver = version.parse(bitstring.__version__)
+if bitstring_ver >= version.parse('4.2.0'):
     bitstring.options.lsb0 = True
-except AttributeError:
-    try:
-        bitstring.lsb0 = True
-    except AttributeError:
-        try:
-            bitstring.set_lsb0(True)
-        except:
-            pass
+elif bitstring_ver >= version.parse('4.0.0'):
+    bitstring.lsb0 = True
+elif bitstring_ver >= version.parse('3.1.7'):
+    bitstring.set_lsb0(True)
+else:
+    raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
 
 import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
