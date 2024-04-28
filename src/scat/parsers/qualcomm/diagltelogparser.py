@@ -347,16 +347,16 @@ class DiagLteLogParser:
                         for y in range(subpkt_scell_meas_v48.num_cells):
                             stdout += self.parse_lte_ml1_scell_meas_response_cell_v48(y, subpkt_body[pos_meas:pos_meas+140])
                             pos_meas += 140
-                    elif subpkt_header.version == 60:
-                        subpkt_scell_meas_v60_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV60', 'earfcn num_cells')
-                        subpkt_scell_meas_v60 = subpkt_scell_meas_v60_struct._make(struct.unpack('<LL', subpkt_body[0:8]))
-                        stdout += 'LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}\n'.format(subpkt_scell_meas_v60.earfcn,
-                            subpkt_scell_meas_v60.num_cells)
+                    # elif subpkt_header.version == 60:
+                    #     subpkt_scell_meas_v60_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV60', 'earfcn num_cells')
+                    #     subpkt_scell_meas_v60 = subpkt_scell_meas_v60_struct._make(struct.unpack('<LL', subpkt_body[0:8]))
+                    #     stdout += 'LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}\n'.format(subpkt_scell_meas_v60.earfcn,
+                    #         subpkt_scell_meas_v60.num_cells)
 
-                        pos_meas = 8
-                        for y in range(subpkt_scell_meas_v60.num_cells):
-                            # stdout += self.parse_lte_ml1_scell_meas_response_cell_v60(y, subpkt_body[pos_meas:pos_meas+148])
-                            pos_meas += 148
+                    #     pos_meas = 8
+                    #     for y in range(subpkt_scell_meas_v60.num_cells):
+                    #         # stdout += self.parse_lte_ml1_scell_meas_response_cell_v60(y, subpkt_body[pos_meas:pos_meas+148])
+                    #         pos_meas += 148
                     else:
                         if self.parent:
                             self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas Serving Cell Measurement Result subpacket version {}'.format(subpkt_header.version))
