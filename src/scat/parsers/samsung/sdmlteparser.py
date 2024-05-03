@@ -24,6 +24,7 @@ class SdmLteParser:
 
             g | c.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
             g | c.LTE_L2_RNTI_INFO: lambda x: self.sdm_lte_l2_rnti_info(x),
+            g | c.LTE_L2_MAC_CONTROL_ELEMENT: lambda x: self.sdm_lte_l2_mac_ce(x),
 
             g | c.LTE_RRC_SERVING_CELL: lambda x: self.sdm_lte_rrc_serving_cell(x),
             g | c.LTE_RRC_STATUS: lambda x: self.sdm_lte_rrc_state(x),
@@ -208,6 +209,23 @@ class SdmLteParser:
         stdout = 'LTE L2 RNTI Info: SI: {:#x} P: {:#x} TC: {:#x} C: {:#x} RA: {:#x} {:#x}'.format(
             rnti_info.si_rnti, rnti_info.p_rnti, rnti_info.tc_rnti,
             rnti_info.c_rnti, rnti_info.ra_rnti, rnti_info.val6)
+        return {'stdout': stdout}
+
+    def sdm_lte_l2_mac_ce(self, pkt):
+        pkt = pkt[15:-1]
+        struct_format = '<BLBHB'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteL2MacCe', 'unk1 unk2 ta c_rnti trailer_len')
+        ce_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        stdout = 'LTE L2 MAC-CE: PHR: {:#x}, {:#10x}, TA: {}, RNTI: {:#x}, Trailer: {}'.format(
+            ce_info.unk1, ce_info.unk2, ce_info.ta, ce_info.c_rnti,
+            'None' if ce_info.trailer_len == 0 else '{} {}'.format(pkt[expected_len], binascii.hexlify(pkt[expected_len+1:expected_len+1+ce_info.trailer_len]).decode()))
         return {'stdout': stdout}
 
     def sdm_lte_rrc_serving_cell(self, pkt):
