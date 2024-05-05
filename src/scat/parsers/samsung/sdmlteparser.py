@@ -22,6 +22,9 @@ class SdmLteParser:
             g | c.LTE_PHY_CELL_SEARCH_MEAS: lambda x: self.sdm_lte_phy_cell_search_meas(x),
             g | c.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
 
+            g | c.LTE_L1_RF: lambda x: self.sdm_lte_l1_rf_info(x),
+            g | c.LTE_L1_RACH_ATTEMPT: lambda x: self.sdm_lte_l1_rach_attempt(x),
+
             g | c.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
             g | c.LTE_L2_RNTI_INFO: lambda x: self.sdm_lte_l2_rnti_info(x),
             g | c.LTE_L2_MAC_CONTROL_ELEMENT: lambda x: self.sdm_lte_l2_mac_ce(x),
@@ -177,6 +180,52 @@ class SdmLteParser:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
         return {'stdout': stdout.rstrip()}
+
+    def sdm_lte_l1_rf_info(self, pkt):
+        pkt = pkt[15:-1]
+        struct_format = '<hhhhh'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteL1RfInfo', 'rx0 rx1 rx2 rx3 tx')
+        rf_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        stdout = 'LTE L1 RF Info: RX: [{} {} {} {}], TX: {}'.format(
+            -rf_info.rx0 / 100, -rf_info.rx1 / 100, -rf_info.rx2 / 100, -rf_info.rx3 / 100, rf_info.tx)
+
+        pos = expected_len
+        num_extra_cells = struct.unpack('<L', pkt[expected_len:expected_len+4])[0]
+        pos += 4
+
+        if num_extra_cells > 0:
+            for i in range(num_extra_cells):
+                rf_info = header._make(struct.unpack(struct_format, pkt[pos:pos+expected_len]))
+                stdout += '\nLTE L1 RF Info: SCell {}: RX: [{} {} {} {}], TX: {}'.format(
+                    i,
+                    -rf_info.rx0 / 100, -rf_info.rx1 / 100, -rf_info.rx2 / 100, -rf_info.rx3 / 100, rf_info.tx)
+                pos += expected_len
+
+        return {'stdout': stdout}
+
+    def sdm_lte_l1_rach_attempt(self, pkt):
+        pkt = pkt[15:-1]
+        struct_format = '<LHHBBLHHB'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteL1RachAttempt', 'earfcn pci ra_rnti preamble txpwr ul_grant tc_rnti ta unk')
+        rach_attempt = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        stdout = 'LTE L1 RACH Attempt: EARFCN/PCI {}/{}, UL Grant: {:#010x}, TC-RNTI: {}, TA: {}'.format(
+            rach_attempt.earfcn, rach_attempt.pci, rach_attempt.ul_grant, rach_attempt.tc_rnti, rach_attempt.ta)
+
+        return {'stdout': stdout}
 
     def sdm_lte_l2_rach_info(self, pkt):
         pkt = pkt[15:-1]

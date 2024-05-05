@@ -107,6 +107,7 @@ class sdm_lte_data(IntEnum):
     LTE_L1_SYNC                  = 0x11
     LTE_L1_DOWNLINK              = 0x12
     LTE_L1_UPLINK                = 0x13
+    LTE_L1_RACH_ATTEMPT          = 0x17
     LTE_L1_MEAS_CONFIG           = 0x18
 
     LTE_L2_UL_SPECIFIC_PARAM     = 0x30
