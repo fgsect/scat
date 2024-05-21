@@ -117,13 +117,13 @@ def scat_main():
 
     if not args.type in parser_dict.keys():
         print('Error: invalid baseband type {} specified. Available modules: {}'.format(args.type, ', '.join(parser_dict.keys())))
-        sys.exit(0)
+        sys.exit(1)
 
     layers = args.layer.split(',')
     for l in layers:
         if not l in valid_layers:
             print('Error: invalid layer {} specified. Available layers: {}'.format(l, ', '.join(valid_layers)))
-            sys.exit(0)
+            sys.exit(1)
 
     # Device preparation
     io_device = None
@@ -148,7 +148,7 @@ def scat_main():
         io_device = scat.iodevices.FileIO(args.dump)
     else:
         print('Error: no device specified.')
-        sys.exit(0)
+        sys.exit(1)
 
     # Writer preparation
     if args.pcap_file == None:
@@ -216,7 +216,7 @@ def scat_main():
         current_parser.read_dump()
     else:
         assert('Invalid input handler?')
-        sys.exit(0)
+        sys.exit(1)
 
 if __name__ == '__main__':
     scat_main()
