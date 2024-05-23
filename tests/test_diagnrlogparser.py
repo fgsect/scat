@@ -109,6 +109,42 @@ class TestDiagNrLogParser(unittest.TestCase):
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
+    
+    def test_parse_nr_ml1_meas_db_update(self):
+        #major 2 minor 7 one beam
+        payload = binascii.unhexlify('070002000114000026ffffff44000000991006000100c602000000000000000000000000ffffffffffff0000ffffffffc6027e000100000017caffff0afaffff000000000000000000000000a5a1dbbd4199a005a3bcffff17caffff17caffff0afaffff0000000000000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload, None)
+        expected = {'stdout': 'NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer: 0, NR-ARFCN 397465, Num Cells 1, Serving PCI 710, Serving SSB 0\n\tCell: 0 PCI 710 PBCH SFN 126 Num Beams 1\n\t\tBeam: 0 SSB Index 0 beam_rsrp -107.8203125 beam_rsrq -11.921875\n',
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected)
+        # major 2 minor 9 one beam
+        payload = binascii.unhexlify('09000200000000000114000026ffffff44000000991006000100c602000000000000000000000000ffffffffffff0000ffffffffc6027e000100000017caffff0afaffff000000000000000000000000a5a1dbbd4199a005a3bcffff17caffff17caffff0afaffff0000000000000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload, None)
+        expected = {'stdout': 'NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer: 0, NR-ARFCN 397465, Num Cells 1, Serving PCI 710, Serving SSB 0\n\tCell: 0 PCI 710 PBCH SFN 126 Num Beams 1\n\t\tBeam: 0 SSB Index 0 beam_rsrp -107.8203125 beam_rsrq -11.921875\n',
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected)
+
+        # major 2 minor 7 4 beams
+        payload = binascii.unhexlify('070002000114000016040000f8ffffff11ef070001005500020000000000000000000000ffffffffffff0000ffffffff5f00fe000400000064d0ffffa9faffff02000000000000000000000056efbfd9a266dd0e06d0ffff3bcdffff06d0ffffacfaffff0000000000000000010000000000000000000000aed514d75244dd0e64d0ffff4dcdffff64d0ffffa9faffff0000000000000000000000000000000000000000567115d5a22add0efecbffff8ac9fffffecbffff73f9ffff00000000000000000500000000000000000000000e0910f752bc7d05c1caffffcfc8ffffc1caffffedf8ffff0000000000000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
+        expected = {'stdout': "NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer: 0, NR-ARFCN 519953, Num Cells 1, Serving PCI 85, Serving SSB 2\n\tCell: 0 PCI 95 PBCH SFN 254 Num Beams 4\n\t\tBeam: 0 SSB Index 2 beam_rsrp -95.953125 beam_rsrq -10.65625\n\t\tBeam: 1 SSB Index 1 beam_rsrp -95.21875 beam_rsrq -10.6796875\n\t\tBeam: 2 SSB Index 0 beam_rsrp -104.015625 beam_rsrq -13.1015625\n\t\tBeam: 3 SSB Index 5 beam_rsrp -106.4921875 beam_rsrq -14.1484375\n",
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected)
+        
+        # major 2 minor 9 4 beams
+        payload = binascii.unhexlify('09000200000000000114000016040000f8ffffff11ef070001005500020000000000000000000000ffffffffffff0000ffffffff5f00fe000400000064d0ffffa9faffff02000000000000000000000056efbfd9a266dd0e06d0ffff3bcdffff06d0ffffacfaffff0000000000000000010000000000000000000000aed514d75244dd0e64d0ffff4dcdffff64d0ffffa9faffff0000000000000000000000000000000000000000567115d5a22add0efecbffff8ac9fffffecbffff73f9ffff00000000000000000500000000000000000000000e0910f752bc7d05c1caffffcfc8ffffc1caffffedf8ffff0000000000000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
+        expected = {'stdout': "NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer: 0, NR-ARFCN 519953, Num Cells 1, Serving PCI 85, Serving SSB 2\n\tCell: 0 PCI 95 PBCH SFN 254 Num Beams 4\n\t\tBeam: 0 SSB Index 2 beam_rsrp -95.953125 beam_rsrq -10.65625\n\t\tBeam: 1 SSB Index 1 beam_rsrp -95.21875 beam_rsrq -10.6796875\n\t\tBeam: 2 SSB Index 0 beam_rsrp -104.015625 beam_rsrq -13.1015625\n\t\tBeam: 3 SSB Index 5 beam_rsrp -106.4921875 beam_rsrq -14.1484375\n",
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected)
 
 if __name__ == '__main__':
     unittest.main()
