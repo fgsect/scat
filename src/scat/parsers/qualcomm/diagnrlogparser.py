@@ -84,7 +84,15 @@ class DiagNrLogParser:
                 meas_carrier_list.serv_rx_beam_0 if meas_carrier_list.serv_rx_beam_0 != 0xffff else 'NA',
                 meas_carrier_list.serv_rx_beam_1 if meas_carrier_list.serv_rx_beam_1 != 0xffff else 'NA',
                 meas_carrier_list.num_cells, meas_carrier_list.serv_cell_index)
-            num_cells = meas_carrier_list.num_cells
+
+            if meas_carrier_list.num_cells == 0xff or meas_carrier_list.num_cells == 0x00:
+                if meas_carrier_list.serv_cell_index > 0x00 and meas_carrier_list.serv_cell_index < 0xff:
+                    num_cells = meas_carrier_list.serv_cell_index
+                else:
+                    num_cells = 0
+            else:
+                num_cells = meas_carrier_list.num_cells
+
             for cell in range(num_cells):
                 cell_list_struct = namedtuple('QcDiagNrMl1Packet', 'pci pbch_sfn num_beams null_0 cell_quality_rsrp cell_quality_rsrq')
                 cell_list = cell_list_struct._make(struct.unpack('<HHB3sII', pkt_body[current_offset:current_offset+16]))
