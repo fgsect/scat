@@ -70,7 +70,7 @@ class DiagNrLogParser:
                 current_offset = 16
         else:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown ML1 Information packet Major: {} Minor: {}'.format(pkt_ver.ml1_rel_maj, pkt_ver.ml1_rel_min))
+                self.parent.logger.log(logging.WARNING, 'Unknown NR ML1 Information packet, version: {}.{}'.format(pkt_ver.ml1_rel_maj, pkt_ver.ml1_rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return
 
@@ -78,21 +78,35 @@ class DiagNrLogParser:
             meas_carrier_list_struct = namedtuple('QcDiagNrMl1Packet', 'raster_arfcn num_cells serv_cell_index serv_cell_pci serv_ssb null_0 serv_rsrp_rx_0 serv_rsrp_rx_1 serv_rx_beam_0 serv_rx_beam_1 serv_rfic_id null_1 serv_subarr_0 serv_subarr_1')
             meas_carrier_list = meas_carrier_list_struct._make(struct.unpack('<IBBHB3sIIHHH2sHH', pkt_body[current_offset:current_offset+32]))
             current_offset += 32
-            stdout += "Layer: {}, NR-ARFCN {}, Num Cells {}, Serving PCI {}, Serving SSB {}\n".format(layer, meas_carrier_list.raster_arfcn, meas_carrier_list.num_cells, meas_carrier_list.serv_cell_pci, meas_carrier_list.serv_ssb)
+            stdout += "Layer {}: NR-ARFCN {}, SCell PCI {:4d}/SSB {}, RSRP {:.2f}/{:.2f}, RX beam {}/{}, Num Cells: {} (S: {})\n".format(
+                layer, meas_carrier_list.raster_arfcn, meas_carrier_list.serv_cell_pci, meas_carrier_list.serv_ssb & 0xf,
+                self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_0), self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_1),
+                meas_carrier_list.serv_rx_beam_0 if meas_carrier_list.serv_rx_beam_0 != 0xffff else 'NA',
+                meas_carrier_list.serv_rx_beam_1 if meas_carrier_list.serv_rx_beam_1 != 0xffff else 'NA',
+                meas_carrier_list.num_cells, meas_carrier_list.serv_cell_index)
             num_cells = meas_carrier_list.num_cells
             for cell in range(num_cells):
                 cell_list_struct = namedtuple('QcDiagNrMl1Packet', 'pci pbch_sfn num_beams null_0 cell_quality_rsrp cell_quality_rsrq')
                 cell_list = cell_list_struct._make(struct.unpack('<HHB3sII', pkt_body[current_offset:current_offset+16]))
                 current_offset += 16
-                stdout += "\tCell: {} PCI {} PBCH SFN {} Num Beams {}\n".format(cell, cell_list.pci, cell_list.pbch_sfn, cell_list.num_beams)
+                stdout += "└── Cell {}: PCI {:4d}, PBCH SFN {}, RSRP: {:.2f}, RSRQ: {:.2f}, Num Beams: {}\n".format(
+                    cell, cell_list.pci, cell_list.pbch_sfn,
+                    self.parse_float_q7(cell_list.cell_quality_rsrp), self.parse_float_q7(cell_list.cell_quality_rsrq),
+                    cell_list.num_beams)
                 for beam in range(cell_list.num_beams):
                     beam_meas_struct = namedtuple('QcDiagNrMl1Packet', 'ssb_index null_0 rx_beam_0 rx_beam_1 null_1 ssb_ref_timing rx_beam_info_rsrp_0 rx_beam_info_rsrp_1 nr2nr_filtered_beam_rsrp_l3 nr2nr_filtered_beam_rsrq_l3 l_2_nr_filtered_tx_beam_rsrp_l3 l_2_nr_filtered_tx_beam_rsrq_l3')
                     beam_meas = beam_meas_struct._make(struct.unpack('<HHHHIQIIIIII', pkt_body[current_offset: current_offset+44]))
                     current_offset+=44
-                    stdout += "\t\tBeam: {} SSB Index {} beam_rsrp {} beam_rsrq {}\n".format(beam, beam_meas.ssb_index, self.parse_float_q7(beam_meas.nr2nr_filtered_beam_rsrp_l3), self.parse_float_q7(beam_meas.nr2nr_filtered_beam_rsrq_l3))
+                    stdout += "    └── Beam {}: SSB[{}] Beam ID {}/{}, RSRP {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr) {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr) {:.2f}/{:.2f}\n".format(
+                        beam, beam_meas.ssb_index,
+                        beam_meas.rx_beam_0, beam_meas.rx_beam_1,
+                        self.parse_float_q7(beam_meas.rx_beam_info_rsrp_0), self.parse_float_q7(beam_meas.rx_beam_info_rsrp_1),
+                        self.parse_float_q7(beam_meas.nr2nr_filtered_beam_rsrp_l3), self.parse_float_q7(beam_meas.nr2nr_filtered_beam_rsrq_l3),
+                        self.parse_float_q7(beam_meas.l_2_nr_filtered_tx_beam_rsrp_l3), self.parse_float_q7(beam_meas.l_2_nr_filtered_tx_beam_rsrq_l3),
+                    )
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        return {'stdout': stdout, 'ts': pkt_ts}
+        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     # RRC
     def parse_nr_rrc(self, pkt_header, pkt_body, args):
