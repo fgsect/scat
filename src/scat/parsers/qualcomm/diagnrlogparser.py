@@ -39,7 +39,7 @@ class DiagNrLogParser:
             i(c.LOG_5GNR_NAS_5GMM_STATE): lambda x, y, z: self.parse_nr_mm_state(x, y, z),
         }
 
-    def rsrp_calculator(self, data_to_convert):
+    def parse_float_q7(self, data_to_convert):
         if data_to_convert == 0:
             return 0
         integer = (data_to_convert >> 7) & 0xff
@@ -89,7 +89,7 @@ class DiagNrLogParser:
                     beam_meas_struct = namedtuple('QcDiagNrMl1Packet', 'ssb_index null_0 rx_beam_0 rx_beam_1 null_1 ssb_ref_timing rx_beam_info_rsrp_0 rx_beam_info_rsrp_1 nr2nr_filtered_beam_rsrp_l3 nr2nr_filtered_beam_rsrq_l3 l_2_nr_filtered_tx_beam_rsrp_l3 l_2_nr_filtered_tx_beam_rsrq_l3')
                     beam_meas = beam_meas_struct._make(struct.unpack('<HHHHIQIIIIII', pkt_body[current_offset: current_offset+44]))
                     current_offset+=44
-                    stdout += "\t\tBeam: {} SSB Index {} beam_rsrp {} beam_rsrq {}\n".format(beam, beam_meas.ssb_index, self.rsrp_calculator(beam_meas.nr2nr_filtered_beam_rsrp_l3), self.rsrp_calculator(beam_meas.nr2nr_filtered_beam_rsrq_l3))
+                    stdout += "\t\tBeam: {} SSB Index {} beam_rsrp {} beam_rsrq {}\n".format(beam, beam_meas.ssb_index, self.parse_float_q7(beam_meas.nr2nr_filtered_beam_rsrp_l3), self.parse_float_q7(beam_meas.nr2nr_filtered_beam_rsrq_l3))
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         return {'stdout': stdout, 'ts': pkt_ts}
