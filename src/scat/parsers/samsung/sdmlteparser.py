@@ -30,7 +30,7 @@ class SdmLteParser:
             g | c.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
             g | c.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
             g | c.LTE_RRC_RACH_MSG: lambda x: self.sdm_lte_rrc_rach_msg(x),
-            g | 0x57: lambda x: self.sdm_lte_dummy(x, 0x57),
+            g | c.LTE_RRC_EVENT: lambda x: self.sdm_lte_dummy(x, 0x57),
             g | c.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
             g | c.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
             g | c.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),

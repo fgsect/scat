@@ -136,6 +136,7 @@ class sdm_lte_data(IntEnum):
     LTE_RRC_TIMER                = 0x53
     LTE_RRC_ASN_VERSION          = 0x54
     LTE_RRC_RACH_MSG             = 0x55
+    LTE_RRC_EVENT                = 0x57
     LTE_NAS_SIM_DATA             = 0x58
     LTE_NAS_STATUS_VARIABLE      = 0x59
     LTE_NAS_EMM_MESSAGE          = 0x5A
