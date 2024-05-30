@@ -19,6 +19,7 @@ class SdmLteParser:
         c = sdmcmd.sdm_lte_data
         self.process = {
             g | c.LTE_PHY_STATUS: lambda x: self.sdm_lte_phy_status(x),
+            g | c.LTE_PHY_CELL_SEARCH_MEAS: lambda x: self.sdm_lte_phy_cell_search_meas(x),
             g | c.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
 
             g | c.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
@@ -66,6 +67,46 @@ class SdmLteParser:
         phy_status = header._make(struct.unpack('<H', pkt[0:2]))
         stdout = 'LTE PHY Status: Current SFN {}'.format(phy_status.sfn)
         return {'stdout': stdout}
+
+    def sdm_lte_phy_cell_search_meas(self, pkt):
+        sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
+        pkt = pkt[15:-1]
+
+        header = namedtuple('SdmLtePhyCellSearchMeas', 'pci unk rsrp0 rsrq0 rssi0 rsrp1 rsrq1 rssi1 rsrp2 rsrq2 rssi2 rsrp3 rsrq3 rssi3')
+        header_fmt = '<HL LLL LLL LLL LLL'
+        header_expected_len = struct.calcsize(header_fmt)
+
+        if len(pkt) < header_expected_len:
+            self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({})'.format(len(pkt), header_expected_len))
+            return None
+
+        scell_meas = header._make(struct.unpack(header_fmt, pkt[0:header_expected_len]))
+        stdout = 'LTE PHY Cell Search Measure: SCell: PCI {}, RSRP/RSRQ/RSSI: ({}, {}, {}), ({}, {}, {}), ({}, {}, {}), ({}, {}, {})\n'.format(
+            scell_meas.pci,
+            -scell_meas.rsrp0 / 100, -scell_meas.rsrq0 / 100, -scell_meas.rssi0 / 100,
+            -scell_meas.rsrp1 / 100, -scell_meas.rsrq1 / 100, -scell_meas.rssi1 / 100,
+            -scell_meas.rsrp2 / 100, -scell_meas.rsrq2 / 100, -scell_meas.rssi2 / 100,
+            -scell_meas.rsrp3 / 100, -scell_meas.rsrq3 / 100, -scell_meas.rssi3 / 100,
+        )
+
+        if len(pkt) > 54:
+            pos = 54
+            num_ncells = struct.unpack('<L', pkt[pos:pos+4])[0]
+            pos += 4
+            for i in range(num_ncells):
+                ncell_meas = header._make(struct.unpack(header_fmt, pkt[pos:pos+header_expected_len]))
+                stdout += 'LTE PHY Cell Search Measure: NCell {}: PCI {}, RSRP/RSRQ/RSSI: ({}, {}, {}), ({}, {}, {}), ({}, {}, {}), ({}, {}, {})\n'.format(
+                    i,
+                    ncell_meas.pci,
+                    -ncell_meas.rsrp0 / 100, -ncell_meas.rsrq0 / 100, -ncell_meas.rssi0 / 100,
+                    -ncell_meas.rsrp1 / 100, -ncell_meas.rsrq1 / 100, -ncell_meas.rssi1 / 100,
+                    -ncell_meas.rsrp2 / 100, -ncell_meas.rsrq2 / 100, -ncell_meas.rssi2 / 100,
+                    -ncell_meas.rsrp3 / 100, -ncell_meas.rsrq3 / 100, -ncell_meas.rssi3 / 100,
+                )
+                pos += header_expected_len
+            extra = pkt[pos:]
+
+        return {'stdout': stdout.rstrip()}
 
     def sdm_lte_phy_cell_info(self, pkt):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
