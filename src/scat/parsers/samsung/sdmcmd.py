@@ -136,6 +136,7 @@ class sdm_lte_data(IntEnum):
     LTE_RRC_TIMER                = 0x53
     LTE_RRC_ASN_VERSION          = 0x54
     LTE_RRC_RACH_MSG             = 0x55
+    LTE_RRC_TIMER_STATE_INFO     = 0x56
     LTE_RRC_EVENT                = 0x57
     LTE_NAS_SIM_DATA             = 0x58
     LTE_NAS_STATUS_VARIABLE      = 0x59
@@ -150,6 +151,10 @@ class sdm_lte_data(IntEnum):
     LTE_DATA_TIMING_INFO         = 0x61
     LTE_DATA_HANDOVER_STAT       = 0x62
     LTE_DATA_CALL_DROP           = 0x63
+    LTE_NAS_TIN_INFO             = 0x64
+    LTE_NAS_ATTEMPT_INFO         = 0x65
+    LTE_NAS_EMM_TIMER_STATE_INFO = 0x66
+    LTE_NAS_ESM_TIMER_STATE_INFO = 0x67
 
     LTE_VOLTE_TX_PACKET_INFO     = 0x70
     LTE_VOLTE_RX_PACKET_INFO     = 0x71
@@ -203,6 +208,7 @@ class sdm_hspa_data(IntEnum):
     HSPA_URRC_RRC_STATUS      = 0x20
     HSPA_URRC_RB_MAPPING      = 0x21
     HSPA_URRC_NETWORK_INFO    = 0x22
+    HSPA_URRC_EVENT           = 0x23
     HSPA_UUL_RACH_CONFIG      = 0x28
     HSPA_UUL_UDPCH_CONFIG     = 0x29
     HSPA_UUL_POWER_INFO       = 0x2a
