@@ -28,7 +28,7 @@ class PcapWriter:
 
     def write_pkt(self, sock_content, port, radio_id=0, ts=datetime.datetime.now()):
         pcap_hdr = struct.pack('<LLLL',
-                int(ts.timestamp()),
+                int(ts.timestamp()) % 4294967296,
                 ts.microsecond,
                 len(sock_content) + 8 + 20 + 14,
                 len(sock_content) + 8 + 20 + 14,
