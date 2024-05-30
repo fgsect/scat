@@ -147,14 +147,16 @@ class DiagNrLogParser:
 
         if pkt_ver in (0x09, 0x0c):
             rrc_type_map = {
-                1: "BCCH_BCH",
-                2: "BCCH_DL_SCH",
-                3: "DL_CCCH",
-                4: "DL_DCCH",
-                5: "PCCH",
-                6: "UL_CCCH",
-                7: "UL_CCCH1",
-                8: "UL_DCCH",
+                1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+                2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+                4: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+                5: util.gsmtapv3_nr_rrc_types.PCCH,
+                6: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+                7: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
+                8: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+            }
+            rrc_type_map_stdout = {
                 9: "RRC_RECONFIGURATION",
                 10: "RRC_RECONFIGURATION_COMPLETE",
                 25: "nr-RadioBearerConfig",
@@ -163,14 +165,16 @@ class DiagNrLogParser:
             }
         elif pkt_ver in (0x0e, ):
             rrc_type_map = {
-                1: "BCCH_BCH",
-                2: "BCCH_DL_SCH",
-                3: "DL_CCCH",
-                4: "DL_DCCH",
-                5: "PCCH",
-                6: "UL_CCCH",
-                7: "UL_CCCH1",
-                8: "UL_DCCH",
+                1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+                2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+                4: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+                5: util.gsmtapv3_nr_rrc_types.PCCH,
+                6: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+                7: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
+                8: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+            }
+            rrc_type_map_stdout = {
                 9: "RRC_RECONFIGURATION",
                 10: "RRC_RECONFIGURATION_COMPLETE",
                 31: "UE_MRDC_CAPABILITY",
@@ -179,29 +183,33 @@ class DiagNrLogParser:
             }
         elif pkt_ver in (0x11, 0x13, ):
             rrc_type_map = {
-                1: "BCCH_BCH",
-                2: "BCCH_DL_SCH",
-                3: "DL_CCCH",
-                4: "DL_DCCH",
-                5: "PCCH",
-                6: "UL_CCCH",
-                7: "UL_CCCH1",
-                8: "UL_DCCH",
+                1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+                2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+                4: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+                5: util.gsmtapv3_nr_rrc_types.PCCH,
+                6: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+                7: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
+                8: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+            }
+            rrc_type_map_stdout = {
                 9: "RRC_RECONFIGURATION",
                 10: "RRC_RECONFIGURATION_COMPLETE",
                 29: "nr-RadioBearerConfig",
             }
         elif pkt_ver in (0x17, ):
            rrc_type_map = {
-                1: "BCCH_BCH",
-                2: "BCCH_DL_SCH",
-                3: "DL_CCCH",
-                4: "DL_DCCH",
-                5: "MCCH",
-                6: "PCCH",
-                7: "UL_CCCH",
-                8: "UL_CCCH1",
-                9: "UL_DCCH",
+                1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+                2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+                4: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+                5: util.gsmtapv3_nr_rrc_types.MCCH,
+                6: util.gsmtapv3_nr_rrc_types.PCCH,
+                7: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+                8: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
+                9: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+           }
+           rrc_type_map_stdout = {
                 10: "RRC_RECONFIGURATION",
                 11: "RRC_RECONFIGURATION_COMPLETE",
                 36: "nr-RadioBearerConfig",
@@ -213,13 +221,28 @@ class DiagNrLogParser:
 
         if item.pdu_id in rrc_type_map.keys():
             type_str = rrc_type_map[item.pdu_id]
+            stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}".format(item.nrarfcn, item.pci)
+            nr_pdu_id_gsmtap = rrc_type_map[item.pdu_id]
+
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.NR_RRC,
+                arfcn = 0,
+                sub_type = nr_pdu_id_gsmtap,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+
+            return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts, 'stdout': stdout}
         else:
-            type_str = '{}'.format(item.pdu_id)
+            if item.pdu_id in rrc_type_map_stdout.keys():
+                type_str = rrc_type_map_stdout[item.pdu_id]
+            else:
+                type_str = '{}'.format(item.pdu_id)
 
-        stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}, Type: {}\n".format(item.nrarfcn, item.pci, type_str)
-        stdout += "NR RRC OTA Packet: Body: {}".format(binascii.hexlify(msg_content).decode())
+            stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}, Type: {}\n".format(item.nrarfcn, item.pci, type_str)
+            stdout += "NR RRC OTA Packet: Body: {}".format(binascii.hexlify(msg_content).decode())
 
-        return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
+            return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_mib_info(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -306,6 +329,7 @@ class DiagNrLogParser:
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
         stdout = ''
+        plain = (cmd_id in (0xB800, 0xB801, 0xB80A, 0xB80B, 0xB814))
 
         # Version 4b, std version maj.min.rev 1b each
         pkt_ver = struct.unpack('<L', pkt_body[0:4])[0]
@@ -313,16 +337,24 @@ class DiagNrLogParser:
         msg_content = pkt_body[7:]
         if pkt_ver == 0x1:
             item = item_struct._make(struct.unpack('<BBB', pkt_body[4:7]))
-            stdout = "NAS-5GS message ({:04X}) version {:x}.{:x}.{:x}: ".format(cmd_id, item.vermaj, item.vermid, item.vermin)
+            stdout = "NAS-5GS message ({:04X}) version {:x}.{:x}.{:x}".format(cmd_id, item.vermaj, item.vermid, item.vermin)
             msg_content = pkt_body[7:]
             stdout += "{}".format(binascii.hexlify(msg_content).decode())
+
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.NAS_5GS,
+                arfcn = 0,
+                sub_type = 0 if plain else 1,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+
+            return {'layer': 'nas', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts, 'stdout': stdout}
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR NAS Message packet version {:#x}'.format(pkt_ver))
                 self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
-
-        return {'layer': 'nas', 'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_mm_state(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)

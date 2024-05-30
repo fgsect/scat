@@ -263,12 +263,65 @@ class gsmtap_lte_rrc_types(IntEnum):
     PCCH_NB = 21
     SC_MCCH_NB = 22
 
+@unique
+class gsmtapv3_types(IntEnum):
+    OSMOCORE_LOG = 0x0000
+    SIM = 0x0001
+    BASEBAND_DIAG = 0x0002
+    SIGNAL_STATUS_REPORT = 0x0003
+    TETRA_I1 = 0x0004
+    TETRA_I1_BURST = 0x0005
+    GMR1_UM = 0x0006
+    E1T1 = 0x0007
+    WMX_BURST = 0x0008
+
+    UM = 0x0200
+    UM_BURST = 0x0201
+    GB_RLCMAC = 0x0202
+    GB_LLC = 0x0203
+    GB_SNDCP = 0x0204
+    ABIS = 0x0205
+    RLP = 0x0206
+
+    UMTS_MAC = 0x0300
+    UMTS_RLC = 0x0301
+    UMTS_PDCP = 0x0302
+    UMTS_RRC = 0x0303
+
+    LTE_MAC = 0x0400
+    LTE_RLC = 0x0401
+    LTE_PDCP = 0x0402
+    LTE_RRC = 0x0403
+    NAS_EPS = 0x0404
+
+    NR_MAC = 0x0500
+    NR_RLC = 0x0501
+    NR_PDCP = 0x0502
+    NR_RRC = 0x0503
+    NAS_5GS = 0x0504
+
+@unique
+class gsmtapv3_nr_rrc_types(IntEnum):
+    BCCH_BCH = 0x0001
+    BCCH_DL_SCH = 0x0002
+    DL_CCCH = 0x0003
+    DL_DCCH = 0x0004
+    MCCH = 0x0005
+    PCCH = 0x0006
+    UL_CCCH = 0x0007
+    UL_CCCH1 = 0x0008
+    UL_DCCH = 0x0009
+
+    SBCCH_SL_BCH = 0x0101
+    SCCH = 0x0102
+
 def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
     arfcn = 0, signal_dbm = 0, snr_db = 0, frame_number = 0,
     sub_type = 0, antenna_nr = 0, sub_slot = 0,
     device_sec = 0, device_usec = 0):
 
     gsmtap_v2_hdr_def = '!BBBBHBBLBBBB'
+    gsmtap_v3_hdr_def = '!BBHHH'
     gsmtap_hdr = b''
 
     # Sanity check - Wireshark GSMTAP dissector accepts only 14 bits of ARFCN
@@ -295,7 +348,13 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             0                            # Reserved
             )
     elif version == 3:
-        assert False, "New GSMTAPv3 is WIP"
+        gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
+            3,                           # Version
+            0,                           # Reserved
+            2,                           # Header Length
+            payload_type,                # Type
+            sub_type,                    # Subtype
+            )
     else:
         assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
 
