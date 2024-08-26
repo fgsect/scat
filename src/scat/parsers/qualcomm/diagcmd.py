@@ -396,7 +396,7 @@ def log_mask_scat_lte(num_max_items=0x09ff, layers=[]):
         diag_log_code_lte.LOG_LTE_ML1_MAC_CONTENTION_RESOLUTION_MESSAGE_MSG4_REPORT,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL,
         diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS,
-        diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE,
+        # diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE,
         diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_INFO,
         diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE,
         diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO,
