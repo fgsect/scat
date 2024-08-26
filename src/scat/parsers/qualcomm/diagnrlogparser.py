@@ -133,7 +133,7 @@ class DiagNrLogParser:
         elif pkt_ver in (0x11, ): # Version 17
             item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIH', pkt_body[4:31]))
             msg_content = pkt_body[31:]
-        elif pkt_ver in (0x13, ): # Version 19
+        elif pkt_ver in (0x13, 0x14): # Version 19, 20
             item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIHx', pkt_body[4:32]))
             msg_content = pkt_body[32:]
         elif pkt_ver in (0x17, ): # Version 23
@@ -197,7 +197,7 @@ class DiagNrLogParser:
                 10: "RRC_RECONFIGURATION_COMPLETE",
                 29: "nr-RadioBearerConfig",
             }
-        elif pkt_ver in (0x17, ):
+        elif pkt_ver in (0x14, 0x17, ):
            rrc_type_map = {
                 1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
                 2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
