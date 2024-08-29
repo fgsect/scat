@@ -114,7 +114,7 @@ class DiagLteLogParser:
         elif pkt_version == 5: # Version 5
             # EARFCN -> 4 bytes
             # PCI, Serv Layer Priority -> 4 bytes
-            item = item_struct._make(struct.unpack('<BHLLLLLLLL', pkt_body[1:36]))
+            item = item_struct._make(struct.unpack('<BHLH2xLLLLLL', pkt_body[1:36]))
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 Serving Cell Meas packet version 0x{:02x}'.format(pkt_version))
@@ -397,7 +397,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
-        pci_pbch_phich_bits = bitstring.Bits(uint=item.pci_pbch_phich, length=16)
+        pci_pbch_phich_bits = bitstring.Bits(uint=item.pci_pbch_phich % 65536, length=16)
         pci = pci_pbch_phich_bits[0:9].uint
         pbch = pci_pbch_phich_bits[9:10].uint
         phich_duration = pci_pbch_phich_bits[10:13].uint
