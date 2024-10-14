@@ -198,7 +198,7 @@ class SdmControlParser:
         pkt = pkt[15:-1]
 
         item_struct = namedtuple('SdmIlmTableGetResponse', 'is_end unk total_item_count packet_item_count')
-        subitem_struct = namedtuple('SdmIlmTableIlmItem', 'id unk1 unk2 unk3 text_len')
+        subitem_struct = namedtuple('SdmIlmTableIlmItem', 'id task_id tx_lev rx_lev text_len')
         item = item_struct._make(struct.unpack('<BBBB', pkt[0:4]))
         content = pkt[4:]
         stdout = ''
@@ -216,7 +216,7 @@ class SdmControlParser:
                 item_str = subitem[8:].decode(errors='backslashreplace')
             else:
                 item_str = subitem[8:8+item_hdr.text_len].decode(errors='backslashreplace')
-            self.ilm_group[item_hdr.id] = (item_hdr.unk1, item_hdr.unk2, item_hdr.unk3, item_str)
+            self.ilm_group[item_hdr.id] = (item_hdr.task_id, item_hdr.tx_lev, item_hdr.rx_lev, item_str)
             self.ilm_cur_count += 1
 
         if item.is_end == 1:
@@ -225,7 +225,7 @@ class SdmControlParser:
                     self.parent.logger.log(logging.WARNING, "ILM item count mismatch: {} != {}".format(self.ilm_total_count, self.ilm_cur_count))
             stdout += 'SDM ILM Table:\n'
             for x in self.ilm_group:
-                stdout += 'Item ID {:#06x}, Args: {:#10x}, {:#04x}, {:#04x}, Text: {}\n'.format(x,
+                stdout += 'Item ID {:#06x}, Task ID: {:#10x}, TXLVL: {:#04x}, RXLVL: {:#04x}, Text: {}\n'.format(x,
                     self.ilm_group[x][0], self.ilm_group[x][1], self.ilm_group[x][2],
                     self.ilm_group[x][3])
 
