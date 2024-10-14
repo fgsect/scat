@@ -73,8 +73,8 @@ class SdmControlParser:
             extra_str = extra_str[:extra_str_len]
         extra_str = extra_str.decode(errors='backslashreplace').split('\x00',1)[0]
         chip_id = 0
-        if len(rest_str) == 4:
-            chip_id = struct.unpack('<L', rest_str)[0]
+        if len(rest_str) >= 4:
+            chip_id = struct.unpack('<L', rest_str[0:4])[0]
         elif len(rest_str) == 2:
             chip_id = struct.unpack('<H', rest_str)[0]
 
