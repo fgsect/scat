@@ -123,6 +123,20 @@ Issues related to exposing the diagnostics port via USB is out of scope.
 * On certain Qualcomm devices, after exiting and launching the application for
   more than once, initialization eventually hangs and no messages are appearing.
   Root cause still in investigation. Solution: reboot the smartphone.
+  
+## Chat
+
+* [Matrix](https://matrix.to/#/#scat-users:tchncs.de)
+* [Telegram Bridge](https://t.me/scat_users)
+
+The canonical address is the Matrix chat room. Telegram is only provided as a bridge and exisys only for your convenience.
+
+Rules:
+
+* The `--start-magic` related to the [Issue #27](https://github.com/fgsect/scat/issues/27#issuecomment-1416233282) should not be discussed in the public.
+* Please respect the rules of [tchncs.de](https://tchncs.de/matrix) where the chat room is hosted.
+* Please be nice to each others, and do not push anyone regarding the ETA of any feature of bugfix.
+* SCAT is not a part of KDE project, but I personally recommend [KDE's code of conduct](https://kde.org/code-of-conduct/).
 
 ## License
 
