@@ -129,7 +129,7 @@ Issues related to exposing the diagnostics port via USB is out of scope.
 * [Matrix](https://matrix.to/#/#scat-users:tchncs.de)
 * [Telegram Bridge](https://t.me/scat_users)
 
-The canonical address is the Matrix chat room. Telegram is only provided as a bridge and exisys only for your convenience.
+The canonical address is the Matrix chat room. Telegram is only provided as a bridge and exists only for your convenience. In case of abuse I may close down the Telegram bridge.
 
 Rules:
 
