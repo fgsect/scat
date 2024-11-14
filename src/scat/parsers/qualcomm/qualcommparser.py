@@ -757,11 +757,15 @@ class QualcommParser:
         if pkt[1] == 0x01:
             # Ranges
             ext_msg_range_header = namedtuple('QcDiagExtMsgRange', 'cmd_code ts_type unk1 num_ranges unk2')
+            if len(pkt) < 8:
+                return None
             pkt_header = ext_msg_range_header._make(struct.unpack('<BBHHH', pkt[0:8]))
             stdout = 'Extended message range: '
             id_ranges = []
 
             pos = 8
+            if len(pkt) < (8 + 4 * (pkt_header.num_ranges)):
+                return None
             for i in range(pkt_header.num_ranges):
                 id_range = struct.unpack('<HH', pkt[pos:pos+4])
                 stdout += '{}-{}, '.format(id_range[0], id_range[1])
@@ -772,11 +776,15 @@ class QualcommParser:
         elif pkt[1] == 0x02:
             # Levels
             ext_msg_level_header = namedtuple('QcDiagExtMsgLevel', 'cmd_code ts_type start_id end_id unk1')
+            if len(pkt) < 8:
+                return None
             pkt_header = ext_msg_level_header._make(struct.unpack('<BBHHH', pkt[0:8]))
             stdout = 'Extended message level: \n'
             levels = []
 
             pos = 8
+            if len(pkt) < (8 + 4 * (pkt_header.end_id - pkt_header.start_id + 1)):
+                return None
             for i in range(pkt_header.end_id - pkt_header.start_id + 1):
                 level = struct.unpack('<L', pkt[pos:pos+4])[0]
                 stdout += 'Message ID {}: {:#x}\n'.format(pkt_header.start_id + i, level)
