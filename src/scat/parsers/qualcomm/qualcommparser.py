@@ -362,9 +362,14 @@ class QualcommParser:
                 break
             buf = oldbuf + buf
 
-            pkt_len = struct.unpack('<H', buf[0:2])[0]
-            while len(buf) >= pkt_len:
+            while True:
                 # DLF lacks CRC16/other fancy stuff
+                if len(buf) < 2:
+                    break
+                pkt_len = struct.unpack('<H', buf[0:2])[0]
+                if pkt_len < 2:
+                    buf = buf[2:]
+                    continue
                 pkt = buf[0:pkt_len]
                 pkt = b'\x10\x00' + pkt[0:2] + pkt
                 parse_result = self.parse_diag(pkt, has_crc=False, hdlc_encoded=False)
@@ -373,10 +378,6 @@ class QualcommParser:
                     self.postprocess_parse_result(parse_result)
 
                 buf = buf[pkt_len:]
-
-                if len(buf) < 2:
-                    break
-                pkt_len = struct.unpack('<H', buf[0:2])[0]
 
             oldbuf = buf
 
