@@ -1201,10 +1201,19 @@ class DiagLteLogParser:
             return None
         gsmtap_subtype = rrc_subtype_map[item.pdu_num]
 
+        uplink = gsmtap_subtype in (
+            util.gsmtap_lte_rrc_types.UL_CCCH,
+            util.gsmtap_lte_rrc_types.UL_DCCH,
+            util.gsmtap_lte_rrc_types.UL_CCCH_NB,
+            util.gsmtap_lte_rrc_types.UL_DCCH_NB,
+        )
+
+        arfcn = (int(uplink) << 14) + item.earfcn
+
         gsmtap_hdr = util.create_gsmtap_header(
             version = 2,
             payload_type = util.gsmtap_type.LTE_RRC,
-            arfcn = item.earfcn,
+            arfcn = earfcn,
             frame_number = sfn,
             sub_type = gsmtap_subtype,
             sub_slot = subfn,
