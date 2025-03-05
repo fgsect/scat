@@ -32,7 +32,13 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas(pkt_header, payload, None)
-        self.assertEqual(result['stdout'], '')
+        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN 167781620, PCI 333, Measured RSRP -127.12, Measured RSSI 2.75, Measured RSRQ -22.25')
+
+        payload = binascii.unhexlify('0501000000190000a90d0000d9944d00d9944d006081d5d55d2568bc48ad3e027f314fe0891900e0')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), timestamp=0)
+        result = self.parser.parse_lte_ml1_scell_meas(pkt_header, payload, None)
+        self.assertEqual(result['stdout'], 'EARFCN 6400, PCI 425, Measured RSRP -102.44, Measured RSSI -77.44, Measured RSRQ -8.00')
 
     def test_parse_lte_ml1_ncell_meas(self):
         # V4

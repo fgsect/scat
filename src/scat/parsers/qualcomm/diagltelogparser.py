@@ -131,7 +131,8 @@ class DiagLteLogParser:
         meas_rsrq = rsrq_bits[0:10].uint
         avg_rsrq = rsrq_bits[20:30].uint
 
-        meas_rssi = (item.rssi >> 10) # TODO: get to know exact bit mask
+        rssi_bits = bitstring.Bits(uint=item.rssi, length=32)
+        meas_rssi = rssi_bits[10:21].uint
 
         rxlev_bits = bitstring.Bits(uint=item.rxlev, length=32)
         q_rxlevmin = rxlev_bits[0:6].uint
