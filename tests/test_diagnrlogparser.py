@@ -31,7 +31,7 @@ class TestDiagNrLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
         result = self.parser.parse_nr_mib_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR MIB: NR-ARFCN 372750, PCI  336, SFN: 30, SCS: 15 kHz',
+            'stdout': 'NR MIB: NR-ARFCN 372750, PCI  336, SFN: 798, SCS: 15 kHz',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -41,7 +41,7 @@ class TestDiagNrLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
         result = self.parser.parse_nr_mib_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR MIB: NR-ARFCN 431070, PCI  988, SFN: 512, SCS: 15 kHz',
+            'stdout': 'NR MIB: NR-ARFCN 431070, PCI  988, SFN: 0, SCS: 15 kHz',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)

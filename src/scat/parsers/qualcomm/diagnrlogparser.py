@@ -5,6 +5,18 @@ import calendar
 import logging
 import binascii
 from collections import namedtuple
+import bitstring
+from packaging import version
+
+bitstring_ver = version.parse(bitstring.__version__)
+if bitstring_ver >= version.parse('4.2.0'):
+    bitstring.options.lsb0 = True
+elif bitstring_ver >= version.parse('4.0.0'):
+    bitstring.lsb0 = True
+elif bitstring_ver >= version.parse('3.1.7'):
+    bitstring.set_lsb0(True)
+else:
+    raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
 
 import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
@@ -248,7 +260,7 @@ class DiagNrLogParser:
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
 
-        item_struct = namedtuple('QcDiagNrMibInfo', 'pci nrarfcn props')
+        item_struct = namedtuple('QcDiagNrMibInfo', 'pci nrarfcn')
         scs_map = {
             0: 15,
             1: 30,
@@ -258,13 +270,15 @@ class DiagNrLogParser:
 
         scs_str = ''
         if pkt_ver == 0x03: # Version 3
-            item = item_struct._make(struct.unpack('<HI4s', pkt_body[4:14]))
-            sfn = (item.props[0]) | (((item.props[1] & 0b11000000) >> 6) << 8)
-            scs = (item.props[3] & 0b11000000) >> 6
+            item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
+            props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:14]))
+            sfn = props_bits[0:10].uint
+            scs = props_bits[30:32].uint
         elif pkt_ver == 0x20000: # Version 131072
-            item = item_struct._make(struct.unpack('<HI5s', pkt_body[4:15]))
-            sfn = (item.props[0]) | (((item.props[1] & 0b11000000) >> 6) << 8)
-            scs = (item.props[3] & 0b10000000) >> 7 | ((item.props[4] & 0b00000001) << 1)
+            item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
+            props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:15]))
+            sfn = props_bits[0:10].uint
+            scs = props_bits[31:33].uint
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR MIB Information packet version {}'.format(pkt_ver))
