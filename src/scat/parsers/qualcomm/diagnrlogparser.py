@@ -130,6 +130,80 @@ class DiagNrLogParser:
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     # RRC
+    def parse_nr_mib_info(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
+
+        item_struct = namedtuple('QcDiagNrMibInfo', 'pci nrarfcn')
+        scs_map = {
+            0: 15,
+            1: 30,
+            2: 60,
+            3: 120,
+        }
+
+        scs_str = ''
+        if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x03: # Version 3
+            item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
+            props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:14]))
+            sfn = props_bits[0:10].uint
+            scs = props_bits[30:32].uint
+        elif pkt_ver.rel_maj == 0x02 and pkt_ver.rel_min == 0x00: # Version 131072
+            item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
+            props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:15]))
+            sfn = props_bits[0:10].uint
+            scs = props_bits[31:33].uint
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown NR MIB Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
+                self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
+            return
+
+        if scs in scs_map:
+            scs_str = '{} kHz'.format(scs_map[scs])
+
+        if len(scs_str) > 0:
+            stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}, SCS: {}'.format(item.nrarfcn, item.pci, sfn, scs_str)
+        else:
+            stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}'.format(item.nrarfcn, item.pci, sfn)
+        return {'stdout': stdout, 'ts': pkt_ts}
+
+    def parse_nr_rrc_scell_info(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
+
+        item_struct = namedtuple('QcDiagNrScellInfo', 'pci dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
+        item_struct_v30000 = namedtuple('QcDiagNrScellInfoV30000', 'pci nr_cgi dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
+        if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x04:
+            # PCI 2b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+            item = item_struct._make(struct.unpack('<H LLHH Q H BH B LH', pkt_body[4:38]))
+        elif pkt_ver.rel_maj == 0x03:
+            if pkt_ver.rel_min == 0x00:
+                # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
+            elif pkt_ver.rel_min in (0x02, 0x03, ):
+                # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
+                self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
+            return None
+
+        if item.mnc_digit == 2:
+            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
+                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+        elif item.mnc_digit == 3:
+            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
+                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+        else:
+            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
+                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+        return {'stdout': stdout, 'ts': pkt_ts}
+
+    def parse_nr_rrc_conf_info(self, pkt_header, pkt_body, args):
+        pass
+
     def parse_nr_rrc(self, pkt_header, pkt_body, args):
         msg_content = b''
         stdout = ''
@@ -257,79 +331,6 @@ class DiagNrLogParser:
 
             return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_nr_mib_info(self, pkt_header, pkt_body, args):
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
-
-        item_struct = namedtuple('QcDiagNrMibInfo', 'pci nrarfcn')
-        scs_map = {
-            0: 15,
-            1: 30,
-            2: 60,
-            3: 120,
-        }
-
-        scs_str = ''
-        if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x03: # Version 3
-            item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
-            props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:14]))
-            sfn = props_bits[0:10].uint
-            scs = props_bits[30:32].uint
-        elif pkt_ver.rel_maj == 0x02 and pkt_ver.rel_min == 0x00: # Version 131072
-            item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
-            props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:15]))
-            sfn = props_bits[0:10].uint
-            scs = props_bits[31:33].uint
-        else:
-            if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR MIB Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
-                self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
-            return
-
-        if scs in scs_map:
-            scs_str = '{} kHz'.format(scs_map[scs])
-
-        if len(scs_str) > 0:
-            stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}, SCS: {}'.format(item.nrarfcn, item.pci, sfn, scs_str)
-        else:
-            stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}'.format(item.nrarfcn, item.pci, sfn)
-        return {'stdout': stdout, 'ts': pkt_ts}
-
-    def parse_nr_rrc_scell_info(self, pkt_header, pkt_body, args):
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
-
-        item_struct = namedtuple('QcDiagNrScellInfo', 'pci dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
-        item_struct_v30000 = namedtuple('QcDiagNrScellInfoV30000', 'pci nr_cgi dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
-        if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x04:
-            # PCI 2b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-            item = item_struct._make(struct.unpack('<H LLHH Q H BH B LH', pkt_body[4:38]))
-        elif pkt_ver.rel_maj == 0x03:
-            if pkt_ver.rel_min == 0x00:
-                # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
-            elif pkt_ver.rel_min in (0x02, 0x03, ):
-                # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
-        else:
-            if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
-                self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
-            return None
-
-        if item.mnc_digit == 2:
-            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
-                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
-        elif item.mnc_digit == 3:
-            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
-                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
-        else:
-            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
-                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
-        return {'stdout': stdout, 'ts': pkt_ts}
-
-    def parse_nr_rrc_conf_info(self, pkt_header, pkt_body, args):
-        pass
 
     def parse_nr_cacombos(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
