@@ -51,6 +51,8 @@ class DiagNrLogParser:
             i(c.LOG_5GNR_NAS_5GMM_STATE): lambda x, y, z: self.parse_nr_mm_state(x, y, z),
         }
 
+        self.nr_pkt_ver = namedtuple('QcDiagNrPktVer', 'rel_min rel_maj')
+
     def parse_float_q7(self, data_to_convert):
         if data_to_convert == 0:
             return 0
@@ -62,19 +64,18 @@ class DiagNrLogParser:
     # ML1
     def parse_nr_ml1_meas_db_update(self, pkt_header, pkt_body, args):
         stdout = ''
-        ml1_pkt_ver = namedtuple('QcDiagNrMl1Packet', 'ml1_rel_min ml1_rel_maj')
-        pkt_ver = ml1_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
         num_layers = 0
         current_offset = 0
-        if pkt_ver.ml1_rel_maj in (0x02,):
-            if pkt_ver.ml1_rel_min in (0x09,):
+        if pkt_ver.rel_maj in (0x02,):
+            if pkt_ver.rel_min in (0x09,):
                 ml1_shared_struct = namedtuple('QcDiagNrMl1Packet', 'unknown num_layers ssb_periocity null frequency_offset timing_offset')
                 ml1_2_9 = ml1_shared_struct._make(struct.unpack('<IBBHII', pkt_body[4:20]))
                 num_layers = ml1_2_9.num_layers
                 stdout += "NR ML1 Meas Packet: Layers {}, ssb_periocity {}\n".format(ml1_2_9.num_layers, ml1_2_9.ssb_periocity)
                 current_offset = 20
 
-            elif pkt_ver.ml1_rel_min in (0x07,):
+            elif pkt_ver.rel_min in (0x07,):
                 ml1_shared_struct = namedtuple('QcDiagNrMl1Packet', 'num_layers ssb_periocity null frequency_offset timing_offset')
                 ml1_2_7 = ml1_shared_struct._make(struct.unpack('<BB2sII', pkt_body[4:16]))
                 num_layers = ml1_2_7.num_layers
@@ -82,7 +83,7 @@ class DiagNrLogParser:
                 current_offset = 16
         else:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR ML1 Information packet, version: {}.{}'.format(pkt_ver.ml1_rel_maj, pkt_ver.ml1_rel_min))
+                self.parent.logger.log(logging.WARNING, 'Unknown NR ML1 Information packet, version: {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return
 
@@ -258,7 +259,7 @@ class DiagNrLogParser:
 
     def parse_nr_mib_info(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
 
         item_struct = namedtuple('QcDiagNrMibInfo', 'pci nrarfcn')
         scs_map = {
@@ -269,19 +270,19 @@ class DiagNrLogParser:
         }
 
         scs_str = ''
-        if pkt_ver == 0x03: # Version 3
+        if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x03: # Version 3
             item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
             props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:14]))
             sfn = props_bits[0:10].uint
             scs = props_bits[30:32].uint
-        elif pkt_ver == 0x20000: # Version 131072
+        elif pkt_ver.rel_maj == 0x02 and pkt_ver.rel_min == 0x00: # Version 131072
             item = item_struct._make(struct.unpack('<HI', pkt_body[4:10]))
             props_bits = bitstring.Bits(bytes=reversed(pkt_body[10:15]))
             sfn = props_bits[0:10].uint
             scs = props_bits[31:33].uint
         else:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR MIB Information packet version {}'.format(pkt_ver))
+                self.parent.logger.log(logging.WARNING, 'Unknown NR MIB Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return
 
@@ -296,22 +297,23 @@ class DiagNrLogParser:
 
     def parse_nr_rrc_scell_info(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
 
         item_struct = namedtuple('QcDiagNrScellInfo', 'pci dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
         item_struct_v30000 = namedtuple('QcDiagNrScellInfoV30000', 'pci nr_cgi dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
-        if pkt_ver == 0x04:
+        if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x04:
             # PCI 2b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
             item = item_struct._make(struct.unpack('<H LLHH Q H BH B LH', pkt_body[4:38]))
-        elif pkt_ver == 0x30000:
-            # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
-        elif pkt_ver in (0x30002, 0x30003, ):
-            # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
+        elif pkt_ver.rel_maj == 0x03:
+            if pkt_ver.rel_min == 0x00:
+                # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
+            elif pkt_ver.rel_min in (0x02, 0x03, ):
+                # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
         else:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR SCell Information packet version {:4x}'.format(pkt_ver))
+                self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
 
@@ -372,9 +374,9 @@ class DiagNrLogParser:
 
     def parse_nr_mm_state(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
 
-        if pkt_ver in (0x01, 0x30000, ): # Version 1 and 196608
+        if (pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x01) or (pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min == 0x00): # Version 1 and 196608
             item_struct = namedtuple('QcDiagNrNasMmState', 'mm_state mm_substate plmn_id guti_5gs mm_update_status tac')
             item = item_struct._make(struct.unpack('<BH3s12sb3s', pkt_body[4:26]))
             plmn_id = util.unpack_mcc_mnc(item.plmn_id)
@@ -396,6 +398,6 @@ class DiagNrLogParser:
             return {'stdout': stdout, 'ts': pkt_ts}
         else:
             if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR MM State packet version %s' % pkt_ver)
+                self.parent.logger.log(logging.WARNING, 'Unknown NR MM State packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: %s" % (util.xxd_oneline(pkt_body[4:])))
             return
