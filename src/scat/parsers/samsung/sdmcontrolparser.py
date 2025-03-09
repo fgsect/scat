@@ -55,8 +55,12 @@ class SdmControlParser:
 
         version_str = pkt[2:27]
         if version_str[0:6] == b'LibVer':
-            version_str = "LibVer: {}, ASN: LTE Release {}.{}.{} ({:02d}.{:02d}), NR Release {}.{}.{} ({:02d}.{:02d})".format(
-                binascii.hexlify(version_str[6:12]).decode(errors='backslashreplace'),
+            try:
+                libver_decoded = struct.unpack('<HHH', version_str[6:12])
+            except:
+                libver_decoded = (0, 0, 0)
+            version_str = "LibVer: {}.{}.{}, ASN: LTE Release {}.{}.{} ({:02d}.{:02d}), NR Release {}.{}.{} ({:02d}.{:02d})".format(
+                libver_decoded[0], libver_decoded[1], libver_decoded[2],
                 version_str[15], version_str[16], version_str[17],
                 version_str[18], version_str[19],
                 version_str[20], version_str[21], version_str[22],
