@@ -68,6 +68,7 @@ class SamsungParser:
         self.combine_stdout = False
         self.layers = []
         self.all_items = False
+        self.display_format = 'x'
 
         self.trace_group = None
         self.ilm_group = None
@@ -115,6 +116,10 @@ class SamsungParser:
         for p in self.sdm_parsers:
             p.set_icd_ver(version)
 
+    def update_display_format(self, display_format):
+        for p in self.sdm_parsers:
+            p.set_display_format(display_format)
+
     def set_parameter(self, params):
         for p in params:
             if p == 'model':
@@ -138,6 +143,9 @@ class SamsungParser:
                 self.layers = params[p]
             elif p == 'all-items':
                 self.all_items = params[p]
+            elif p == 'format':
+                self.display_format = params[p]
+                self.update_display_format(self.display_format)
 
     def init_diag(self):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))

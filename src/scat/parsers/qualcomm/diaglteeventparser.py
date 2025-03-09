@@ -14,6 +14,11 @@ class DiagLteEventParser:
         self.parent = parent
         self.header = b''
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         # Event IDs are available at:
         # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
@@ -48,6 +53,9 @@ class DiagLteEventParser:
             1938: (self.parse_event_lte_ml1_phr_report, 'LTE_ML1_PHR_REPORT'),
             1994: (self.parse_event_lte_rrc_state_change_trigger, 'LTE_RRC_STATE_CHANGE_TRIGGER'),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def build_header(func):
         @wraps(func)

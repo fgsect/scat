@@ -9,6 +9,11 @@ class DiagFallbackEventParser:
         self.parent = parent
         self.header = b''
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         # Event IDs are available at:
         # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
@@ -1648,6 +1653,9 @@ class DiagFallbackEventParser:
             2746: 'EVENT_WLAN_TDLS_TX_RX_MGMT', # 0xaba
             2747: 'EVENT_WLAN_LOW_RESOURCE_FAILURE', # 0xabb
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def parse_event_fallback(self, ts, event_id, *args):
         gsmtap_hdr = util.create_gsmtap_header(

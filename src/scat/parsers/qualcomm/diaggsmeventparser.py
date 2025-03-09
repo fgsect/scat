@@ -8,6 +8,11 @@ class DiagGsmEventParser:
         self.parent = parent
         self.header = b''
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         # Event IDs are available at:
         # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
@@ -15,6 +20,9 @@ class DiagGsmEventParser:
             # event ID, (function, event name)
             450: (self.parse_event_gsm_message_received, 'GSM_MESSAGE_RECEIVED'),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def build_header(func):
         @wraps(func)

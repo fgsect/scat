@@ -25,6 +25,11 @@ class DiagLteLogParser:
     def __init__(self, parent):
         self.parent = parent
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         self.no_process = {
         }
 
@@ -84,6 +89,9 @@ class DiagLteLogParser:
             i(c.LOG_LTE_NAS_EMM_PLAIN_OTA_INCOMING_MESSAGE): lambda x, y, z: self.parse_lte_nas(x, y, z, True),
             i(c.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE): lambda x, y, z: self.parse_lte_nas(x, y, z, True),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     # def parse_lte_dummy(self, pkt_header, pkt_body, args):
     #     return {'stdout': 'LTE Dummy 0x{:04x}: {}'.format(pkt_header.log_id, binascii.hexlify(pkt_body).decode())}

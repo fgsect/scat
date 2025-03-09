@@ -15,6 +15,11 @@ class SdmCommonParser:
         self.multi_message_chunk = {}
         self.ip_id = 0
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         g = (sdmcmd.sdm_command_group.CMD_COMMON_DATA << 8)
         c = sdmcmd.sdm_common_data
         self.process = {
@@ -29,6 +34,9 @@ class SdmCommonParser:
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def sdm_common_dummy(self, pkt, cmdid):
         pkt = pkt[15:-1]

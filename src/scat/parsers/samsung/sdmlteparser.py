@@ -15,6 +15,11 @@ class SdmLteParser:
         self.icd_ver = icd_ver
         self.multi_message_chunk = {}
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         g = (sdmcmd.sdm_command_group.CMD_LTE_DATA << 8)
         c = sdmcmd.sdm_lte_data
         self.process = {
@@ -55,6 +60,9 @@ class SdmLteParser:
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def sdm_lte_dummy(self, pkt, cmdid):
         pkt = pkt[15:-1]

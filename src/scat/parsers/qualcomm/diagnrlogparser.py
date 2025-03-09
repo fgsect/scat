@@ -25,6 +25,11 @@ class DiagNrLogParser:
     def __init__(self, parent):
         self.parent = parent
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         i = diagcmd.diag_log_get_lte_item_id
         c = diagcmd.diag_log_code_5gnr
         self.process = {
@@ -52,6 +57,9 @@ class DiagNrLogParser:
         }
 
         self.nr_pkt_ver = namedtuple('QcDiagNrPktVer', 'rel_min rel_maj')
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def parse_float_q7(self, data_to_convert):
         if data_to_convert == 0:

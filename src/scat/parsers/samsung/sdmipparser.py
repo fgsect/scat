@@ -12,6 +12,11 @@ class SdmIpParser:
         self.parent = parent
         self.icd_ver = icd_ver
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         g = (sdmcmd.sdm_command_group.CMD_IP_DATA << 8)
         self.process = {
             g | 0x00: lambda x: self.sdm_ip_data(x),
@@ -20,6 +25,9 @@ class SdmIpParser:
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def sdm_ip_data(self, pkt):
         pkt = pkt[15:-1]

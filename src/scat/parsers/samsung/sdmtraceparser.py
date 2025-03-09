@@ -13,6 +13,11 @@ class SdmTraceParser:
         self.parent = parent
         self.icd_ver = icd_ver
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         g = (sdmcmd.sdm_command_group.CMD_TRACE_DATA << 8)
         self.process = {
             g | 0x90: lambda x: self.sdm_trace_0x90(x),
@@ -20,6 +25,9 @@ class SdmTraceParser:
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def sdm_trace_0x90(self, pkt):
         pkt = pkt[15:-1]

@@ -14,6 +14,11 @@ class DiagCommonEventParser:
         self.parent = parent
         self.header = b''
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         # Event IDs are available at:
         # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
         # https://android.googlesource.com/kernel/msm/+/android-7.1.0_r0.2/drivers/staging/qcacld-2.0/CORE/VOSS/inc/event_defs.h
@@ -25,6 +30,9 @@ class DiagCommonEventParser:
             2865: (self.parse_event_diag_qshrink_id, 'DIAG_QSHRINK_ID'),
             2866: (self.parse_event_diag_process_name_id, 'DIAG_PROCESS_NAME'),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def build_header(func):
         @wraps(func)

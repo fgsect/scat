@@ -11,6 +11,11 @@ class HisiLogParser:
     def __init__(self, parent, model=None):
         self.parent = parent
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         self.process = {
             0x10051082: lambda x, y, z: self.hisi_lte_current_cell_info(x, y, z),
             0x20010000: lambda x, y, z: self.hisi_lte_ota_msg(x, y, z),
@@ -18,6 +23,9 @@ class HisiLogParser:
             0x20030000: lambda x, y, z: self.hisi_debug_msg(x, y, z),
             0x20020000: lambda x, y, z: self.hisi_0x20020000(x, y, z),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def hisi_lte_ota_msg(self, pkt_header, pkt_data, args):
         # Direction: 1: DL, 2: UL

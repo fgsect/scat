@@ -16,6 +16,8 @@ class UnisocParser:
         self.writer = None
         self.combine_stdout = False
 
+        self.display_format = 'x'
+
         self.name = 'unisoc'
         self.shortname = 'sprd'
 
@@ -49,6 +51,8 @@ class UnisocParser:
                 self.combine_stdout = params[p]
             elif p == 'layer':
                 self.layers = params[p]
+            elif p == 'format':
+                self.display_format = params[p]
 
     def init_diag(self):
         pass

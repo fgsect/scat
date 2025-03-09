@@ -12,6 +12,11 @@ class DiagUmtsLogParser:
     def __init__(self, parent):
         self.parent = parent
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         i = diagcmd.diag_log_get_umts_item_id
         c = diagcmd.diag_log_code_umts
         self.process = {
@@ -19,6 +24,9 @@ class DiagUmtsLogParser:
             i(c.LOG_UMTS_NAS_OTA_MESSAGE_LOG_PACKET_C): lambda x, y, z: self.parse_umts_ue_ota(x, y, z),
             i(c.LOG_UMTS_DSDS_NAS_SIGNALING_MESSAGE): lambda x, y, z: self.parse_umts_ue_ota_dsds(x, y, z),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def parse_umts_ue_ota(self, pkt_header, pkt_body, args):
         radio_id = 0

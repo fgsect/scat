@@ -17,6 +17,11 @@ class Diag1xLogParser:
         self.last_rx = [b'', b'']
         self.ip_id = 0
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         self.process = {
             # SIM
             #0x1098: lambda x, y, z: self.parse_sim(x, y, z, 0), # RUIM Debug
@@ -28,6 +33,9 @@ class Diag1xLogParser:
             # IMS
             0x156E: lambda x, y, z: self.parse_sip_message(x, y, z),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def parse_ip(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)

@@ -39,6 +39,7 @@ class HisiliconParser:
         self.combine_stdout = False
         self.check_crc = True
         self.layers = []
+        self.display_format = 'x'
 
         self.name = 'hisilicon'
         self.shortname = 'hisi'
@@ -75,6 +76,13 @@ class HisiliconParser:
     def set_writer(self, writer):
         self.writer = writer
 
+    def update_display_format(self, display_format):
+        for p in self.diag_log_parsers:
+            p.set_display_format(display_format)
+
+        for p in self.diag_nested_parsers:
+            p.set_display_format(display_format)
+
     def set_parameter(self, params):
         for p in params:
             if p == 'log_level':
@@ -87,6 +95,9 @@ class HisiliconParser:
                 self.check_crc = not params[p]
             elif p == 'layer':
                 self.layers = params[p]
+            elif p == 'format':
+                self.display_format = params[p]
+                self.update_display_format(self.display_format)
 
     def init_diag(self):
         pass

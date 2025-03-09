@@ -11,10 +11,18 @@ class HisiNestedParser:
     def __init__(self, parent):
         self.parent = parent
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         self.process = {
             0x00020101: lambda x, y, z: self.hisi_l3_ota(x, y, z),
             0xfd010101: lambda x, y, z: self.hisi_debug_msg(x, y, z),
         }
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def hisi_l3_ota(self, pkt_header, pkt_data, args):
         if pkt_data[0] == 0x22:

@@ -13,6 +13,11 @@ class SdmHspaParser:
         self.parent = parent
         self.icd_ver = icd_ver
 
+        if self.parent:
+            self.display_format = self.parent.display_format
+        else:
+            self.display_format = 'x'
+
         g = (sdmcmd.sdm_command_group.CMD_HSPA_DATA << 8)
         c = sdmcmd.sdm_hspa_data
         self.process = {
@@ -27,6 +32,9 @@ class SdmHspaParser:
 
     def set_icd_ver(self, version):
         self.icd_ver = version
+
+    def set_display_format(self, display_format):
+        self.display_format = display_format
 
     def sdm_hspa_ul1_rf_info_icd_4(self, pkt):
         pkt = pkt[15:-1]

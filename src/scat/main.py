@@ -53,10 +53,11 @@ def scat_main():
     parser.register('action', 'listusb', ListUSBAction)
 
     parser.add_argument('-D', '--debug', help='Print debug information, mostly hexdumps.', action='store_true')
-    parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: {}'.format(', '.join(parser_dict.keys())), required=True)
+    parser.add_argument('-t', '--type', help='Baseband type to be parsed.\nAvailable types: {}'.format(', '.join(parser_dict.keys())), required=True, choices=list(parser_dict.keys()))
     parser.add_argument('-l', '--list-devices', help='List USB devices and exit', nargs=0, action='listusb')
     parser.add_argument('-V', '--version', action='version', version='SCAT {}'.format(__version__))
     parser.add_argument('-L', '--layer', help='Specify the layers to see as GSMTAP packets (comma separated).\nAvailable layers: {}, Default: "ip,nas,rrc"'.format(', '.join(valid_layers)), type=str, default='ip,nas,rrc')
+    parser.add_argument('-f', '--format', help='Select display format for LAC/RAC/TAC/CID: [d]ecimal, he[x]adecimal (default), [b]oth.', type=str, default='x', choices=['d', 'x', 'b'])
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
@@ -182,7 +183,8 @@ def scat_main():
             'cacombos': args.cacombos,
             'combine-stdout': args.combine_stdout,
             'disable-crc-check': args.disable_crc_check,
-            'layer': layers})
+            'layer': layers,
+            'format': args.format})
     elif args.type == 'sec':
         current_parser.set_parameter({
             'model': args.model,
@@ -190,13 +192,15 @@ def scat_main():
             'trace': args.trace,
             'ilm': args.ilm,
             'combine-stdout': args.combine_stdout,
-            'layer': layers})
+            'layer': layers,
+            'format': args.format})
     elif args.type == 'hisi':
         current_parser.set_parameter({
             'msgs': args.msgs,
             'combine-stdout': args.combine_stdout,
             'disable-crc-check': args.disable_crc_check,
-            'layer': layers})
+            'layer': layers,
+            'format': args.format})
 
     # Run process
     if args.serial or args.usb:
