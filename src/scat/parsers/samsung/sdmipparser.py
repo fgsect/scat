@@ -22,10 +22,9 @@ class SdmIpParser:
         self.icd_ver = version
 
     def sdm_ip_data(self, pkt):
-        # Unknown: 0x0800, 0x150D
         pkt = pkt[15:-1]
 
-        header_struct = namedtuple('SdmIpData', 'seq_num direction unknown length')
+        header_struct = namedtuple('SdmIpData', 'seq_num direction ethertype length')
         header = header_struct._make(struct.unpack('<HHHH', pkt[0:8]))
         payload = pkt[8:]
 
