@@ -16,7 +16,7 @@ class TestSdmHspaParser(unittest.TestCase):
         payload = binascii.unhexlify('3c2a0000b4ffa8e4')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
-        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN 10812, RSSI -76.00, TxPwr -70.00'}
+        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN: 10812, RSSI: -76.00, TxPwr: -70.00'}
         self.assertDictEqual(result, expected)
 
         # e333:
@@ -24,7 +24,7 @@ class TestSdmHspaParser(unittest.TestCase):
         payload = binascii.unhexlify('44290000adff7cfc')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
-        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN 10564, RSSI -83.00, TxPwr -9.00'}
+        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN: 10564, RSSI: -83.00, TxPwr: -9.00'}
         self.assertDictEqual(result, expected)
 
         # e355:
@@ -32,7 +32,7 @@ class TestSdmHspaParser(unittest.TestCase):
         payload = binascii.unhexlify('3c2a4f01202a2d3b')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
-        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN 10812, PSC 335, RSSI -69.00, Ec/No -3.50, RSCP -71.00, TxPwr -12.00'}
+        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN: 10812, PSC: 335, RSSI: -69.00, Ec/No: -3.50, RSCP: -71.00, TxPwr: -12.00'}
         self.assertDictEqual(result, expected)
 
         # e5123
@@ -40,7 +40,7 @@ class TestSdmHspaParser(unittest.TestCase):
         payload = binascii.unhexlify('ea0bd501162e2547')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_UMTS_RF_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_rf_info(packet)
-        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN 3050, PSC 469, RSSI -79.00, Ec/No -1.50, RSCP -79.00, TxPwr 0.00'}
+        expected = {'stdout': 'HSPA UL1 RF Info: DL UARFCN: 3050, PSC: 469, RSSI: -79.00, Ec/No: -1.50, RSCP: -79.00, TxPwr: 0.00'}
         self.assertDictEqual(result, expected)
 
     def test_sdm_hspa_ul1_serving_cell(self):
@@ -49,13 +49,13 @@ class TestSdmHspaParser(unittest.TestCase):
         payload = binascii.unhexlify('d501c6ff0000fdff5000')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_SERV_CELL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_serving_cell(packet)
-        expected = {'stdout': 'HSPA UL1 Serving Cell: PSC 469, CPICH RSCP -58.00, Delta RSCP 0.00, Ec/No -3.00, DRX 80 ms'}
+        expected = {'stdout': 'HSPA UL1 Serving Cell: PSC: 469, CPICH RSCP: -58.00, Delta RSCP: 0.00, Ec/No: -3.00, DRX: 80 ms'}
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('d501c7ff0000fcff8002')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_SERV_CELL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_serving_cell(packet)
-        expected = {'stdout': 'HSPA UL1 Serving Cell: PSC 469, CPICH RSCP -57.00, Delta RSCP 0.00, Ec/No -4.00, DRX 640 ms'}
+        expected = {'stdout': 'HSPA UL1 Serving Cell: PSC: 469, CPICH RSCP: -57.00, Delta RSCP: 0.00, Ec/No: -4.00, DRX: 640 ms'}
         self.assertDictEqual(result, expected)
 
     def test_hspa_ul1_intra_freq_resel(self):
@@ -64,29 +64,29 @@ class TestSdmHspaParser(unittest.TestCase):
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_intra_freq_resel(packet)
         expected = {'stdout': '''HSPA UL1 Intra Frequency Reselection:
-Measurement 0: PSC 103, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 1: PSC 64, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 2: PSC 413, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 3: PSC 462, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 4: PSC 195, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 5: PSC 37, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 6: PSC 239, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 7: PSC 371, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 8: PSC 412, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 9: PSC 217, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 10: PSC 483, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 11: PSC 112, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 12: PSC 214, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 13: PSC 430, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 14: PSC 346, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 15: PSC 284, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 16: PSC 290, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 17: PSC 262, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 18: PSC 297, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 19: PSC 26, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 20: PSC 250, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 21: PSC 357, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 22: PSC 325, CPICH RSCP -116, CPICH Ec/No -24
+Measurement 0: PSC: 103, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 1: PSC: 64, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 2: PSC: 413, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 3: PSC: 462, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 4: PSC: 195, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 5: PSC: 37, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 6: PSC: 239, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 7: PSC: 371, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 8: PSC: 412, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 9: PSC: 217, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 10: PSC: 483, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 11: PSC: 112, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 12: PSC: 214, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 13: PSC: 430, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 14: PSC: 346, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 15: PSC: 284, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 16: PSC: 290, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 17: PSC: 262, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 18: PSC: 297, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 19: PSC: 26, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 20: PSC: 250, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 21: PSC: 357, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 22: PSC: 325, CPICH RSCP: -116, CPICH Ec/No: -24
 Extra: 6400000009240004010000004400000058f9e44193d26c4005000000232a000400000000540800000400000014000000000000005927'''}
         self.assertDictEqual(result, expected)
 
@@ -94,31 +94,31 @@ Extra: 6400000009240004010000004400000058f9e44193d26c4005000000232a0004000000005
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_INTRA_FREQ_RESEL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_intra_freq_resel(packet)
         expected = {'stdout': '''HSPA UL1 Intra Frequency Reselection:
-Measurement 0: PSC 346, CPICH RSCP -90, CPICH Ec/No -19
-Measurement 1: PSC 103, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 2: PSC 261, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 3: PSC 64, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 4: PSC 413, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 5: PSC 462, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 6: PSC 195, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 7: PSC 37, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 8: PSC 239, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 9: PSC 371, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 10: PSC 412, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 11: PSC 217, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 12: PSC 112, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 13: PSC 430, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 14: PSC 214, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 15: PSC 284, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 16: PSC 290, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 17: PSC 250, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 18: PSC 297, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 19: PSC 325, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 20: PSC 357, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 21: PSC 26, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 22: PSC 262, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 23: PSC 113, CPICH RSCP -116, CPICH Ec/No -24
-Measurement 24: PSC 483, CPICH RSCP -116, CPICH Ec/No -24
+Measurement 0: PSC: 346, CPICH RSCP: -90, CPICH Ec/No: -19
+Measurement 1: PSC: 103, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 2: PSC: 261, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 3: PSC: 64, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 4: PSC: 413, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 5: PSC: 462, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 6: PSC: 195, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 7: PSC: 37, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 8: PSC: 239, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 9: PSC: 371, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 10: PSC: 412, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 11: PSC: 217, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 12: PSC: 112, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 13: PSC: 430, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 14: PSC: 214, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 15: PSC: 284, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 16: PSC: 290, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 17: PSC: 250, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 18: PSC: 297, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 19: PSC: 325, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 20: PSC: 357, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 21: PSC: 26, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 22: PSC: 262, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 23: PSC: 113, CPICH RSCP: -116, CPICH Ec/No: -24
+Measurement 24: PSC: 483, CPICH RSCP: -116, CPICH Ec/No: -24
 Extra: 4900000074f9e44193d26c4005000000232a0004000000000c0900000400000014000000000000005927'''}
         self.assertDictEqual(result, expected)
 
@@ -149,7 +149,7 @@ Extra: 2030312030302030302030302030302030302030302030302030302030302030302030302
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_HSPA_DATA, sdmcmd.sdm_hspa_data.HSPA_UL1_INTER_FREQ_RESEL, payload, timestamp=0x0)
         result = self.parser.sdm_hspa_ul1_inter_freq_resel(packet)
         expected = {'stdout': '''HSPA UL1 Inter Frequency Reselection:
-Measurement 0: UARFCN 10836, PSC 439, CPICH RSCP -84, CPICH Ec/No -2
+Measurement 0: UARFCN: 10836, PSC: 439, CPICH RSCP: -84, CPICH Ec/No: -2
 Extra: 61707320496e636f6d696e67205b373731355d204e535f53544154455f4348414e47455f494e442c2050414c20436c617373205b325d2028696e742970616c5f454d7367436c6173735f52544b5f4d5347202d3e2041544920436c617373205b3130345d2028696e74294154495f4d53475f545950455f4d554c54495f434c49454e54000000484f274400000000b8770443100300006cbd6764000000000000000010030000ffbd676400000000000000000803000000ffffff0000000000000000484f2744484f274400000000484f274404000000940000009062dc40a8030000f0672441b6020000d32003002863dc408c0000004154'''}
         self.assertDictEqual(result, expected)
 
@@ -169,7 +169,7 @@ Extra: 61707320496e636f6d696e67205b373731355d204e535f53544154455f4348414e47455f4
         self.parser.icd_ver = (7, 2)
         payload = binascii.unhexlify('7f1600001300e9ffa00422e6c4ec3586263c2a500408007e')
         result = self.parser.sdm_hspa_wcdma_serving_cell(payload)
-        expected = {'stdout': 'WCDMA Serving Cell: UARFCN 10812/9862, MCC 450, MNC 8'}
+        expected = {'stdout': 'WCDMA Serving Cell: UARFCN: 10812/9862, MCC: 450, MNC: 8'}
         self.assertDictEqual(result, expected)
 
 if __name__ == '__main__':

@@ -20,7 +20,10 @@ class TestDiagNrLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload, None)
-        expected = {'stdout': 'NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer 0: NR-ARFCN 397465, SCell PCI  710/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 1 (S: 0)\n└── Cell 0: PCI  710, PBCH SFN 126, RSRP: -107.82, RSRQ: -11.92, Num Beams: 1\n    └── Beam 0: SSB[0] Beam ID 0/0, RSRP -134.73/-107.82, Filtered RSRP/RSRQ (Nr2Nr) -107.82/-11.92, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 397465, SCell PCI:  710/SSB: 0, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 1 (S: 0)
+└── Cell 0: PCI:  710, PBCH SFN: 126, RSRP: -107.82, RSRQ: -11.92, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID: 0/0, RSRP: -134.73/-107.82, Filtered RSRP/RSRQ (Nr2Nr): -107.82/-11.92, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
         # major 2 minor 9 one beam
@@ -28,7 +31,10 @@ class TestDiagNrLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload, None)
-        expected = {'stdout': 'NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer 0: NR-ARFCN 397465, SCell PCI  710/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 1 (S: 0)\n└── Cell 0: PCI  710, PBCH SFN 126, RSRP: -107.82, RSRQ: -11.92, Num Beams: 1\n    └── Beam 0: SSB[0] Beam ID 0/0, RSRP -134.73/-107.82, Filtered RSRP/RSRQ (Nr2Nr) -107.82/-11.92, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 397465, SCell PCI:  710/SSB: 0, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 1 (S: 0)
+└── Cell 0: PCI:  710, PBCH SFN: 126, RSRP: -107.82, RSRQ: -11.92, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID: 0/0, RSRP: -134.73/-107.82, Filtered RSRP/RSRQ (Nr2Nr): -107.82/-11.92, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -38,7 +44,13 @@ class TestDiagNrLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
 
-        expected = {'stdout': 'NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer 0: NR-ARFCN 519953, SCell PCI   85/SSB 2, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 1 (S: 0)\n└── Cell 0: PCI   95, PBCH SFN 254, RSRP: -95.22, RSRQ: -10.68, Num Beams: 4\n    └── Beam 0: SSB[2] Beam ID 0/0, RSRP -95.95/-101.54, Filtered RSRP/RSRQ (Nr2Nr) -95.95/-10.66, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00\n    └── Beam 1: SSB[1] Beam ID 0/0, RSRP -95.22/-101.40, Filtered RSRP/RSRQ (Nr2Nr) -95.22/-10.68, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00\n    └── Beam 2: SSB[0] Beam ID 0/0, RSRP -104.02/-108.92, Filtered RSRP/RSRQ (Nr2Nr) -104.02/-13.10, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00\n    └── Beam 3: SSB[5] Beam ID 0/0, RSRP -106.49/-110.38, Filtered RSRP/RSRQ (Nr2Nr) -106.49/-14.15, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 519953, SCell PCI:   85/SSB: 2, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 1 (S: 0)
+└── Cell 0: PCI:   95, PBCH SFN: 254, RSRP: -95.22, RSRQ: -10.68, Num Beams: 4
+    └── Beam 0: SSB[2] Beam ID: 0/0, RSRP: -95.95/-101.54, Filtered RSRP/RSRQ (Nr2Nr): -95.95/-10.66, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 1: SSB[1] Beam ID: 0/0, RSRP: -95.22/-101.40, Filtered RSRP/RSRQ (Nr2Nr): -95.22/-10.68, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 2: SSB[0] Beam ID: 0/0, RSRP: -104.02/-108.92, Filtered RSRP/RSRQ (Nr2Nr): -104.02/-13.10, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 3: SSB[5] Beam ID: 0/0, RSRP: -106.49/-110.38, Filtered RSRP/RSRQ (Nr2Nr): -106.49/-14.15, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -47,7 +59,13 @@ class TestDiagNrLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
-        expected = {'stdout': 'NR ML1 Meas Packet: Layers 1, ssb_periocity 20\nLayer 0: NR-ARFCN 519953, SCell PCI   85/SSB 2, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 1 (S: 0)\n└── Cell 0: PCI   95, PBCH SFN 254, RSRP: -95.22, RSRQ: -10.68, Num Beams: 4\n    └── Beam 0: SSB[2] Beam ID 0/0, RSRP -95.95/-101.54, Filtered RSRP/RSRQ (Nr2Nr) -95.95/-10.66, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00\n    └── Beam 1: SSB[1] Beam ID 0/0, RSRP -95.22/-101.40, Filtered RSRP/RSRQ (Nr2Nr) -95.22/-10.68, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00\n    └── Beam 2: SSB[0] Beam ID 0/0, RSRP -104.02/-108.92, Filtered RSRP/RSRQ (Nr2Nr) -104.02/-13.10, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00\n    └── Beam 3: SSB[5] Beam ID 0/0, RSRP -106.49/-110.38, Filtered RSRP/RSRQ (Nr2Nr) -106.49/-14.15, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 519953, SCell PCI:   85/SSB: 2, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 1 (S: 0)
+└── Cell 0: PCI:   95, PBCH SFN: 254, RSRP: -95.22, RSRQ: -10.68, Num Beams: 4
+    └── Beam 0: SSB[2] Beam ID: 0/0, RSRP: -95.95/-101.54, Filtered RSRP/RSRQ (Nr2Nr): -95.95/-10.66, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 1: SSB[1] Beam ID: 0/0, RSRP: -95.22/-101.40, Filtered RSRP/RSRQ (Nr2Nr): -95.22/-10.68, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 2: SSB[0] Beam ID: 0/0, RSRP: -104.02/-108.92, Filtered RSRP/RSRQ (Nr2Nr): -104.02/-13.10, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 3: SSB[5] Beam ID: 0/0, RSRP: -106.49/-110.38, Filtered RSRP/RSRQ (Nr2Nr): -106.49/-14.15, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -56,12 +74,12 @@ class TestDiagNrLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
-        expected = {'stdout': '''NR ML1 Meas Packet: Layers 1, ssb_periocity 0
-Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 2 (S: 255)
-└── Cell 0: PCI  841, PBCH SFN 624, RSRP: -105.00, RSRQ: -11.01, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -114.05/-104.88, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) -104.88/-10.95
-└── Cell 1: PCI  644, PBCH SFN 782, RSRP: -117.00, RSRQ: -19.50, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -117.21/-119.49, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) -117.21/-19.57''',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 0
+Layer 0: NR-ARFCN: 431070, SCell PCI: 65535/SSB: 15, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 2 (S: 255)
+└── Cell 0: PCI:  841, PBCH SFN: 624, RSRP: -105.00, RSRQ: -11.01, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -114.05/-104.88, Filtered RSRP/RSRQ (Nr2Nr): 0.00/0.00, Filtered RSRP/RSRQ (L2Nr): -104.88/-10.95
+└── Cell 1: PCI:  644, PBCH SFN: 782, RSRP: -117.00, RSRQ: -19.50, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -117.21/-119.49, Filtered RSRP/RSRQ (Nr2Nr): 0.00/0.00, Filtered RSRP/RSRQ (L2Nr): -117.21/-19.57''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -69,12 +87,12 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00, RX beam NA/NA,
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
-        expected = {'stdout': '''NR ML1 Meas Packet: Layers 1, ssb_periocity 20
-Layer 0: NR-ARFCN 431070, SCell PCI  988/SSB 3, RSRP -112.41/-112.19, RX beam NA/NA, Num Cells: 2 (S: 0)
-└── Cell 0: PCI  988, PBCH SFN 672, RSRP: -107.63, RSRQ: -12.07, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -107.29/-115.45, Filtered RSRP/RSRQ (Nr2Nr) -107.43/-12.03, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00
-└── Cell 1: PCI  987, PBCH SFN 14, RSRP: -111.94, RSRQ: -14.43, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -112.34/-116.98, Filtered RSRP/RSRQ (Nr2Nr) -111.77/-14.48, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00''',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 431070, SCell PCI:  988/SSB: 3, RSRP: -112.41/-112.19, RX beam: NA/NA, Num Cells: 2 (S: 0)
+└── Cell 0: PCI:  988, PBCH SFN: 672, RSRP: -107.63, RSRQ: -12.07, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -107.29/-115.45, Filtered RSRP/RSRQ (Nr2Nr): -107.43/-12.03, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+└── Cell 1: PCI:  987, PBCH SFN: 14, RSRP: -111.94, RSRQ: -14.43, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -112.34/-116.98, Filtered RSRP/RSRQ (Nr2Nr): -111.77/-14.48, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -83,12 +101,12 @@ Layer 0: NR-ARFCN 431070, SCell PCI  988/SSB 3, RSRP -112.41/-112.19, RX beam NA
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
-        expected = {'stdout': '''NR ML1 Meas Packet: Layers 1, ssb_periocity 0
-Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 255 (S: 2)
-└── Cell 0: PCI  988, PBCH SFN 608, RSRP: -114.15, RSRQ: -15.71, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -114.15/-114.55, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00
-└── Cell 1: PCI  987, PBCH SFN 608, RSRP: -110.48, RSRQ: -17.69, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -110.48/-116.52, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00''',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 0
+Layer 0: NR-ARFCN: 431070, SCell PCI: 65535/SSB: 15, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 255 (S: 2)
+└── Cell 0: PCI:  988, PBCH SFN: 608, RSRP: -114.15, RSRQ: -15.71, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -114.15/-114.55, Filtered RSRP/RSRQ (Nr2Nr): 0.00/0.00, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+└── Cell 1: PCI:  987, PBCH SFN: 608, RSRP: -110.48, RSRQ: -17.69, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -110.48/-116.52, Filtered RSRP/RSRQ (Nr2Nr): 0.00/0.00, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -96,10 +114,10 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00, RX beam NA/NA,
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
-        expected = {'stdout': '''NR ML1 Meas Packet: Layers 1, ssb_periocity 20
-Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, Num Cells: 0 (S: 1)
-└── Cell 0: PCI  866, PBCH SFN 314, RSRP: -95.45, RSRQ: -10.68, Num Beams: 1
-    └── Beam 0: SSB[3] Beam ID 0/0, RSRP -110.33/-93.88, Filtered RSRP/RSRQ (Nr2Nr) -95.45/-10.68, Filtered RSRP/RSRQ (L2Nr) 0.00/0.00''',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 156510, SCell PCI:  866/SSB: 0, RSRP: 0.00/0.00, RX beam: NA/NA, Num Cells: 0 (S: 1)
+└── Cell 0: PCI:  866, PBCH SFN: 314, RSRP: -95.45, RSRQ: -10.68, Num Beams: 1
+    └── Beam 0: SSB[3] Beam ID: 0/0, RSRP: -110.33/-93.88, Filtered RSRP/RSRQ (Nr2Nr): -95.45/-10.68, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -108,12 +126,12 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
         result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
-        expected = {'stdout': '''NR ML1 Meas Packet: Layers 1, ssb_periocity 0
-Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX beam NA/NA, Num Cells: 2 (S: 255)
-└── Cell 0: PCI  425, PBCH SFN 474, RSRP: -113.77, RSRQ: -11.65, Num Beams: 1
-    └── Beam 0: SSB[0] Beam ID 0/0, RSRP -113.77/-114.37, RSRQ -11.65/-14.68, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) -113.77/-11.65
-└── Cell 1: PCI  487, PBCH SFN 474, RSRP: -117.24, RSRQ: -14.58, Num Beams: 1
-    └── Beam 0: SSB[0] Beam ID 0/0, RSRP -156.00/-114.24, RSRQ -43.00/-14.58, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) -117.24/-14.58''',
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 0
+Layer 0: NR-ARFCN: 431070, SCell PCI: 65535/SSB: 15, RSRP: 0.00/0.00/0.00/0.00, RX beam: NA/NA, Num Cells: 2 (S: 255)
+└── Cell 0: PCI:  425, PBCH SFN: 474, RSRP: -113.77, RSRQ: -11.65, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID: 0/0, RSRP: -113.77/-114.37, RSRQ: -11.65/-14.68, Filtered RSRP/RSRQ (Nr2Nr): 0.00/0.00, Filtered RSRP/RSRQ (L2Nr): -113.77/-11.65
+└── Cell 1: PCI:  487, PBCH SFN: 474, RSRP: -117.24, RSRQ: -14.58, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID: 0/0, RSRP: -156.00/-114.24, RSRQ: -43.00/-14.58, Filtered RSRP/RSRQ (Nr2Nr): 0.00/0.00, Filtered RSRP/RSRQ (L2Nr): -117.24/-14.58''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
@@ -125,7 +143,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
         result = self.parser.parse_nr_mib_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR MIB: NR-ARFCN 371904, PCI  336, SFN: 154, SCS: 15 kHz',
+            'stdout': 'NR MIB: NR-ARFCN: 371904, PCI:  336, SFN: 154, SCS: 15 kHz',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -136,7 +154,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
         result = self.parser.parse_nr_mib_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR MIB: NR-ARFCN 372750, PCI  336, SFN: 798, SCS: 15 kHz',
+            'stdout': 'NR MIB: NR-ARFCN: 372750, PCI:  336, SFN: 798, SCS: 15 kHz',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -146,7 +164,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
         result = self.parser.parse_nr_mib_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR MIB: NR-ARFCN 431070, PCI  988, SFN: 0, SCS: 15 kHz',
+            'stdout': 'NR MIB: NR-ARFCN: 431070, PCI:  988, SFN: 0, SCS: 15 kHz',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -158,7 +176,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_nr_rrc_scell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR RRC SCell Info: NR-ARFCN 641760/640726, Bandwidth 90/90 MHz, Band 78, PCI  669, xTAC/xCID 7929/4f27d1200, MCC 262, MNC 01',
+            'stdout': 'NR RRC SCell Info: NR-ARFCN: 641760/640726, Bandwidth: 90/90 MHz, Band: 78, PCI:  669, MCC: 262, MNC: 01, xTAC/xCID: 7929/4f27d1200',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -168,7 +186,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_nr_rrc_scell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR RRC SCell Info: NR-ARFCN 631968/627396, Bandwidth 80/80 MHz, Band 78, PCI   26, xTAC/xCID c094/69b40ca, MCC 262, MNC 02',
+            'stdout': 'NR RRC SCell Info: NR-ARFCN: 631968/627396, Bandwidth: 80/80 MHz, Band: 78, PCI:   26, MCC: 262, MNC: 02, xTAC/xCID: c094/69b40ca',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -179,7 +197,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_nr_rrc_scell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR RRC SCell Info: NR-ARFCN 156510/144664, Bandwidth 10/10 MHz, Band 28, PCI  866, xTAC/xCID c096/481980d5, MCC 262, MNC 02',
+            'stdout': 'NR RRC SCell Info: NR-ARFCN: 156510/144664, Bandwidth: 10/10 MHz, Band: 28, PCI:  866, MCC: 262, MNC: 02, xTAC/xCID: c096/481980d5',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -190,7 +208,7 @@ Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX b
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_nr_rrc_scell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'NR RRC SCell Info: NR-ARFCN 126490/134664, Bandwidth 10/10 MHz, Band 71, PCI   75, xTAC/xCID 21b98e/5573bc801, MCC 302, MNC 220',
+            'stdout': 'NR RRC SCell Info: NR-ARFCN: 126490/134664, Bandwidth: 10/10 MHz, Band: 71, PCI:   75, MCC: 302, MNC: 220, xTAC/xCID: 21b98e/5573bc801',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)

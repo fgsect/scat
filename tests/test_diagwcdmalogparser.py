@@ -18,7 +18,9 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C), timestamp=0)
         result = self.parser.parse_wcdma_search_cell_reselection(pkt_header, payload, None)
-        expected = 'WCDMA Search Cell: 2 3G cells, 0 2G cells\nWCDMA Search Cell: 3G Cell 0: UARFCN 10737, PSC  50, RSCP -95, Ec/Io -7.50\nWCDMA Search Cell: 3G Cell 1: UARFCN 10737, PSC  49, RSCP -98, Ec/Io -17.00'
+        expected = '''WCDMA Search Cell: 2 3G cells, 0 2G cells
+WCDMA Search Cell: 3G Cell 0: UARFCN: 10737, PSC:  50, RSCP: -95, Ec/Io: -7.50
+WCDMA Search Cell: 3G Cell 1: UARFCN: 10737, PSC:  49, RSCP: -98, Ec/Io: -17.00'''
         self.assertEqual(result['stdout'], expected)
 
     def test_parse_wcdma_pn_search_edition_2(self):
@@ -43,7 +45,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_RLC_DL_PDU_CIPHER_PACKET_C), timestamp=0)
         result = self.parser.parse_wcdma_rlc_dl_pdu_cipher_packet(pkt_header, payload, None)
-        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher DL PDU: LCID: 16, CK = 0x1, Algorithm = UEA1, Message = 0x805dfaf9, Count C = 0x400b')
+        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher DL PDU: LCID: 16, CK: 0x1, Algorithm: UEA1, Message: 0x805dfaf9, Count C: 0x400b')
 
     def test_parse_wcdma_rlc_ul_pdu_cipher_packet(self):
         payload = binascii.unhexlify('01001000000000ff00000000')
@@ -56,7 +58,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_RLC_UL_PDU_CIPHER_PACKET_C), timestamp=0)
         result = self.parser.parse_wcdma_rlc_ul_pdu_cipher_packet(pkt_header, payload, None)
-        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher UL PDU: LCID: 16, CK = 0x1, Algorithm = UEA1, Count C = 0x400c')
+        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher UL PDU: LCID: 16, CK: 0x1, Algorithm: UEA1, Count C: 0x400c')
 
     # RRC
     def test_parse_wcdma_cell_id(self):
@@ -64,7 +66,7 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_CELL_ID_C), timestamp=0)
         result = self.parser.parse_wcdma_cell_id(pkt_header, payload, None)
-        expected = 'WCDMA Cell ID: UARFCN 10663/9713, PSC 397, xCID/xLAC/xRAC 82d8541/9c9d/1, MCC 020602, MNC 00030f'
+        expected = 'WCDMA Cell ID: UARFCN: 10663/9713, PSC: 397, MCC: 020602, MNC: 00030f, xLAC/xRAC/xCID: 9c9d/1/82d8541'
         self.assertEqual(result['stdout'], expected)
 
     def test_parse_wcdma_rrc(self):

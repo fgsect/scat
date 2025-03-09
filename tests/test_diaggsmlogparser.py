@@ -18,7 +18,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_FCCH_ACQUISITION_C), timestamp=0)
         result = self.parser.parse_gsm_fcch(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM FCCH acquistion: ARFCN 12/Band 8',
+            'stdout': 'GSM FCCH acquistion: ARFCN: 12/Band: 8',
             'radio_id': 0,
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
@@ -30,7 +30,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_SCH_ACQUISITION_C), timestamp=0)
         result = self.parser.parse_gsm_sch(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM SCH acquistion: ARFCN 12/Band 8, Data: 0000000000111011110110000',
+            'stdout': 'GSM SCH acquistion: ARFCN: 12/Band: 8, Data: 0000000000111011110110000',
             'radio_id': 0,
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
@@ -42,7 +42,8 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_BURST_METRICS_C), timestamp=0)
         result = self.parser.parse_gsm_l1_burst_metric(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM Serving Cell Burst Metric: ARFCN 37/BC 8, RSSI 4152472, RxPwr -76.62\nGSM Serving Cell Burst Metric: ARFCN 37/BC 8, RSSI 3778662, RxPwr -76.94',
+            'stdout': '''GSM Serving Cell Burst Metric: ARFCN: 37/BC: 8, RSSI: 4152472, RxPwr: -76.62
+GSM Serving Cell Burst Metric: ARFCN: 37/BC: 8, RSSI: 3778662, RxPwr: -76.94''',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -53,7 +54,8 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_NEW_BURST_METRICS_C), timestamp=0)
         result = self.parser.parse_gsm_l1_new_burst_metric(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM Serving Cell New Burst Metric: ARFCN 37/BC 8, RSSI 4152472, RxPwr -76.62\nGSM Serving Cell New Burst Metric: ARFCN 37/BC 8, RSSI 3778662, RxPwr -76.94',
+            'stdout': '''GSM Serving Cell New Burst Metric: ARFCN: 37/BC: 8, RSSI: 4152472, RxPwr: -76.62
+GSM Serving Cell New Burst Metric: ARFCN: 37/BC: 8, RSSI: 3778662, RxPwr: -76.94''',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -64,7 +66,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_SCELL_AUX_MEASUREMENTS_C), timestamp=0)
         result = self.parser.parse_gsm_l1_serv_aux_meas(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM Serving Cell Aux Measurement: RxPwr -76.75',
+            'stdout': 'GSM Serving Cell Aux Measurement: RxPwr: -76.75',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -75,7 +77,17 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_SCELL_BA_LIST_C), timestamp=0)
         result = self.parser.parse_gsm_l1_surround_cell_ba(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM Surround Cell BA: 10 cells\nGSM Surround Cell BA: Cell 0: ARFCN 4/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 1: ARFCN 10/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 2: ARFCN 12/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 3: ARFCN 16/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 4: ARFCN 31/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 5: ARFCN 42/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 6: ARFCN 43/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 7: ARFCN 45/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 8: ARFCN 47/BC 8/BSIC N/A RxPwr 0.00\nGSM Surround Cell BA: Cell 9: ARFCN 49/BC 8/BSIC N/A RxPwr 0.00',
+            'stdout': '''GSM Surround Cell BA: 10 cells
+GSM Surround Cell BA: Cell 0: ARFCN: 4/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 1: ARFCN: 10/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 2: ARFCN: 12/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 3: ARFCN: 16/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 4: ARFCN: 31/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 5: ARFCN: 42/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 6: ARFCN: 43/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 7: ARFCN: 45/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 8: ARFCN: 47/BC: 8/BSIC: N/A, RxPwr: 0.00
+GSM Surround Cell BA: Cell 9: ARFCN: 49/BC: 8/BSIC: N/A, RxPwr: 0.00''',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -86,7 +98,13 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_NCELL_AUX_MEASUREMENTS_C), timestamp=0)
         result = self.parser.parse_gsm_l1_neig_aux_meas(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM Neighbor Cell Aux: 6 cells\nGSM Neighbor Cell Aux 0: ARFCN 42/BC 8, RxPwr -105.25\nGSM Neighbor Cell Aux 1: ARFCN 49/BC 8, RxPwr -106.50\nGSM Neighbor Cell Aux 2: ARFCN 43/BC 8, RxPwr -106.19\nGSM Neighbor Cell Aux 3: ARFCN 45/BC 8, RxPwr -106.19\nGSM Neighbor Cell Aux 4: ARFCN 47/BC 8, RxPwr -106.25\nGSM Neighbor Cell Aux 5: ARFCN 12/BC 8, RxPwr -114.25',
+            'stdout': '''GSM Neighbor Cell Aux: 6 cells
+GSM Neighbor Cell Aux 0: ARFCN: 42/BC: 8, RxPwr: -105.25
+GSM Neighbor Cell Aux 1: ARFCN: 49/BC: 8, RxPwr: -106.50
+GSM Neighbor Cell Aux 2: ARFCN: 43/BC: 8, RxPwr: -106.19
+GSM Neighbor Cell Aux 3: ARFCN: 45/BC: 8, RxPwr: -106.19
+GSM Neighbor Cell Aux 4: ARFCN: 47/BC: 8, RxPwr: -106.25
+GSM Neighbor Cell Aux 5: ARFCN: 12/BC: 8, RxPwr: -114.25''',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -96,7 +114,10 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_L1_NCELL_AUX_MEASUREMENTS_C), timestamp=0)
         result = self.parser.parse_gsm_l1_neig_aux_meas(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM Neighbor Cell Aux: 3 cells\nGSM Neighbor Cell Aux 0: ARFCN 10/BC 8, RxPwr -112.06\nGSM Neighbor Cell Aux 1: ARFCN 12/BC 8, RxPwr -110.44\nGSM Neighbor Cell Aux 2: ARFCN 16/BC 8, RxPwr -111.38',
+            'stdout': '''GSM Neighbor Cell Aux: 3 cells
+GSM Neighbor Cell Aux 0: ARFCN: 10/BC: 8, RxPwr: -112.06
+GSM Neighbor Cell Aux 1: ARFCN: 12/BC: 8, RxPwr: -110.44
+GSM Neighbor Cell Aux 2: ARFCN: 16/BC: 8, RxPwr: -111.38''',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -152,7 +173,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C), timestamp=0)
         result = self.parser.parse_gsm_cell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM RR Cell Info: ARFCN 16/Band 8, BCC 4, NCC 1, xCID 7618, xLAI 62f2200141',
+            'stdout': 'GSM RR Cell Info: ARFCN: 16/Band: 8, BCC: 4, NCC: 1, xCID: 7618, xLAI: 62f2200141',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -162,7 +183,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C), timestamp=0)
         result = self.parser.parse_gsm_cell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM RR Cell Info: ARFCN 991/Band 8, BCC 3, NCC 4, xCID f3df, xLAI 62f2305604',
+            'stdout': 'GSM RR Cell Info: ARFCN: 991/Band: 8, BCC: 3, NCC: 4, xCID: f3df, xLAI: 62f2305604',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -172,7 +193,7 @@ class TestDiagGsmLogParser(unittest.TestCase):
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C), timestamp=0)
         result = self.parser.parse_gsm_cell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM RR Cell Info: ARFCN 37/Band 8, BCC 3, NCC 3, xCID 7617, xLAI 62f2200141',
+            'stdout': 'GSM RR Cell Info: ARFCN: 37/Band: 8, BCC: 3, NCC: 3, xCID: 7617, xLAI: 62f2200141',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
