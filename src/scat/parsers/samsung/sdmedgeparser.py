@@ -53,8 +53,15 @@ class SdmEdgeParser:
             # Invalid measurement
             return {'stdout': ''}
 
-        stdout = 'EDGE Serving Cell Info: ARFCN: {}, BSIC: {:#x}, RxLev: {} (RSSI: {}), PLMN: MCC {:x}/MNC {:x}, LAC: {:#x}, RAC: {:#x}, CID: {:#x}\n'.format(
-            scell_info.arfcn, scell_info.bsic, scell_info.rxlev, scell_info.rxlev - 110, plmn_str[0], plmn_str[1], lac, scell_info.rac, cid
+        if self.display_format == 'd':
+            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{}'.format(lac, scell_info.rac, cid)
+        elif self.display_format == 'x':
+            lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(lac, scell_info.rac, cid)
+        elif self.display_format == 'b':
+            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(lac, scell_info.rac, cid, lac, scell_info.rac, cid)
+
+        stdout = 'EDGE Serving Cell Info: ARFCN: {}, BSIC: {:#x}, MCC: {:x}, MNC: {:x}, {}, RxLev: {} (RSSI: {})\n'.format(
+            scell_info.arfcn, scell_info.bsic, plmn_str[0], plmn_str[1], lac_rac_cid_str, scell_info.rxlev, scell_info.rxlev - 110,
         )
 
         if self.parent:
@@ -81,12 +88,22 @@ class SdmEdgeParser:
         identified_meas = namedtuple('SdmEdgeNCellIdCell', 'arfcn bsic rxlev c1 c2 c31 c32 unk lai gprs_raclr')
         for i in range(num_identified_cells):
             identified_meas_pkt = identified_meas._make(struct.unpack('<HBBbbhhH5sb', pkt[pos:pos+18]))
-            lai_str = 'MCC/MNC {:x}/{:x}, LAC {:#x}'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
-                                                        struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
-            stdout += "EDGE Neighbor Cell Info: Identified Cell {}: ARFCN {}, RxLev {} (RSSI {}), C1 {}, C2 {}, C31 {}, C32 {}, {}, GPRS RA Colour {}\n".format(
-                i, identified_meas_pkt.arfcn, identified_meas_pkt.rxlev, identified_meas_pkt.rxlev - 110, identified_meas_pkt.c1, identified_meas_pkt.c2,
+
+            if self.display_format == 'd':
+                lai_str = 'MCC/MNC: {:x}/{:x}, LAC: {}'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
+                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+            elif self.display_format == 'x':
+                lai_str = 'MCC/MNC: {:x}/{:x}, xLAC: {:x}'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
+                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+            elif self.display_format == 'b':
+                lai_str = 'MCC/MNC: {:x}/{:x}, LAC: {} ({:#x})'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
+                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0],
+                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+
+            stdout += "EDGE Neighbor Cell Info: Identified Cell {}: ARFCN: {}, {}, C1: {}, C2: {}, C31: {}, C32: {}, GPRS RA Colour: {}, RxLev: {} (RSSI: {})\n".format(
+                i, identified_meas_pkt.arfcn, lai_str, identified_meas_pkt.c1, identified_meas_pkt.c2,
                 identified_meas_pkt.c31, identified_meas_pkt.c32,
-                lai_str, identified_meas_pkt.gprs_raclr
+                identified_meas_pkt.gprs_raclr, identified_meas_pkt.rxlev, identified_meas_pkt.rxlev - 110,
             )
             pos += 18
 
@@ -94,7 +111,7 @@ class SdmEdgeParser:
         n_meas = namedtuple('SdmEdgeNCellNCell', 'arfcn rxlev')
         for i in range(num_ncells):
             n_meas_pkt = n_meas._make(struct.unpack('<HB', pkt[pos:pos+3]))
-            stdout += "EDGE Neighbor Cell Info: Neighbor Cell {}: ARFCN {}, RxLev {} (RSSI {})\n".format(
+            stdout += "EDGE Neighbor Cell Info: Neighbor Cell {}: ARFCN: {}, RxLev: {} (RSSI: {})\n".format(
                 i, n_meas_pkt.arfcn, n_meas_pkt.rxlev, n_meas_pkt.rxlev - 110
             )
             pos += 3
@@ -116,7 +133,7 @@ class SdmEdgeParser:
         n_meas = namedtuple('SdmEdge3GNCellNCell', 'uarfcn psc rssi rscp ecno')
         for i in range(num_3g_cells):
             n_meas_pkt = n_meas._make(struct.unpack('<HHBBB', pkt[pos:pos+7]))
-            stdout += "NCell {}: UARFCN {}, PSC {}, RSSI {}, RSCP {}, Ec/No {}\n".format(
+            stdout += "NCell {}: UARFCN: {}, PSC: {}, RSSI: {}, RSCP: {}, Ec/No: {}\n".format(
                 i, n_meas_pkt.uarfcn, n_meas_pkt.psc,
                 n_meas_pkt.rssi, n_meas_pkt.rscp * -1, n_meas_pkt.ecno / -10
             )
@@ -145,11 +162,11 @@ class SdmEdgeParser:
         if ho_history_info:
             stdout += 'EDGE Handover History Info: '
             if ho_history_info.arfcn != 0xffff:
-                stdout += 'ARFCN {}/BSIC {} '.format(ho_history_info.arfcn, ho_history_info.bsic)
+                stdout += 'ARFCN: {}/BSIC: {} '.format(ho_history_info.arfcn, ho_history_info.bsic)
             if ho_history_info.uarfcn != 0xffff:
-                stdout += 'UARFCN {}/PSC {} '.format(ho_history_info.uarfcn, ho_history_info.psc)
+                stdout += 'UARFCN: {}/PSC: {} '.format(ho_history_info.uarfcn, ho_history_info.psc)
             if ho_history_info.earfcn != 0xffff:
-                stdout += 'EARFCN {}/PCI {} '.format(ho_history_info.earfcn, ho_history_info.pci)
+                stdout += 'EARFCN: {}/PCI: {} '.format(ho_history_info.earfcn, ho_history_info.pci)
             stdout += '\n'
 
         if len(extra) > 0:
@@ -166,7 +183,7 @@ class SdmEdgeParser:
         extra = pkt[16:]
 
         if scell_meas_info.arfcn < 1024 and scell_meas_info.rxlev > 0:
-            stdout = 'EDGE Measurement Info (Serving Cell): ARFCN {}, BSIC {:#04x}, RxLev {} (RSSI {}), TxLev {}\n'.format(
+            stdout = 'EDGE Measurement Info (Serving Cell): ARFCN: {}, BSIC: {:#04x}, RxLev: {} (RSSI: {}), TxLev: {}\n'.format(
                 scell_meas_info.arfcn, scell_meas_info.bsic,
                 scell_meas_info.rxlev, scell_meas_info.rxlev - 110, scell_meas_info.txlev)
         else:
@@ -175,7 +192,7 @@ class SdmEdgeParser:
         for i in range(int(len(extra)/10)):
             ncell_meas_info = header_n._make(struct.unpack('<HHHL', extra[i*10:(i+1)*10]))
             if ncell_meas_info.arfcn < 1024 and ncell_meas_info.rxlev > 0:
-                stdout += 'EDGE Measurement Info (Neighbor Cell): ARFCN {}, BSIC {:#04x}, RxLev {} (RSSI {})\n'.format(
+                stdout += 'EDGE Measurement Info (Neighbor Cell): ARFCN: {}, BSIC: {:#04x}, RxLev: {} (RSSI: {})\n'.format(
                     ncell_meas_info.arfcn, ncell_meas_info.bsic & 0b111111,
                     ncell_meas_info.rxlev, ncell_meas_info.rxlev - 110)
 

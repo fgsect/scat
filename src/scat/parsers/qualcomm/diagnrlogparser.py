@@ -80,21 +80,21 @@ class DiagNrLogParser:
                 ml1_shared_struct = namedtuple('QcDiagNrMl1Packet', 'num_layers ssb_periocity null frequency_offset timing_offset')
                 ml1_2_7 = ml1_shared_struct._make(struct.unpack('<BB2sII', pkt_body[4:16]))
                 num_layers = ml1_2_7.num_layers
-                stdout += "NR ML1 Meas Packet: Layers {}, ssb_periocity {}\n".format(ml1_2_7.num_layers, ml1_2_7.ssb_periocity)
+                stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_7.num_layers, ml1_2_7.ssb_periocity)
                 current_offset = 16
 
             elif pkt_ver.rel_min == 0x09:
                 ml1_shared_struct = namedtuple('QcDiagNrMl1Packet', 'unknown num_layers ssb_periocity null frequency_offset timing_offset')
                 ml1_2_9 = ml1_shared_struct._make(struct.unpack('<IBBHII', pkt_body[4:20]))
                 num_layers = ml1_2_9.num_layers
-                stdout += "NR ML1 Meas Packet: Layers {}, ssb_periocity {}\n".format(ml1_2_9.num_layers, ml1_2_9.ssb_periocity)
+                stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_9.num_layers, ml1_2_9.ssb_periocity)
                 current_offset = 20
         elif pkt_ver.rel_maj == 0x03:
             if pkt_ver.rel_min == 0x00:
                 ml1_shared_struct = namedtuple('QcDiagNrMl1Packet', 'unknown num_layers ssb_periocity null frequency_offset timing_offset')
                 ml1_3_0 = ml1_shared_struct._make(struct.unpack('<IBBHII', pkt_body[4:20]))
                 num_layers = ml1_3_0.num_layers
-                stdout += "NR ML1 Meas Packet: Layers {}, ssb_periocity {}\n".format(ml1_3_0.num_layers, ml1_3_0.ssb_periocity)
+                stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_3_0.num_layers, ml1_3_0.ssb_periocity)
                 current_offset = 20
         else:
             if self.parent:
@@ -115,15 +115,15 @@ class DiagNrLogParser:
                     current_offset += 40
 
             if pkt_ver.rel_maj == 0x02:
-                rsrp_str = 'RSRP {:.2f}/{:.2f}'.format(
+                rsrp_str = 'RSRP: {:.2f}/{:.2f}'.format(
                     self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_0), self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_1),
                 )
             elif pkt_ver.rel_maj == 0x03:
-                rsrp_str = 'RSRP {:.2f}/{:.2f}/{:.2f}/{:.2f}'.format(
+                rsrp_str = 'RSRP: {:.2f}/{:.2f}/{:.2f}/{:.2f}'.format(
                     self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_0), self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_1),
                     self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_2), self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_3),
                 )
-            stdout += "Layer {}: NR-ARFCN {}, SCell PCI {:4d}/SSB {}, {}, RX beam {}/{}, Num Cells: {} (S: {})\n".format(
+            stdout += "Layer {}: NR-ARFCN: {}, SCell PCI: {:4d}/SSB: {}, {}, RX beam: {}/{}, Num Cells: {} (S: {})\n".format(
                 layer, meas_carrier_list.raster_arfcn, meas_carrier_list.serv_cell_pci, meas_carrier_list.serv_ssb & 0xf,
                 rsrp_str,
                 meas_carrier_list.serv_rx_beam_0 if meas_carrier_list.serv_rx_beam_0 != 0xffff else 'NA',
@@ -142,7 +142,7 @@ class DiagNrLogParser:
                 cell_list_struct = namedtuple('QcDiagNrMl1Packet', 'pci pbch_sfn num_beams null_0 cell_quality_rsrp cell_quality_rsrq')
                 cell_list = cell_list_struct._make(struct.unpack('<HHB3sII', pkt_body[current_offset:current_offset+16]))
                 current_offset += 16
-                stdout += "└── Cell {}: PCI {:4d}, PBCH SFN {}, RSRP: {:.2f}, RSRQ: {:.2f}, Num Beams: {}\n".format(
+                stdout += "└── Cell {}: PCI: {:4d}, PBCH SFN: {}, RSRP: {:.2f}, RSRQ: {:.2f}, Num Beams: {}\n".format(
                     cell, cell_list.pci, cell_list.pbch_sfn,
                     self.parse_float_q7(cell_list.cell_quality_rsrp), self.parse_float_q7(cell_list.cell_quality_rsrq),
                     cell_list.num_beams)
@@ -152,7 +152,7 @@ class DiagNrLogParser:
                     if pkt_ver.rel_maj == 0x02:
                         beam_meas = beam_meas_struct._make(struct.unpack('<HHHHIQIIIIII', pkt_body[current_offset: current_offset+44]))
                         current_offset += 44
-                        stdout += "    └── Beam {}: SSB[{}] Beam ID {}/{}, RSRP {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr) {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr) {:.2f}/{:.2f}\n".format(
+                        stdout += "    └── Beam {}: SSB[{}] Beam ID: {}/{}, RSRP: {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr): {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr): {:.2f}/{:.2f}\n".format(
                             beam, beam_meas.ssb_index,
                             beam_meas.rx_beam_0, beam_meas.rx_beam_1,
                             self.parse_float_q7(beam_meas.rx_beam_info_rsrp_0), self.parse_float_q7(beam_meas.rx_beam_info_rsrp_1),
@@ -162,7 +162,7 @@ class DiagNrLogParser:
                     elif pkt_ver.rel_maj == 0x03:
                         beam_meas = beam_meas_struct_v3._make(struct.unpack('<HHHHIQIIIIIIIIIIIIIIII', pkt_body[current_offset: current_offset+84]))
                         current_offset += 84
-                        stdout += "    └── Beam {}: SSB[{}] Beam ID {}/{}, RSRP {:.2f}/{:.2f}, RSRQ {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr) {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr) {:.2f}/{:.2f}\n".format(
+                        stdout += "    └── Beam {}: SSB[{}] Beam ID: {}/{}, RSRP: {:.2f}/{:.2f}, RSRQ: {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr): {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr): {:.2f}/{:.2f}\n".format(
                             beam, beam_meas.ssb_index,
                             beam_meas.rx_beam_0, beam_meas.rx_beam_1,
                             self.parse_float_q7(beam_meas.rx_beam_info_rsrp_0), self.parse_float_q7(beam_meas.rx_beam_info_rsrp_1),
@@ -208,9 +208,9 @@ class DiagNrLogParser:
             scs_str = '{} kHz'.format(scs_map[scs])
 
         if len(scs_str) > 0:
-            stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}, SCS: {}'.format(item.nrarfcn, item.pci, sfn, scs_str)
+            stdout = 'NR MIB: NR-ARFCN: {}, PCI: {:4d}, SFN: {}, SCS: {}'.format(item.nrarfcn, item.pci, sfn, scs_str)
         else:
-            stdout = 'NR MIB: NR-ARFCN {}, PCI {:4d}, SFN: {}'.format(item.nrarfcn, item.pci, sfn)
+            stdout = 'NR MIB: NR-ARFCN: {}, PCI: {:4d}, SFN: {}'.format(item.nrarfcn, item.pci, sfn)
         return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_rrc_scell_info(self, pkt_header, pkt_body, args):
@@ -235,15 +235,22 @@ class DiagNrLogParser:
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
 
+        if self.display_format == 'd':
+            tac_cid_fmt = 'TAC/CID: {}/{}'.format(item.tac, item.cell_id)
+        elif self.display_format == 'x':
+            tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(item.tac, item.cell_id)
+        elif self.display_format == 'b':
+            tac_cid_fmt = 'TAC/CID: {}/{} ({:#x}/{:#x})'.format(item.tac, item.cell_id, item.tac, item.cell_id)
+
         if item.mnc_digit == 2:
-            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
-                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+            stdout = 'NR RRC SCell Info: NR-ARFCN: {}/{}, Bandwidth: {}/{} MHz, Band: {}, PCI: {:4d}, MCC: {}, MNC: {:02}, {}'.format(item.dl_nrarfcn,
+                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         elif item.mnc_digit == 3:
-            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
-                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+            stdout = 'NR RRC SCell Info: NR-ARFCN: {}/{}, Bandwidth: {}/{} MHz, Band: {}, PCI: {:4d}, MCC: {}, MNC: {:03}, {}'.format(item.dl_nrarfcn,
+                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         else:
-            stdout = 'NR RRC SCell Info: NR-ARFCN {}/{}, Bandwidth {}/{} MHz, Band {}, PCI {:4d}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_nrarfcn,
-                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+            stdout = 'NR RRC SCell Info: NR-ARFCN: {}/{}, Bandwidth: {}/{} MHz, Band: {}, PCI: {:4d}, MCC: {}, MNC: {}, {}'.format(item.dl_nrarfcn,
+                item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_nr_rrc_conf_info(self, pkt_header, pkt_body, args):
@@ -358,11 +365,16 @@ class DiagNrLogParser:
 
         if item.pdu_id in rrc_type_map.keys():
             type_str = rrc_type_map[item.pdu_id]
-            stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}".format(item.nrarfcn, item.pci)
+            stdout += "NR RRC OTA Packet: NR-ARFCN: {}, PCI: {}".format(item.nrarfcn, item.pci)
             if ncgi:
                 mcc_mnc = util.unpack_mcc_mnc(ncgi[36:60].bytes)
                 cell_id = ncgi[0:36].uint
-                stdout += ', NR CGI: {:3x}-{:3x}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
+                if self.display_format == 'd':
+                    stdout += ', NR CGI: {:3x}-{:3x}-{}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
+                elif self.display_format == 'x':
+                    stdout += ', NR CGI: {:3x}-{:3x}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
+                elif self.display_format == 'b':
+                    stdout += ', NR CGI: {:3x}-{:3x}-{} ({:#9x})'.format(mcc_mnc[0], mcc_mnc[1], cell_id, cell_id)
             nr_pdu_id_gsmtap = rrc_type_map[item.pdu_id]
 
             gsmtap_hdr = util.create_gsmtap_header(
@@ -380,7 +392,7 @@ class DiagNrLogParser:
             else:
                 type_str = '{}'.format(item.pdu_id)
 
-            stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}, Type: {}\n".format(item.nrarfcn, item.pci, type_str)
+            stdout += "NR RRC OTA Packet: NR-ARFCN: {}, PCI: {}, Type: {}\n".format(item.nrarfcn, item.pci, type_str)
             stdout += "NR RRC OTA Packet: Body: {}".format(binascii.hexlify(msg_content).decode())
 
             return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
@@ -414,9 +426,18 @@ class DiagNrLogParser:
             else:
                 guti_str = binascii.hexlify(item.guti_5gs).decode()
 
-            stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
-                item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
-            )
+            if self.display_format == 'd':
+                stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {}, GUTI: {}'.format(
+                    item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
+                )
+            elif self.display_format == 'x':
+                stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
+                    item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
+                )
+            elif self.display_format == 'b':
+                stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {} ({:#6x}), GUTI: {}'.format(
+                    item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, tac, guti_str
+                )
             return {'stdout': stdout, 'ts': pkt_ts}
         else:
             if self.parent:
@@ -439,7 +460,6 @@ class DiagNrLogParser:
             item = item_struct._make(struct.unpack('<BBB', pkt_body[4:7]))
             stdout = "NAS-5GS message ({:04X}) version {:x}.{:x}.{:x}".format(cmd_id, item.vermaj, item.vermid, item.vermin)
             msg_content = pkt_body[7:]
-            stdout += "{}".format(binascii.hexlify(msg_content).decode())
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 3,

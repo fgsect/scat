@@ -113,18 +113,18 @@ class SdmCommonParser:
         if common_basic.dlfreq in known_bad_freq:
             dlfreq_str = '-'
         else:
-            dlfreq_str = 'DL {:.2f} MHz'.format(common_basic.dlfreq / 1000000)
+            dlfreq_str = 'DL: {:.2f} MHz'.format(common_basic.dlfreq / 1000000)
 
         if common_basic.ulfreq in known_bad_freq:
             ulfreq_str = '-'
         else:
             if self.icd_ver >= (6, 0) and common_basic.rat in (0x12, 0x14):
-                ulfreq_str = 'UL UARFCN {}'.format(int(common_basic.ulfreq / 100000))
+                ulfreq_str = 'UL: UARFCN {}'.format(int(common_basic.ulfreq / 100000))
             else:
-                ulfreq_str = 'UL {:.2f} MHz'.format(common_basic.ulfreq / 1000000)
+                ulfreq_str = 'UL: {:.2f} MHz'.format(common_basic.ulfreq / 1000000)
 
 
-        stdout = 'Common Basic Info: RAT {}, Status {}, MIMO {}, Frequency {}/{}{}'.format(
+        stdout = 'Common Basic Info: RAT: {}, Status: {}, MIMO: {}, Frequency: {}/{}{}'.format(
             rat_str, common_basic.status, common_basic.mimo, dlfreq_str, ulfreq_str, extra_str)
 
         return {'stdout': stdout}

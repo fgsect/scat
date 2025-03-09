@@ -43,7 +43,7 @@ class SdmHspaParser:
         ul1_rf_info = header._make(struct.unpack('<HHhh', pkt[0:12]))
         extra = pkt[12:]
 
-        stdout = 'HSPA UL1 RF Info: DL UARFCN {}, RSSI {:.2f}, TxPwr {:.2f}'.format(
+        stdout = 'HSPA UL1 RF Info: DL UARFCN: {}, RSSI: {:.2f}, TxPwr: {:.2f}'.format(
             ul1_rf_info.uarfcn,
             ul1_rf_info.rssi,
             ul1_rf_info.txpwr / 100
@@ -60,7 +60,7 @@ class SdmHspaParser:
         ul1_rf_info = header._make(struct.unpack('<HHBBBB', pkt[0:12]))
         extra = pkt[12:]
 
-        stdout = 'HSPA UL1 RF Info: DL UARFCN {}, PSC {}, RSSI {:.2f}, Ec/No {:.2f}, RSCP {:.2f}, TxPwr {:.2f}'.format(
+        stdout = 'HSPA UL1 RF Info: DL UARFCN: {}, PSC: {}, RSSI: {:.2f}, Ec/No: {:.2f}, RSCP: {:.2f}, TxPwr: {:.2f}'.format(
             ul1_rf_info.uarfcn, ul1_rf_info.psc,
             ul1_rf_info.rssi - 101,
             (ul1_rf_info.ecno / 2) - 24.5,
@@ -85,7 +85,7 @@ class SdmHspaParser:
         ul1_meas = header._make(struct.unpack('<HhhhH', pkt[0:10]))
         extra = pkt[10:]
 
-        stdout = 'HSPA UL1 Serving Cell: PSC {}, CPICH RSCP {:.2f}, Delta RSCP {:.2f}, Ec/No {:.2f}, DRX {} ms'.format(
+        stdout = 'HSPA UL1 Serving Cell: PSC: {}, CPICH RSCP: {:.2f}, Delta RSCP: {:.2f}, Ec/No: {:.2f}, DRX: {} ms'.format(
             ul1_meas.psc,
             ul1_meas.cpich_rscp,
             ul1_meas.cpich_delta_rscp,
@@ -108,7 +108,7 @@ class SdmHspaParser:
         pos = 2
         for i in range(num_meas):
             intra_meas = header._make(struct.unpack('<Hhh', pkt[pos:pos+6]))
-            stdout += 'Measurement {}: PSC {}, CPICH RSCP {}, CPICH Ec/No {}\n'.format(
+            stdout += 'Measurement {}: PSC: {}, CPICH RSCP: {}, CPICH Ec/No: {}\n'.format(
                 i,
                 intra_meas.psc,
                 intra_meas.cpich_rscp,
@@ -133,7 +133,7 @@ class SdmHspaParser:
         pos = 2
         for i in range(num_meas):
             inter_meas = header._make(struct.unpack('<HHhh', pkt[pos:pos+8]))
-            stdout += 'Measurement {}: UARFCN {}, PSC {}, CPICH RSCP {}, CPICH Ec/No {}\n'.format(
+            stdout += 'Measurement {}: UARFCN: {}, PSC: {}, CPICH RSCP: {}, CPICH Ec/No: {}\n'.format(
                 i,
                 inter_meas.uarfcn,
                 inter_meas.psc,
@@ -206,7 +206,7 @@ class SdmHspaParser:
         scell_info = header._make(struct.unpack('<HHHH', pkt[0:8]))
         if scell_info.dl_uarfcn == 0:
             return None
-        stdout = 'WCDMA Serving Cell: UARFCN {}/{}, MCC {:x}, MNC {:x}'.format(scell_info.dl_uarfcn,
+        stdout = 'WCDMA Serving Cell: UARFCN: {}/{}, MCC: {:x}, MNC: {:x}'.format(scell_info.dl_uarfcn,
             scell_info.ul_uarfcn, scell_info.mcc, scell_info.mnc)
 
         if self.parent:

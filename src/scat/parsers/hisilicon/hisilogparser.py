@@ -122,7 +122,7 @@ class HisiLogParser:
 
             self.parent.lte_last_band_ind[0] = cell_info.band_ind
 
-        stdout = 'LTE Current Cell Info: EARFCN {}/{} ({:.1f}/{:.1f} MHz), Bandwidth {}/{} MHz, Band {}'.format(
+        stdout = 'LTE Current Cell Info: EARFCN: {}/{} ({:.1f}/{:.1f} MHz), Bandwidth: {}/{} MHz, Band: {}'.format(
             cell_info.dl_earfcn, cell_info.ul_earfcn, cell_info.dl_freq / 10, cell_info.ul_freq / 10,
             nrb_to_bw[cell_info.dl_bw], nrb_to_bw[cell_info.ul_bw], cell_info.band_ind
         )
@@ -181,7 +181,7 @@ class HisiLogParser:
                     scell_header_data.freq / 10, scell_header_data.band
                 )
                 scell_meas_data = scell_meas._make(struct.unpack('<Hhhh', info_data[12:20]))
-                stdout += 'PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(
+                stdout += 'PCI: {}, RSRP: {:.1f}, RSRQ: {:.1f}\n'.format(
                     scell_meas_data.pci,
                     scell_meas_data.rsrp / 10, scell_meas_data.rsrq / 10
                 )
@@ -197,7 +197,7 @@ class HisiLogParser:
                 )
                 for i in range(intra_freq_header_data.total_cell):
                     intra_freq_meas_data = intra_freq_meas._make(struct.unpack('<Hhhh', info_data[8*(i+2):8*(i+3)]))
-                    stdout += 'Cell {}: PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(i,
+                    stdout += 'Cell {}: PCI: {}, RSRP: {:.1f}, RSRQ: {:.1f}\n'.format(i,
                         intra_freq_meas_data.pci,
                         intra_freq_meas_data.rsrp / 10, intra_freq_meas_data.rsrq / 10,
                     )
@@ -217,7 +217,7 @@ class HisiLogParser:
                     )
                     for j in range(inter_freq_header_data.total_cell):
                         inter_freq_meas_data = inter_freq_meas._make(struct.unpack('<Hhhh', info_data[pos:pos+8]))
-                        stdout += 'Cell {}: PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(j,
+                        stdout += 'Cell {}: PCI: {}, RSRP: {:.1f}, RSRQ: {:.1f}\n'.format(j,
                             inter_freq_meas_data.pci,
                             inter_freq_meas_data.rsrp / 10, inter_freq_meas_data.rsrq / 10,
                         )
@@ -242,7 +242,7 @@ class HisiLogParser:
                 )
                 for i in range(intra_freq_header_data.total_cell):
                     intra_freq_meas_data = intra_freq_meas._make(struct.unpack('<Hhhh', info_data[8*(i+2):8*(i+3)]))
-                    stdout += 'Cell {}: PCI {}, RSRP {:.1f}, RSRQ {:.1f}\n'.format(i,
+                    stdout += 'Cell {}: PCI: {}, RSRP: {:.1f}, RSRQ: {:.1f}\n'.format(i,
                         intra_freq_meas_data.pci,
                         intra_freq_meas_data.rsrp / 10, intra_freq_meas_data.rsrq / 10,
                     )

@@ -182,7 +182,7 @@ class DiagLteLogParser:
         real_rssi = self.parse_rssi(meas_rssi)
         real_rsrq = self.parse_rsrq(meas_rsrq)
 
-        return {'stdout': 'LTE SCell: EARFCN {}, PCI {:3d}, Measured RSRP {:.2f}, Measured RSSI {:.2f}, Measured RSRQ {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi, real_rsrq),
+        return {'stdout': 'LTE SCell: EARFCN: {}, PCI: {:3d}, Measured RSRP: {:.2f}, Measured RSSI: {:.2f}, Measured RSRQ: {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi, real_rsrq),
                 'ts': pkt_ts}
 
     def parse_lte_ml1_ncell_meas(self, pkt_header, pkt_body, args):
@@ -214,7 +214,7 @@ class DiagLteLogParser:
 
         q_rxlevmin = item.q_rxlevmin_n_cells & 0x3f
         n_cells = item.q_rxlevmin_n_cells >> 6
-        stdout += 'LTE NCell: EARFCN {}, number of cells: {}\n'.format(item.earfcn, n_cells)
+        stdout += 'LTE NCell: EARFCN: {}, number of cells: {}\n'.format(item.earfcn, n_cells)
 
         for i in range(n_cells):
             n_cell_pkt = pkt_body[pos + 32 * i:pos + 32 * (i + 1)]
@@ -245,7 +245,7 @@ class DiagLteLogParser:
             n_real_rssi = self.parse_rssi(n_meas_rssi)
             n_real_rsrq = self.parse_rsrq(n_meas_rsrq)
 
-            stdout += '└── Neighbor cell {}: PCI {:3d}, RSRP {:.2f}, RSSI {:.2f}, RSRQ {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi, n_real_rsrq)
+            stdout += '└── Neighbor cell {}: PCI: {:3d}, RSRP: {:.2f}, RSSI: {:.2f}, RSRQ: {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi, n_real_rsrq)
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_lte_ml1_scell_meas_response_cell_v36(self, cell_id, cell_bytes, rsrp_offset=16, snr_offset=80, sir_cinr_offset=104):
@@ -304,7 +304,7 @@ class DiagLteLogParser:
         cinr2 = interim[4]
         cinr3 = interim[5]
 
-        return 'LTE ML1 SCell Meas Response (Cell {}): PCI {}, SFN/SubFN {}/{}, Serving cell index {}, is_serving_cell = {}\n'.format(cell_id, pci, sfn, subfn, scell_idx, is_scell)
+        return 'LTE ML1 SCell Meas Response (Cell {}): PCI: {}, SFN/SubFN: {}/{}, Serving cell index: {}, is_serving_cell: {}\n'.format(cell_id, pci, sfn, subfn, scell_idx, is_scell)
 
     def parse_lte_ml1_scell_meas_response_cell_v48(self, cell_id, cell_bytes):
         # resid_freq_error = struct.unpack('<H', cell_bytes[84:86])[0]
@@ -338,7 +338,7 @@ class DiagLteLogParser:
                     if subpkt_header.version == 36:
                         subpkt_scell_meas_v36_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV36', 'earfcn num_cells valid_rx')
                         subpkt_scell_meas_v36 = subpkt_scell_meas_v36_struct._make(struct.unpack('<LHH', subpkt_body[0:8]))
-                        stdout += 'LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}\n'.format(subpkt_scell_meas_v36.earfcn,
+                        stdout += 'LTE ML1 SCell Meas Response: EARFCN: {}, Number of cells: {}, Valid RX: {}\n'.format(subpkt_scell_meas_v36.earfcn,
                             subpkt_scell_meas_v36.num_cells, subpkt_scell_meas_v36.valid_rx)
 
                         pos_meas = 8
@@ -349,7 +349,7 @@ class DiagLteLogParser:
                         # EARFCN, num of cell, valid RX data
                         subpkt_scell_meas_v48_struct = namedtuple('QcDiagLteMl1SubpktScellMeasV48', 'earfcn num_cells valid_rx rx_map')
                         subpkt_scell_meas_v48 = subpkt_scell_meas_v48_struct._make(struct.unpack('<LHHL', subpkt_body[0:12]))
-                        stdout += 'LTE ML1 SCell Meas Response: EARFCN {}, Number of cells = {}, Valid RX = {}\n'.format(subpkt_scell_meas_v48.earfcn,
+                        stdout += 'LTE ML1 SCell Meas Response: EARFCN: {}, Number of cells: {}, Valid RX: {}\n'.format(subpkt_scell_meas_v48.earfcn,
                             subpkt_scell_meas_v48.num_cells, subpkt_scell_meas_v48.valid_rx)
 
                         pos_meas = 12
@@ -419,9 +419,9 @@ class DiagLteLogParser:
 
         mib_payload = struct.pack('!L', item.mib_bytes)[0:3]
         if item.dl_bandwidth in prb_to_mhz:
-            stdout = 'LTE ML1 Cell Info: EARFCN {}, PCI {}, Bandwidth {} MHz, Num antennas {}'.format(item.earfcn, pci, prb_to_mhz[item.dl_bandwidth], item.num_antennas)
+            stdout = 'LTE ML1 Cell Info: EARFCN: {}, PCI: {}, Bandwidth: {} MHz, Num antennas: {}'.format(item.earfcn, pci, prb_to_mhz[item.dl_bandwidth], item.num_antennas)
         else:
-            stdout = 'LTE ML1 Cell Info: EARFCN {}, PCI {}, Bandwidth {} PRBs, Num antennas {}'.format(item.earfcn, pci, item.dl_bandwidth, item.num_antennas)
+            stdout = 'LTE ML1 Cell Info: EARFCN: {}, PCI: {}, Bandwidth: {} PRBs, Num antennas: {}'.format(item.earfcn, pci, item.dl_bandwidth, item.num_antennas)
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
@@ -1012,13 +1012,13 @@ class DiagLteLogParser:
         stdout = ''
         if pkt_version == 1 or pkt_version == 2:
             if item.bandwidth in prb_to_mhz:
-                stdout = 'LTE MIB Info: EARFCN {}, SFN {:4}, Bandwidth {} MHz, TX antennas {}'.format(item.earfcn, item.sfn, prb_to_mhz[item.bandwidth], item.tx_antenna)
+                stdout = 'LTE MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} MHz, TX antennas: {}'.format(item.earfcn, item.sfn, prb_to_mhz[item.bandwidth], item.tx_antenna)
             else:
-                stdout = 'LTE MIB Info: EARFCN {}, SFN {:4}, Bandwidth {} PRBs, TX antennas {}'.format(item.earfcn, item.sfn, item.bandwidth, item.tx_antenna)
+                stdout = 'LTE MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} PRBs, TX antennas: {}'.format(item.earfcn, item.sfn, item.bandwidth, item.tx_antenna)
 
         elif pkt_version == 17:
             # MIB for NB-IoT (only 1 PRB)
-            stdout = 'LTE MIB-NB Info: EARFCN {}, SFN {:4}, TX antennas {}'.format(item.earfcn, item.sfn, item.tx_antenna)
+            stdout = 'LTE MIB-NB Info: EARFCN: {}, SFN: {:4}, TX antennas: {}'.format(item.earfcn, item.sfn, item.tx_antenna)
 
         return {'stdout': stdout, 'ts': pkt_ts}
 
@@ -1056,15 +1056,22 @@ class DiagLteLogParser:
         else:
             bw_str = '{}/{} PRBs'.format(item.dl_bw, item.ul_bw)
 
+        if self.display_format == 'd':
+            tac_cid_fmt = 'TAC/CID: {}/{}'.format(item.tac, item.cell_id)
+        elif self.display_format == 'x':
+            tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(item.tac, item.cell_id)
+        elif self.display_format == 'b':
+            tac_cid_fmt = 'TAC/CID: {}/{} ({:#x}/{:#x})'.format(item.tac, item.cell_id, item.tac, item.cell_id)
+
         if item.mnc_digit == 2:
-            stdout = 'LTE RRC SCell Info: EARFCN {}/{}, Band {}, Bandwidth {}, PCI {}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:02}'.format(item.dl_earfcn,
-                item.ul_earfcn, item.band, bw_str, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+            stdout = 'LTE RRC SCell Info: EARFCN: {}/{}, Band: {}, Bandwidth: {}, PCI: {}, MCC: {}, MNC: {:02}, {}'.format(item.dl_earfcn,
+                item.ul_earfcn, item.band, bw_str, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         elif item.mnc_digit == 3:
-            stdout = 'LTE RRC SCell Info: EARFCN {}/{}, Band {}, Bandwidth {}, PCI {}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {:03}'.format(item.dl_earfcn,
-                item.ul_earfcn, item.band, bw_str, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+            stdout = 'LTE RRC SCell Info: EARFCN: {}/{}, Band: {}, Bandwidth: {}, PCI: {}, MCC: {}, MNC: {:03}, {}'.format(item.dl_earfcn,
+                item.ul_earfcn, item.band, bw_str, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         else:
-            stdout = 'LTE RRC SCell Info: EARFCN {}/{}, Band {}, Bandwidth {}, PCI {}, xTAC/xCID {:x}/{:x}, MCC {}, MNC {}'.format(item.dl_earfcn,
-                item.ul_earfcn, item.band, bw_str, item.pci, item.tac, item.cell_id, item.mcc, item.mnc)
+            stdout = 'LTE RRC SCell Info: EARFCN: {}/{}, Band: {}, Bandwidth: {}, PCI: {}, MCC: {}, MNC: {}, {}'.format(item.dl_earfcn,
+                item.ul_earfcn, item.band, bw_str, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_lte_rrc(self, pkt_header, pkt_body, args):

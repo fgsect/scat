@@ -89,7 +89,7 @@ class DiagWcdmaLogParser:
                 cell_3g = cell_search_v2_3g._make(struct.unpack('<HHbhbhbhhb', pkt_body[pos:pos+16]))
                 pos += 16
 
-            stdout += 'WCDMA Search Cell: 3G Cell {}: UARFCN {}, PSC {:3d}, RSCP {}, Ec/Io {:.2f}\n'.format(i,
+            stdout += 'WCDMA Search Cell: 3G Cell {}: UARFCN: {}, PSC: {:3d}, RSCP: {}, Ec/Io: {:.2f}\n'.format(i,
                     cell_3g.uarfcn, cell_3g.psc,
                     self.get_real_rscp(cell_3g.rscp), self.get_real_ecio(cell_3g.ecio))
 
@@ -104,7 +104,7 @@ class DiagWcdmaLogParser:
                 cell_2g = cell_search_v2_2g._make(struct.unpack('<HHbhbhhb', pkt_body[pos:pos+13]))
                 pos += 13
 
-            stdout += 'WCDMA Search Cell: 2G Cell {}: ARFCN {}, RSSI {:.2f}, Rank {}'.format(i,
+            stdout += 'WCDMA Search Cell: 2G Cell {}: ARFCN: {}, RSSI: {:.2f}, Rank: {}'.format(i,
                     cell_2g.arfcn & 0xfff, cell_2g.rssi, cell_2g.rank)
 
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
@@ -189,7 +189,7 @@ class DiagWcdmaLogParser:
             pos += 14
             if item.ciph_alg == 0xff:
                 continue
-            stdout += "WCDMA RLC Cipher DL PDU: LCID: {}, CK = {:#x}, Algorithm = UEA{}, Message = {:#x}, Count C = 0x{:x}\n".format(item.rlc_id,
+            stdout += "WCDMA RLC Cipher DL PDU: LCID: {}, CK: {:#x}, Algorithm: UEA{}, Message: {:#x}, Count C: 0x{:x}\n".format(item.rlc_id,
                 item.ck, item.ciph_alg, item.ciph_msg, item.count_c)
 
         return {'stdout': stdout.rstrip()}
@@ -206,7 +206,7 @@ class DiagWcdmaLogParser:
             pos += 10
             if item.ciph_alg == 0xff:
                 continue
-            stdout += "WCDMA RLC Cipher UL PDU: LCID: {}, CK = {:#x}, Algorithm = UEA{}, Count C = 0x{:x}\n".format(item.rlc_id,
+            stdout += "WCDMA RLC Cipher UL PDU: LCID: {}, CK: {:#x}, Algorithm: UEA{}, Count C: 0x{:x}\n".format(item.rlc_id,
                 item.ck, item.ciph_alg, item.count_c)
 
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
@@ -229,9 +229,17 @@ class DiagWcdmaLogParser:
             self.parent.umts_last_uarfcn_ul[radio_id] = item.ul_uarfcn
             self.parent.umts_last_uarfcn_dl[radio_id] = item.dl_uarfcn
             self.parent.umts_last_cell_id[radio_id] = psc
-        return {'stdout': 'WCDMA Cell ID: UARFCN {}/{}, PSC {}, xCID/xLAC/xRAC {:x}/{:x}/{:x}, MCC {}, MNC {}'.format(item.dl_uarfcn,
-            item.ul_uarfcn, psc, item.cell_id, item.lac, item.rac,
-            binascii.hexlify(item.mcc).decode(), binascii.hexlify(item.mnc).decode()),
+
+        if self.display_format == 'd':
+            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{}'.format(item.lac, item.rac, item.cell_id)
+        elif self.display_format == 'x':
+            lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(item.lac, item.rac, item.cell_id)
+        elif self.display_format == 'b':
+            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(item.lac, item.rac, item.cell_id, item.lac, item.rac, item.cell_id)
+
+        return {'stdout': 'WCDMA Cell ID: UARFCN: {}/{}, PSC: {}, MCC: {}, MNC: {}, {}'.format(item.dl_uarfcn,
+            item.ul_uarfcn, psc,
+            binascii.hexlify(item.mcc).decode(), binascii.hexlify(item.mnc).decode(), lac_rac_cid_str),
             'ts': pkt_ts}
 
     def parse_wcdma_rrc(self, pkt_header, pkt_body, args):
