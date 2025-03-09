@@ -14,7 +14,7 @@ import importlib.metadata
 
 current_parser = None
 logger = logging.getLogger('scat')
-__version__ = importlib.metadata.version(__package__ or 'scat')
+__version__ = importlib.metadata.version('signalcat')
 
 if os.name != 'nt':
     faulthandler.register(signal.SIGUSR1)
