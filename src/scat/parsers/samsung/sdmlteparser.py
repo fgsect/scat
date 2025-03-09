@@ -148,6 +148,9 @@ class SdmLteParser:
                         if ncell.type == 0:
                             stdout += 'LTE PHY Cell Info: NCell {}: EARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
                                 ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
+                        elif ncell.type == 6:
+                            stdout += 'LTE PHY Cell Info: NCell {} (NR): NR-ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.earfcn,
+                                ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
                         else:
                             stdout += 'LTE PHY Cell Info: NCell {} (Type {}): ARFCN {}, PCI {}, RSRP: {:.2f}, RSRQ: {:.2f}\n'.format(i, ncell.type, ncell.earfcn,
                                 ncell.pci, ncell.rsrp / -100.0, ncell.rsrq / -100.0)
