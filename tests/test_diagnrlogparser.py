@@ -103,6 +103,20 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected)
 
+        # Version 3.0
+        payload = binascii.unhexlify('00000300000081b601000000ec010000f49bb8f1de930600ff02ffffffff000000000000000000000000000000000000ffffffffffff0000ffffffffa901da01010000001ec7ffff2dfaffff000001000000000000000000c37fa8613b8e260d1ec7ffffd1c6ffff2dfaffffa9f8ffff000000000000000000000000000000000000000000000000000000000000000000000000000000001ec7ffff2dfaffffe701da010100000061c5ffffb6f8ffff0000010000000000000000009bfea7612b8e260d00b2ffffe1c6ffff80eaffffb6f8ffff0000000000000000000000000000000000000000000000000000000000000000000000000000000061c5ffffb6f8ffff')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload,None)
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers 1, ssb_periocity 0
+Layer 0: NR-ARFCN 431070, SCell PCI 65535/SSB 15, RSRP 0.00/0.00/0.00/0.00, RX beam NA/NA, Num Cells: 2 (S: 255)
+└── Cell 0: PCI  425, PBCH SFN 474, RSRP: -113.77, RSRQ: -11.65, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID 0/0, RSRP -113.77/-114.37, RSRQ -11.65/-14.68, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) -113.77/-11.65
+└── Cell 1: PCI  487, PBCH SFN 474, RSRP: -117.24, RSRQ: -14.58, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID 0/0, RSRP -156.00/-114.24, RSRQ -43.00/-14.58, Filtered RSRP/RSRQ (Nr2Nr) 0.00/0.00, Filtered RSRP/RSRQ (L2Nr) -117.24/-14.58''',
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected)
+
     # NR RRC
 
     def test_parse_nr_rrc(self):
@@ -114,8 +128,33 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         # }
         # self.assertDictEqual(result, expected)
 
+        # Version 9
+
+        # Version 12
+
+        # Version 14
+
+        # Version 17
+
+        # Version 19
+
+        # Version 20
+
+        # Version 23
+
+        # Version 26
+        payload = binascii.unhexlify('1a000000118001ffff0000000000000000ffffffff48fcb50b000000008a01000000000c81685c40b04432c55fca120dc4e81fa7780018c9230422405d079b6020d6e9d3b89a968d27bc0001a403000001a59c32c562e46e08040000021003420146d00005fb9c0000069d5ce1962c0110038b8d441992305e7046e10dc31b8837d9a6b52b1d2104e467cbbf00202c04930b6a0123ffff0000000200082cc86e1084001ec46ca41c1944174c08008810048000405010161c0954005450c00ca00080099aaa2400a000820610286c0000d2428060400692540304003494a0183001a4b500c2000d262806140069354033e003494a030060490f9349a47493400800c10ece08dc21b8637106f1ffa147398a4e5028200805700008000100000000010ca8080cc554560470001084002a216a5c300e0202208005442d4b8601c080421000a885a9710038180882001510b52e20030422a5400544352a102088018000810180200201c0aa002a284000000801000201400880a000802f0004166208208784ff907f8798cc00100000002b8000f0001a4f78201840008140000001011201001c0000001fd929289494')
+        payload = binascii.unhexlify('1a000000118001ffff0000000000000000ffffffff48fc5524000000000900000000001409289f8ec50a4d83')
+        payload = binascii.unhexlify('1a000000118001a9010000000000000000de9306000000000c0000000001000000000000')
+        payload = binascii.unhexlify('1a0000001180ffa9010000000000000000de9306000000000100000000040000000000022394e0')
+        payload = binascii.unhexlify('1a0000001180ffe701000000000000000000ba09000000100100000000040000000000078624a0')
+        payload = binascii.unhexlify('1a0000001180ffa9010000000000000000f28406000000f8010000000004000000000056f594e4')
+        payload = binascii.unhexlify('1a0000001180ffe7010000000000000000de93060000000001000000000400000000005e2394a0')
+        payload = binascii.unhexlify('1a000000118000a9010000000000000000de930600105000020200000054000000000064858c1200012310309315403cd4100002200000d2ce19621f370402000001080004106840280c2003384000bf73800000d3ab9c32c58022007171a88332460bce08dc21b8637106fb35f16a563a80539a6ec300')
+        payload = binascii.unhexlify('1a000000118000e701000000000000000000ba0900288000020200000065000000000064858c120001231030981ce04bd6109a04c0000508d1b9861f370402000001080004106840280c2200840000509aba3730d801200ed71a8833224cbde08dc21b8637106e28dc61b9037246fb35f179d63c80498019808c040601008000094af72180000000')
+
     def test_parse_nr_mib_info(self):
-        # Version 0x3
+        # Version 0.3
         payload = binascii.unhexlify('030000005001c0ac05009a00003f')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
@@ -126,7 +165,7 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         }
         self.assertDictEqual(result, expected)
 
-        # Version 0x20000
+        # Version 2.0
         payload = binascii.unhexlify('0000020050010eb005001e036a1b0c')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_MIB_INFO), timestamp=0)
@@ -148,6 +187,7 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         self.assertDictEqual(result, expected)
 
     def test_parse_nr_rrc_scell_info(self):
+        # Version 0.4
         payload = binascii.unhexlify('040000009d02e0ca0900d6c609005a005a0000127df204000000060102010001297900004e00')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
@@ -168,6 +208,7 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         }
         self.assertDictEqual(result, expected)
 
+        # Version 3.2
         payload = binascii.unhexlify('020003000101006203d580194800222f065e630200183502000a000a00d58019480000000006010202000096c000001c00')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
@@ -178,7 +219,7 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         }
         self.assertDictEqual(result, expected)
 
-        # Version 0x30003
+        # Version 3.3
         payload = binascii.unhexlify('030003000101004b0001c83b57252230001aee0100080e02000a000a0001c83b57050000002e0103dc00008eb921004700')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), timestamp=0)
@@ -190,6 +231,7 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         self.assertDictEqual(result, expected)
 
     def test_parse_nr_mm_state(self):
+        # Version 0.1
         payload = binascii.unhexlify('0100000003000054f0800254f080a206001636ac480400a040fe')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE), timestamp=0)
@@ -200,7 +242,7 @@ Layer 0: NR-ARFCN 156510, SCell PCI  866/SSB 0, RSRP 0.00/0.00, RX beam NA/NA, N
         }
         self.assertDictEqual(result, expected)
 
-        # Version 0x30000
+        # Version 3.0
         payload = binascii.unhexlify('000003000300000302220203022255c40332d6c214c00021b98e00')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE), timestamp=0)
