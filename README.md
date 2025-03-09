@@ -46,13 +46,11 @@ Use any of the following commands:
 
 ```
 # If you want fast CRC calculation (for Qualcomm and HiSilicon)
-$ pip install "scat[fastcrc] @ git+https://github.com/fgsect/scat"
+$ pip install "signalcat[fastcrc]"
 
 # If you don't want or can't build libscrc
-$ pip install git+https://github.com/fgsect/scat
+$ pip install signalcat
 ```
-
-Please note that the name SCAT is taken in the PyPI, I will find further solution.
 
 For development purposes, please use `pip install -e .[fastcrc]` or `pip install -e .` on your checkout directory.
 
@@ -123,7 +121,7 @@ Issues related to exposing the diagnostics port via USB is out of scope.
 * On certain Qualcomm devices, after exiting and launching the application for
   more than once, initialization eventually hangs and no messages are appearing.
   Root cause still in investigation. Solution: reboot the smartphone.
-  
+
 ## Chat
 
 * [Matrix](https://matrix.to/#/#scat-users:tchncs.de)
