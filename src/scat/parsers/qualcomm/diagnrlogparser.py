@@ -368,7 +368,6 @@ class DiagNrLogParser:
 
             return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
 
-
     def parse_nr_cacombos(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         if self.parent:
@@ -378,6 +377,36 @@ class DiagNrLogParser:
         return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode()), 'ts': pkt_ts}
 
     # NAS
+    def parse_nr_mm_state(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
+
+        if (pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x01) or (pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min == 0x00): # Version 1 and 196608
+            item_struct = namedtuple('QcDiagNrNasMmState', 'mm_state mm_substate plmn_id guti_5gs mm_update_status tac')
+            item = item_struct._make(struct.unpack('<BH3s12sb3s', pkt_body[4:26]))
+            plmn_id = util.unpack_mcc_mnc(item.plmn_id)
+            tac = struct.unpack('>L', b'\x00'+item.tac)[0]
+
+            if item.guti_5gs[0] == 0x02:
+                # mcc-mcc-amf_rid-amf_sid-amf_ptr-5g_tmsi
+                plmn_id_guti = util.unpack_mcc_mnc(item.guti_5gs[1:4])
+                amf_sid = struct.unpack('<H', item.guti_5gs[5:7])[0]
+                tmsi_5gs = struct.unpack('<L', item.guti_5gs[8:12])[0]
+                guti_str = '{:03x}-{:03x}-{:02x}-{:03x}-{:02x}-{:08x}'.format(plmn_id_guti[0], plmn_id_guti[1], item.guti_5gs[4],
+                                                              amf_sid, item.guti_5gs[7], tmsi_5gs)
+            else:
+                guti_str = binascii.hexlify(item.guti_5gs).decode()
+
+            stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
+                item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
+            )
+            return {'stdout': stdout, 'ts': pkt_ts}
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown NR MM State packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
+                self.parent.logger.log(logging.WARNING, "Body: %s" % (util.xxd_oneline(pkt_body[4:])))
+            return
+
     def parse_nr_nas(self, pkt_header, pkt_body, args, cmd_id):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
@@ -409,33 +438,3 @@ class DiagNrLogParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR NAS Message packet version {:#x}'.format(pkt_ver))
                 self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
-
-    def parse_nr_mm_state(self, pkt_header, pkt_body, args):
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
-
-        if (pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x01) or (pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min == 0x00): # Version 1 and 196608
-            item_struct = namedtuple('QcDiagNrNasMmState', 'mm_state mm_substate plmn_id guti_5gs mm_update_status tac')
-            item = item_struct._make(struct.unpack('<BH3s12sb3s', pkt_body[4:26]))
-            plmn_id = util.unpack_mcc_mnc(item.plmn_id)
-            tac = struct.unpack('>L', b'\x00'+item.tac)[0]
-
-            if item.guti_5gs[0] == 0x02:
-                # mcc-mcc-amf_rid-amf_sid-amf_ptr-5g_tmsi
-                plmn_id_guti = util.unpack_mcc_mnc(item.guti_5gs[1:4])
-                amf_sid = struct.unpack('<H', item.guti_5gs[5:7])[0]
-                tmsi_5gs = struct.unpack('<L', item.guti_5gs[8:12])[0]
-                guti_str = '{:03x}-{:03x}-{:02x}-{:03x}-{:02x}-{:08x}'.format(plmn_id_guti[0], plmn_id_guti[1], item.guti_5gs[4],
-                                                              amf_sid, item.guti_5gs[7], tmsi_5gs)
-            else:
-                guti_str = binascii.hexlify(item.guti_5gs).decode()
-
-            stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
-                item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
-            )
-            return {'stdout': stdout, 'ts': pkt_ts}
-        else:
-            if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Unknown NR MM State packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
-                self.parent.logger.log(logging.WARNING, "Body: %s" % (util.xxd_oneline(pkt_body[4:])))
-            return
