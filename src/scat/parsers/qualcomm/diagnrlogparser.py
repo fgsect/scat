@@ -246,7 +246,7 @@ class DiagNrLogParser:
         stdout = ''
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
         item_struct = namedtuple('QcDiagNrRrcOtaPacket', 'rrc_rel_maj rrc_rel_min rbid pci nrarfcn sfn_subfn pdu_id sib_mask len')
-        item_struct_v17 = namedtuple('QcDiagNrRrcOtaPacketV17', 'rrc_rel_maj rrc_rel_min rbid pci unk1 nrarfcn sfn_subfn pdu_id sib_mask len')
+        item_struct_v17 = namedtuple('QcDiagNrRrcOtaPacketV17', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len')
 
         if pkt_ver in (0x09, ): # Version 9
             item = item_struct._make(struct.unpack('<BBBHIIBIH', pkt_body[4:24]))
@@ -268,6 +268,11 @@ class DiagNrLogParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR RRC OTA Message packet version {:#x}'.format(pkt_ver))
                 self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
+
+        if pkt_ver >= 0x11:
+            ncgi = bitstring.Bits(uint=item.ncgi, length=60)
+        else:
+            ncgi = None
 
         if pkt_ver in (0x09, 0x0c):
             rrc_type_map = {
@@ -346,6 +351,10 @@ class DiagNrLogParser:
         if item.pdu_id in rrc_type_map.keys():
             type_str = rrc_type_map[item.pdu_id]
             stdout += "NR RRC OTA Packet: NR-ARFCN {}, PCI {}".format(item.nrarfcn, item.pci)
+            if ncgi:
+                mcc_mnc = util.unpack_mcc_mnc(ncgi[36:60].bytes)
+                cell_id = ncgi[0:36].uint
+                stdout += ', NR CGI: {:3x}-{:3x}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
             nr_pdu_id_gsmtap = rrc_type_map[item.pdu_id]
 
             gsmtap_hdr = util.create_gsmtap_header(
