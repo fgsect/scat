@@ -92,6 +92,8 @@ def scat_main():
         sec_group.add_argument('--sdmraw', help='Store log as raw SDM file (Samsung only)')
         sec_group.add_argument('--trace', action='store_true', help='Decode trace')
         sec_group.add_argument('--ilm', action='store_true', help='Decode ILM')
+        sec_group.add_argument('--all-items', action='store_true', help='Enable all SDM items')
+
 
     if 'hisi' in parser_dict.keys():
         hisi_group = parser.add_argument_group('HiSilicon specific settings')

@@ -67,6 +67,7 @@ class SamsungParser:
         self.ilm = False
         self.combine_stdout = False
         self.layers = []
+        self.all_items = False
 
         self.trace_group = None
         self.ilm_group = None
@@ -135,6 +136,8 @@ class SamsungParser:
                 self.combine_stdout = params[p]
             elif p == 'layer':
                 self.layers = params[p]
+            elif p == 'all-items':
+                self.all_items = params[p]
 
     def init_diag(self):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))
@@ -146,11 +149,18 @@ class SamsungParser:
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0x00)))
 
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, scat_sdm_common_selection(layers=self.layers)))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, scat_sdm_lte_selection(layers=self.layers)))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, scat_sdm_edge_selection(layers=self.layers)))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, scat_sdm_hspa_selection(layers=self.layers)))
-        self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
+        if self.all_items:
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
+        else:
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_SELECT_REQUEST, scat_sdm_common_selection(layers=self.layers)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_SELECT_REQUEST, scat_sdm_lte_selection(layers=self.layers)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.EDGE_ITEM_SELECT_REQUEST, scat_sdm_edge_selection(layers=self.layers)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_SELECT_REQUEST, scat_sdm_hspa_selection(layers=self.layers)))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_SELECT_REQUEST, create_sdm_item_selection(0xff)))
 
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.COMMON_ITEM_REFRESH_REQUEST, b'\xff'))
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.LTE_ITEM_REFRESH_REQUEST, b'\xff'))
