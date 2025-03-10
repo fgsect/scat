@@ -20,19 +20,19 @@ class TestSdmEdgeParser(unittest.TestCase):
         payload = binascii.unhexlify('2c003d2200080162f2200134012e060001000101000000000000000021011c1cffffffffc202')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_SCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_scell_info(packet)
-        expected = {'stdout': '''EDGE Serving Cell Info: ARFCN: 44, BSIC: 0x3d, MCC: 262, MNC: 2, xLAC/xRAC/xCID: 134/1/2e06, RxLev: 34 (RSSI: -76)'''}
+        expected = {'stdout': '''EDGE Serving Cell Info: ARFCN: 44, BSIC: 0x3d, MCC/MNC: 262/02, xLAC/xRAC/xCID: 134/1/2e06, RxLev: 34 (RSSI: -76)'''}
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('04003f1e00060162f220014101291b0001000101000000000000000021021a1affffffffc202')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_SCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_scell_info(packet)
-        expected = {'stdout': '''EDGE Serving Cell Info: ARFCN: 4, BSIC: 0x3f, MCC: 262, MNC: 2, xLAC/xRAC/xCID: 141/1/291b, RxLev: 30 (RSSI: -80)'''}
+        expected = {'stdout': '''EDGE Serving Cell Info: ARFCN: 4, BSIC: 0x3f, MCC/MNC: 262/02, xLAC/xRAC/xCID: 141/1/291b, RxLev: 30 (RSSI: -80)'''}
         self.assertDictEqual(result, expected)
 
         payload = binascii.unhexlify('3500141c00060062f210140701bb4400010001000000000000000000210018f9ffffffffd601')
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_SCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_scell_info(packet)
-        expected = {'stdout': '''EDGE Serving Cell Info: ARFCN: 53, BSIC: 0x14, MCC: 262, MNC: 1, xLAC/xRAC/xCID: 1407/1/bb44, RxLev: 28 (RSSI: -82)'''}
+        expected = {'stdout': '''EDGE Serving Cell Info: ARFCN: 53, BSIC: 0x14, MCC/MNC: 262/01, xLAC/xRAC/xCID: 1407/1/bb44, RxLev: 28 (RSSI: -82)'''}
         self.assertDictEqual(result, expected)
 
     def test_sdm_edge_ncell_info(self):
@@ -40,12 +40,12 @@ class TestSdmEdgeParser(unittest.TestCase):
         packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_EDGE_DATA, sdmcmd.sdm_edge_data.EDGE_NCELL_INFO, payload, timestamp=0x0)
         result = self.parser.sdm_edge_ncell_info(packet)
         expected = {'stdout': '''EDGE Neighbor Cell Info: Identified: 6, Neighbor: 10
-EDGE Neighbor Cell Info: Identified Cell 0: ARFCN: 115, MCC/MNC: 0/0, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 53 (RSSI: -57)
-EDGE Neighbor Cell Info: Identified Cell 1: ARFCN: 118, MCC/MNC: 0/0, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 40 (RSSI: -70)
-EDGE Neighbor Cell Info: Identified Cell 2: ARFCN: 84, MCC/MNC: 0/0, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 38 (RSSI: -72)
-EDGE Neighbor Cell Info: Identified Cell 3: ARFCN: 82, MCC/MNC: 0/0, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 35 (RSSI: -75)
-EDGE Neighbor Cell Info: Identified Cell 4: ARFCN: 65, MCC/MNC: 0/0, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 28 (RSSI: -82)
-EDGE Neighbor Cell Info: Identified Cell 5: ARFCN: 75, MCC/MNC: 0/0, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 29 (RSSI: -81)
+EDGE Neighbor Cell Info: Identified Cell 0: ARFCN: 115, MCC/MNC: 000/000, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 53 (RSSI: -57)
+EDGE Neighbor Cell Info: Identified Cell 1: ARFCN: 118, MCC/MNC: 000/000, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 40 (RSSI: -70)
+EDGE Neighbor Cell Info: Identified Cell 2: ARFCN: 84, MCC/MNC: 000/000, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 38 (RSSI: -72)
+EDGE Neighbor Cell Info: Identified Cell 3: ARFCN: 82, MCC/MNC: 000/000, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 35 (RSSI: -75)
+EDGE Neighbor Cell Info: Identified Cell 4: ARFCN: 65, MCC/MNC: 000/000, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 28 (RSSI: -82)
+EDGE Neighbor Cell Info: Identified Cell 5: ARFCN: 75, MCC/MNC: 000/000, xLAC: 0, C1: -7, C2: -7, C31: -1, C32: -1, GPRS RA Colour: -1, RxLev: 29 (RSSI: -81)
 EDGE Neighbor Cell Info: Neighbor Cell 0: ARFCN: 115, RxLev: 41 (RSSI: -69)
 EDGE Neighbor Cell Info: Neighbor Cell 1: ARFCN: 84, RxLev: 34 (RSSI: -76)
 EDGE Neighbor Cell Info: Neighbor Cell 2: ARFCN: 82, RxLev: 31 (RSSI: -79)

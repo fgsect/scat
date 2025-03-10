@@ -66,7 +66,7 @@ WCDMA Search Cell: 3G Cell 1: UARFCN: 10737, PSC:  49, RSCP: -98, Ec/Io: -17.00'
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_CELL_ID_C), timestamp=0)
         result = self.parser.parse_wcdma_cell_id(pkt_header, payload, None)
-        expected = 'WCDMA Cell ID: UARFCN: 10663/9713, PSC: 397, MCC: 020602, MNC: 00030f, xLAC/xRAC/xCID: 9c9d/1/82d8541'
+        expected = 'WCDMA Cell ID: UARFCN: 10663/9713, PSC: 397, MCC/MNC: 262/03, xLAC/xRAC/xCID: 9c9d/1/82d8541'
         self.assertEqual(result['stdout'], expected)
 
     def test_parse_wcdma_rrc(self):

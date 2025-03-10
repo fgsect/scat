@@ -173,7 +173,7 @@ GSM Neighbor Cell Aux 2: ARFCN: 16/BC: 8, RxPwr: -111.38''',
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C), timestamp=0)
         result = self.parser.parse_gsm_cell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM RR Cell Info: ARFCN: 16/Band: 8, BCC: 4, NCC: 1, xCID: 7618, xLAI: 62f2200141',
+            'stdout': 'GSM RR Cell Info: ARFCN: 16/Band: 8, BCC: 4, NCC: 1, MCC/MNC: 262/02, xLAC/xCID: 141/7618',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -183,7 +183,7 @@ GSM Neighbor Cell Aux 2: ARFCN: 16/BC: 8, RxPwr: -111.38''',
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C), timestamp=0)
         result = self.parser.parse_gsm_cell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM RR Cell Info: ARFCN: 991/Band: 8, BCC: 3, NCC: 4, xCID: f3df, xLAI: 62f2305604',
+            'stdout': 'GSM RR Cell Info: ARFCN: 991/Band: 8, BCC: 3, NCC: 4, MCC/MNC: 262/03, xLAC/xCID: 5604/f3df',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -193,7 +193,7 @@ GSM Neighbor Cell Aux 2: ARFCN: 16/BC: 8, RxPwr: -111.38''',
                                      log_id=diagcmd.diag_log_get_gsm_item_id(diagcmd.diag_log_code_gsm.LOG_GSM_RR_CELL_INFORMATION_C), timestamp=0)
         result = self.parser.parse_gsm_cell_info(pkt_header, payload, None)
         expected = {
-            'stdout': 'GSM RR Cell Info: ARFCN: 37/Band: 8, BCC: 3, NCC: 3, xCID: 7617, xLAI: 62f2200141',
+            'stdout': 'GSM RR Cell Info: ARFCN: 37/Band: 8, BCC: 3, NCC: 3, MCC/MNC: 262/02, xLAC/xCID: 141/7617',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)

@@ -269,7 +269,7 @@ Layer 0: NR-ARFCN: 431070, SCell PCI: 65535/SSB: 15, RSRP: 0.00/0.00/0.00/0.00, 
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE), timestamp=0)
         result = self.parser.parse_nr_mm_state(pkt_header, payload, None)
         expected = {
-            'stdout': '5GMM State: 3/0/0, PLMN: 450/  8, TAC: a040fe, GUTI: 450-008-a2-006-16-0448ac36',
+            'stdout': '5GMM State: 3/0/0, MCC/MNC: 450/08, TAC: a040fe, GUTI: 450-08-a2-006-16-0448ac36',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
@@ -280,7 +280,7 @@ Layer 0: NR-ARFCN: 431070, SCell PCI: 65535/SSB: 15, RSRP: 0.00/0.00/0.00/0.00, 
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_NAS_5GMM_STATE), timestamp=0)
         result = self.parser.parse_nr_mm_state(pkt_header, payload, None)
         expected = {
-            'stdout': '5GMM State: 3/0/0, PLMN: 302/220, TAC: 21b98e, GUTI: 302-220-55-3c4-32-c014c2d6',
+            'stdout': '5GMM State: 3/0/0, MCC/MNC: 302/220, TAC: 21b98e, GUTI: 302-220-55-3c4-32-c014c2d6',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected)
