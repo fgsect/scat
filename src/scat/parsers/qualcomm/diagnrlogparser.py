@@ -370,11 +370,11 @@ class DiagNrLogParser:
                 mcc_mnc = util.unpack_mcc_mnc(ncgi[36:60].bytes)
                 cell_id = ncgi[0:36].uint
                 if self.display_format == 'd':
-                    stdout += ', NR CGI: {:3x}-{:3x}-{}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
+                    stdout += ', NR CGI: {}-{}-{}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
                 elif self.display_format == 'x':
-                    stdout += ', NR CGI: {:3x}-{:3x}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
+                    stdout += ', NR CGI: {}-{}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
                 elif self.display_format == 'b':
-                    stdout += ', NR CGI: {:3x}-{:3x}-{} ({:#9x})'.format(mcc_mnc[0], mcc_mnc[1], cell_id, cell_id)
+                    stdout += ', NR CGI: {}-{}-{} ({:#9x})'.format(mcc_mnc[0], mcc_mnc[1], cell_id, cell_id)
             nr_pdu_id_gsmtap = rrc_type_map[item.pdu_id]
 
             gsmtap_hdr = util.create_gsmtap_header(
@@ -421,21 +421,21 @@ class DiagNrLogParser:
                 plmn_id_guti = util.unpack_mcc_mnc(item.guti_5gs[1:4])
                 amf_sid = struct.unpack('<H', item.guti_5gs[5:7])[0]
                 tmsi_5gs = struct.unpack('<L', item.guti_5gs[8:12])[0]
-                guti_str = '{:03x}-{:03x}-{:02x}-{:03x}-{:02x}-{:08x}'.format(plmn_id_guti[0], plmn_id_guti[1], item.guti_5gs[4],
+                guti_str = '{}-{}-{:02x}-{:03x}-{:02x}-{:08x}'.format(plmn_id_guti[0], plmn_id_guti[1], item.guti_5gs[4],
                                                               amf_sid, item.guti_5gs[7], tmsi_5gs)
             else:
                 guti_str = binascii.hexlify(item.guti_5gs).decode()
 
             if self.display_format == 'd':
-                stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {}, GUTI: {}'.format(
+                stdout = '5GMM State: {}/{}/{}, MCC/MNC: {}/{}, TAC: {}, GUTI: {}'.format(
                     item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
                 )
             elif self.display_format == 'x':
-                stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {:6x}, GUTI: {}'.format(
+                stdout = '5GMM State: {}/{}/{}, MCC/MNC: {}/{}, TAC: {:6x}, GUTI: {}'.format(
                     item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
                 )
             elif self.display_format == 'b':
-                stdout = '5GMM State: {}/{}/{}, PLMN: {:3x}/{:3x}, TAC: {} ({:#6x}), GUTI: {}'.format(
+                stdout = '5GMM State: {}/{}/{}, MCC/MNC: {}/{}, TAC: {} ({:#6x}), GUTI: {}'.format(
                     item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, tac, guti_str
                 )
             return {'stdout': stdout, 'ts': pkt_ts}

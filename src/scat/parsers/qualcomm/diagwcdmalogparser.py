@@ -237,9 +237,15 @@ class DiagWcdmaLogParser:
         elif self.display_format == 'b':
             lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(item.lac, item.rac, item.cell_id, item.lac, item.rac, item.cell_id)
 
-        return {'stdout': 'WCDMA Cell ID: UARFCN: {}/{}, PSC: {}, MCC: {}, MNC: {}, {}'.format(item.dl_uarfcn,
-            item.ul_uarfcn, psc,
-            binascii.hexlify(item.mcc).decode(), binascii.hexlify(item.mnc).decode(), lac_rac_cid_str),
+        try:
+            mcc_str = util.convert_mcc(item.mcc[0], item.mcc[1], item.mcc[2])
+            mnc_str = util.convert_mnc(item.mnc[0], item.mnc[1], item.mnc[2])
+        except ValueError:
+            mcc_str = 'N/A'
+            mnc_str = 'N/A'
+
+        return {'stdout': 'WCDMA Cell ID: UARFCN: {}/{}, PSC: {}, MCC/MNC: {}/{}, {}'.format(item.dl_uarfcn,
+            item.ul_uarfcn, psc, mcc_str, mnc_str, lac_rac_cid_str),
             'ts': pkt_ts}
 
     def parse_wcdma_rrc(self, pkt_header, pkt_body, args):

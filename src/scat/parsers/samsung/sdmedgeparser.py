@@ -45,8 +45,7 @@ class SdmEdgeParser:
         struct_str = '<HBBBBB 5s BH'
 
         scell_info = header._make(struct.unpack(struct_str, pkt[0:struct.calcsize(struct_str)]))
-        plmn_str = util.unpack_mcc_mnc(scell_info.lai[0:3])
-        lac = struct.unpack('>H', scell_info.lai[3:5])[0]
+        lai_val = util.unpack_lai(scell_info.lai)
         cid = struct.unpack('>H', struct.pack('<H',scell_info.cid))[0]
 
         if scell_info.arfcn > 1024:
@@ -54,14 +53,14 @@ class SdmEdgeParser:
             return {'stdout': ''}
 
         if self.display_format == 'd':
-            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{}'.format(lac, scell_info.rac, cid)
+            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{}'.format(lai_val[2], scell_info.rac, cid)
         elif self.display_format == 'x':
-            lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(lac, scell_info.rac, cid)
+            lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(lai_val[2], scell_info.rac, cid)
         elif self.display_format == 'b':
-            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(lac, scell_info.rac, cid, lac, scell_info.rac, cid)
+            lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(lai_val[2], scell_info.rac, cid, lai_val[2], scell_info.rac, cid)
 
-        stdout = 'EDGE Serving Cell Info: ARFCN: {}, BSIC: {:#x}, MCC: {:x}, MNC: {:x}, {}, RxLev: {} (RSSI: {})\n'.format(
-            scell_info.arfcn, scell_info.bsic, plmn_str[0], plmn_str[1], lac_rac_cid_str, scell_info.rxlev, scell_info.rxlev - 110,
+        stdout = 'EDGE Serving Cell Info: ARFCN: {}, BSIC: {:#x}, MCC/MNC: {}/{}, {}, RxLev: {} (RSSI: {})\n'.format(
+            scell_info.arfcn, scell_info.bsic, lai_val[0], lai_val[1], lac_rac_cid_str, scell_info.rxlev, scell_info.rxlev - 110,
         )
 
         if self.parent:
@@ -89,16 +88,13 @@ class SdmEdgeParser:
         for i in range(num_identified_cells):
             identified_meas_pkt = identified_meas._make(struct.unpack('<HBBbbhhH5sb', pkt[pos:pos+18]))
 
+            lai_val = util.unpack_lai(identified_meas_pkt.lai)
             if self.display_format == 'd':
-                lai_str = 'MCC/MNC: {:x}/{:x}, LAC: {}'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
-                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+                lai_str = 'MCC/MNC: {}/{}, LAC: {}'.format(*lai_val)
             elif self.display_format == 'x':
-                lai_str = 'MCC/MNC: {:x}/{:x}, xLAC: {:x}'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
-                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+                lai_str = 'MCC/MNC: {}/{}, xLAC: {:x}'.format(*lai_val)
             elif self.display_format == 'b':
-                lai_str = 'MCC/MNC: {:x}/{:x}, LAC: {} ({:#x})'.format(*util.unpack_mcc_mnc(identified_meas_pkt.lai[0:3]),
-                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0],
-                                                            struct.unpack('>H', identified_meas_pkt.lai[3:5])[0])
+                lai_str = 'MCC/MNC: {}/{}, LAC: {} ({:#x})'.format(*lai_val, lai_val[2])
 
             stdout += "EDGE Neighbor Cell Info: Identified Cell {}: ARFCN: {}, {}, C1: {}, C2: {}, C31: {}, C32: {}, GPRS RA Colour: {}, RxLev: {} (RSSI: {})\n".format(
                 i, identified_meas_pkt.arfcn, lai_str, identified_meas_pkt.c1, identified_meas_pkt.c2,

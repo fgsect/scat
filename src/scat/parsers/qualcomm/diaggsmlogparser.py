@@ -236,14 +236,15 @@ class DiagGsmLogParser:
             self.parent.gsm_last_arfcn[radio_id] = arfcn
             self.parent.gsm_last_cell_id[radio_id] = item.cid
 
+        mcc_mnc_lac = util.unpack_lai(item.lai)
         if self.display_format == 'd':
-            cid_str = 'CID: {}'.format(item.cid)
+            cid_str = 'MCC/MNC: {}/{}, LAC/CID: {}{}'.format(*mcc_mnc_lac, item.cid)
         elif self.display_format == 'x':
-            cid_str = 'xCID: {:x}'.format(item.cid)
+            cid_str = 'MCC/MNC: {}/{}, xLAC/xCID: {:x}/{:x}'.format(*mcc_mnc_lac, item.cid)
         elif self.display_format == 'b':
-            cid_str = 'CID: {} ({:#x})'.format(item.cid, item.cid)
+            cid_str = 'MCC/MNC: {}/{}, LAC/CID: {}/{} ({:#x}/{:#x})'.format(*mcc_mnc_lac, item.cid, mcc_mnc_lac[2], item.cid)
 
-        return {'stdout': 'GSM RR Cell Info: ARFCN: {}/Band: {}, BCC: {}, NCC: {}, {}, xLAI: {}'.format(arfcn, band, item.bcc, item.ncc, cid_str, binascii.hexlify(item.lai).decode()),
+        return {'stdout': 'GSM RR Cell Info: ARFCN: {}/Band: {}, BCC: {}, NCC: {}, {}'.format(arfcn, band, item.bcc, item.ncc, cid_str),
                 'ts': pkt_ts}
 
     def parse_gsm_dsds_cell_info(self, pkt_header, pkt_body, args):

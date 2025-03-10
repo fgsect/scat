@@ -12,6 +12,19 @@ try:
 except ModuleNotFoundError:
     has_libscrc = False
 
+import bitstring
+from packaging import version
+
+bitstring_ver = version.parse(bitstring.__version__)
+if bitstring_ver >= version.parse('4.2.0'):
+    bitstring.options.lsb0 = True
+elif bitstring_ver >= version.parse('4.0.0'):
+    bitstring.lsb0 = True
+elif bitstring_ver >= version.parse('3.1.7'):
+    bitstring.set_lsb0(True)
+else:
+    raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
+
 XXD_SET = string.ascii_letters + string.digits + string.punctuation
 
 crc_table = [
@@ -545,17 +558,54 @@ def calculate_ul_earfcn(dl_earfcn):
         offset = 0
     return dl_earfcn + offset
 
+def convert_mcc(mcc_digit_2, mcc_digit_1, mcc_digit_0):
+    if mcc_digit_2 > 0x09 or mcc_digit_1 > 0x09 or mcc_digit_0 > 0x09:
+        raise ValueError('Invalid digit in MCC')
+    mcc = '{:03}'.format(mcc_digit_2 * 100 + mcc_digit_1 * 10 + mcc_digit_0)
+    return mcc
+
+def convert_mnc(mnc_digit_2, mnc_digit_1, mnc_digit_0):
+    if mnc_digit_2 > 0x09 or mnc_digit_1 > 0x09 or (mnc_digit_0 > 0x09 and mnc_digit_0 < 0xf):
+        raise ValueError('Invalid digit in MNC')
+    if mnc_digit_0 == 0xf:
+        mnc = '{:02}'.format(mnc_digit_2 * 10 + mnc_digit_1)
+    else:
+        mnc = '{:03}'.format(mnc_digit_2 * 100 + mnc_digit_1 * 10 + mnc_digit_0)
+    return mnc
+
 def unpack_mcc_mnc(mcc_mnc_bin):
-    mcc = 0
-    mnc = 0
+    mcc = '000'
+    mnc = '00'
 
-    mcc = ((mcc_mnc_bin[0] & 0xf) << 8) | (((mcc_mnc_bin[0] & 0xf0) >> 4) << 4) | (mcc_mnc_bin[1] & 0xf)
-    mnc = ((mcc_mnc_bin[2] & 0xf) << 8) | (((mcc_mnc_bin[2] & 0xf0) >> 4) << 4) | ((mcc_mnc_bin[1] & 0xf0) >> 4)
+    mcc_mnc_bits = bitstring.Bits(bytes=reversed(mcc_mnc_bin))
 
-    if mnc & 0xf == 0xf:
-        mnc = (mnc >> 4)
+    mcc_digit_2 = mcc_mnc_bits[0:4].uint
+    mcc_digit_1 = mcc_mnc_bits[4:8].uint
+    mcc_digit_0 = mcc_mnc_bits[8:12].uint
+
+    mnc_digit_0 = mcc_mnc_bits[12:16].uint
+    mnc_digit_2 = mcc_mnc_bits[16:20].uint
+    mnc_digit_1 = mcc_mnc_bits[20:24].uint
+
+    try:
+        mcc = convert_mcc(mcc_digit_2, mcc_digit_1, mcc_digit_0)
+        mnc = convert_mnc(mnc_digit_2, mnc_digit_1, mnc_digit_0)
+    except ValueError:
+        mcc = 'N/A'
+        mnc = 'N/A'
 
     return (mcc, mnc)
+
+def unpack_lai(lai_bin):
+    try:
+        mcc_mnc = unpack_mcc_mnc(lai_bin[0:3])
+    except ValueError:
+        mcc_mnc = ('000', '00')
+
+    lac_bits = bitstring.Bits(bytes=lai_bin[3:5])
+    lac = lac_bits.uint
+
+    return (mcc_mnc[0], mcc_mnc[1], lac)
 
 def map_lookup_value(_map, _val, include_val_in_true=False):
     if _val in _map:
