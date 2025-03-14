@@ -287,6 +287,10 @@ function gsmtapv3_parse_metadata(t, hdr_buffer, hdr_len)
         local len = hdr_buffer(offset + 2, 2):uint()
         local type_string
         local type_info
+        if len == 0 then
+            offset = offset + 2
+            break
+        end
         if gsmtapv3_metadata_tags[type] then
             type_string = string.format("Type: %s (0x%04x)", gsmtapv3_metadata_tags[type][1], type)
             type_info = gsmtapv3_metadata_tags[type][1]
@@ -354,7 +358,17 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
                                    :set_text(string.format("Type: 0x%04x (%s)", type, itemtext))
 
         pinfo.cols.protocol = "GSMTAPv3"
-        if type == 0x0503 then
+        if type == 0x0403 then
+            pinfo.cols.info = ""
+            itemtext = "Unknown"
+            if gsmtapv3_lte_rrc_subtypes[subtype] then
+                itemtext = gsmtapv3_lte_rrc_subtypes[subtype][2]
+            end
+            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            gsmtapv3_lte_rrc_subtypes[subtype][1]:call(gsmtap_data:tvb(), pinfo, treeitem)
+        elseif type == 0x0503 then
             pinfo.cols.info = ""
             itemtext = "Unknown"
             if gsmtapv3_nr_rrc_subtypes[subtype] then
