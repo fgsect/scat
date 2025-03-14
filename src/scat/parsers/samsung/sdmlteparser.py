@@ -357,17 +357,19 @@ class SdmLteParser:
         return {'stdout': stdout}
 
     def _parse_sdm_lte_rrc_message(self, sdm_pkt_hdr, channel, direction, length, msg):
+        t_v2 = util.gsmtap_lte_rrc_types
+        t_v3 = util.gsmtapv3_lte_rrc_types
         rrc_subtype_dl = {
-            0: util.gsmtap_lte_rrc_types.DL_CCCH,
-            1: util.gsmtap_lte_rrc_types.PCCH,
-            2: util.gsmtap_lte_rrc_types.BCCH_BCH,
-            3: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-            4: util.gsmtap_lte_rrc_types.DL_DCCH
-            }
+            0: (t_v2.DL_CCCH, t_v3.DL_CCCH),
+            1: (t_v2.PCCH, t_v3.PCCH),
+            2: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+            3: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
+            4: (t_v2.DL_DCCH, t_v3.DL_DCCH)
+        }
         rrc_subtype_ul = {
-            0: util.gsmtap_lte_rrc_types.UL_CCCH,
-            4: util.gsmtap_lte_rrc_types.UL_DCCH
-            }
+            0: (t_v2.UL_CCCH, t_v3.UL_CCCH),
+            4: (t_v2.UL_DCCH, t_v3.UL_DCCH),
+        }
 
         subtype = 0
         try:
@@ -391,11 +393,21 @@ class SdmLteParser:
             else:
                 arfcn = 0
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.LTE_RRC,
-            arfcn = arfcn,
-            sub_type = subtype)
+        if self.gsmtapv3:
+            gsmtapv3_metadata = dict()
+            gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = self.parent.lte_last_pci[sdm_pkt_hdr.radio_id]
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.LTE_RRC,
+                arfcn = arfcn,
+                sub_type = subtype[1],
+                metadata=gsmtapv3_metadata)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.LTE_RRC,
+                arfcn = arfcn,
+                sub_type = subtype[0])
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg]}
 
     def sdm_lte_rrc_ota_packet(self, pkt):
@@ -521,10 +533,16 @@ class SdmLteParser:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(nas_msg), nas_header.length))
             return None
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.LTE_NAS,
-            arfcn = 0)
+        if self.gsmtapv3:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.NAS_EPS,
+                arfcn = 0)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.LTE_NAS,
+                arfcn = 0)
         return {'layer': 'nas', 'cp': [gsmtap_hdr + nas_msg]}
 
     def sdm_lte_nas_plmn_selection(self, pkt):
