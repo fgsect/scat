@@ -193,6 +193,7 @@ def scat_main():
             'ilm': args.ilm,
             'combine-stdout': args.combine_stdout,
             'layer': layers,
+            'all-items': args.all_items,
             'format': args.format})
     elif args.type == 'hisi':
         current_parser.set_parameter({
