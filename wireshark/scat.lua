@@ -13,10 +13,17 @@ local F_gsmtapv3_version = ProtoField.uint8("gsmtapv3.version", "Version", base.
 local F_gsmtapv3_header_len = ProtoField.uint16("gsmtapv3.hdr_len", "Header length", base.DEC)
 local F_gsmtapv3_type = ProtoField.uint16("gsmtapv3.type", "Type", base.HEX)
 local F_gsmtapv3_subtype = ProtoField.uint16("gsmtapv3.sub_type", "Subtype", base.HEX)
-gsmtap_wrapper_proto.fields.version = F_gsmtapv3_version
-gsmtap_wrapper_proto.fields.hdr_len = F_gsmtapv3_header_len
-gsmtap_wrapper_proto.fields.type = F_gsmtapv3_type
-gsmtap_wrapper_proto.fields.subtype = F_gsmtapv3_subtype
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_version)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_header_len)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_type)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_subtype)
+
+local F_gsmtapv3_md_tlv_type = ProtoField.uint16("gsmtapv3.tlv_type", "Metadata Type")
+local F_gsmtapv3_md_tlv_len = ProtoField.uint16("gsmtapv3.tlv_len", "Metadata Length")
+local F_gsmtapv3_md_tlv_val = ProtoField.bytes("gsmtapv3.tlv_val", "Metadata Value")
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_md_tlv_type)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_md_tlv_len)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_md_tlv_val)
 
 -- Dissectors
 local ip_dissector = Dissector.get("ip")
@@ -113,6 +120,60 @@ local gsmtapv3_types = {
     [0x0504] = "NAS-5GS"
 }
 
+local gsmtapv3_metadata_tags = {
+    [0x0000] = { "Packet timestamp", "gsmtapv3.packet_timestamp", ftypes.ABSOLUTE_TIME },
+    [0x0001] = { "Packet comment", "gsmtapv3.packet_comment", ftypes.STRING },
+    [0x0002] = { "Channel number", "gsmtapv3.channel_number", ftypes.UINT32 },
+    [0x0003] = { "Frequency (Hz)", "gsmtapv3.frequency", ftypes.UINT64 },
+    [0x0004] = { "Band indicator", "gsmtapv3.band_indicator", ftypes.UINT16 },
+    [0x0005] = { "Multiplexing information (BSIC/PSC/PCI)", "gsmtapv3.multiplex", ftypes.UINT16 },
+
+    [0x0006] = { "GSM timeslot", "gsmtapv3.gsm_timeslot", ftypes.UINT8 },
+    [0x0007] = { "GSM subslot", "gsmtapv3.gsm_subslot", ftypes.UINT8 },
+    [0x0008] = { "System frame number", "gsmtapv3.sfn", ftypes.UINT32 },
+    [0x0009] = { "Subframe number", "gsmtapv3.subfn", ftypes.UINT16 },
+    [0x000a] = { "Hyperframe number", "gsmtapv3.hfn", ftypes.UINT16 },
+    [0x000d] = { "Antenna number", "gsmtapv3.antenna_num", ftypes.UINT8 },
+
+    [0x0100] = { "Signal level", "gsmtapv3.signal_level", ftypes.FLOAT },
+    [0x0101] = { "RSSI", "gsmtapv3.rssi", ftypes.FLOAT },
+    [0x0102] = { "SNR", "gsmtapv3.snr", ftypes.FLOAT },
+    [0x0103] = { "SINR", "gsmtapv3.sinr", ftypes.FLOAT },
+    [0x0104] = { "RSCP", "gsmtapv3.rscp", ftypes.FLOAT },
+    [0x0105] = { "ECIO", "gsmtapv3.ecio", ftypes.FLOAT },
+    [0x0106] = { "RSRP", "gsmtapv3.rsrp", ftypes.FLOAT },
+    [0x0107] = { "RSRQ", "gsmtapv3.rsrq", ftypes.FLOAT },
+    [0x0108] = { "SS-RSRP", "gsmtapv3.ss_rsrp", ftypes.FLOAT },
+    [0x0109] = { "CSI-RSRP", "gsmtapv3.csi_rsrp", ftypes.FLOAT },
+    [0x010a] = { "SRS-RSRP", "gsmtapv3.srs_rsrp", ftypes.FLOAT },
+    [0x010b] = { "SS-RSRQ", "gsmtapv3.ss_rsrq", ftypes.FLOAT },
+    [0x010c] = { "CSI-RSRQ", "gsmtapv3.csi_rsrq", ftypes.FLOAT },
+    [0x010d] = { "SS-SINR", "gsmtapv3.ss_sinr", ftypes.FLOAT },
+    [0x010e] = { "CSI-SINR", "gsmtapv3.csi_sinr", ftypes.FLOAT },
+
+    [0x0200] = { "Ciphering key (CK)", "gsmtapv3.ck", ftypes.NONE },
+    [0x0201] = { "Integrity key (IK)", "gsmtapv3.ik", ftypes.NONE },
+    [0x0202] = { "NAS encryption key (K_NASenc)", "gsmtapv3.k_nasenc", ftypes.NONE },
+    [0x0203] = { "NAS integrity key (K_NASint)", "gsmtapv3.k_nasint", ftypes.NONE },
+    [0x0204] = { "RRC encryption key (K_RRCenc)", "gsmtapv3.k_rrcenc", ftypes.NONE },
+    [0x0205] = { "RRC integrity key (K_RRCint)", "gsmtapv3.k_rrcint", ftypes.NONE },
+    [0x0206] = { "User plane encryption key (K_UPenc)", "gsmtapv3.k_upenc", ftypes.NONE },
+    [0x0207] = { "User plane integrity key (K_UPint)", "gsmtapv3.k_upint", ftypes.NONE }
+}
+
+proto_fields_metadata = {}
+
+for k, v in pairs(gsmtapv3_metadata_tags) do
+    print(k)
+    print(v[1])
+    print(v[2])
+    print(v[3])
+    -- if not(v[3] == ftypes.NONE) then
+        proto_fields_metadata[k] = ProtoField.new(v[1], v[2], v[3])
+        table.insert(gsmtap_wrapper_proto.fields, proto_fields_metadata[k])
+    -- end
+end
+
 local gsmtapv3_lte_rrc_subtypes = {
     [0x0001] = { check_and_get_dissector("lte_rrc.bcch_bch"), "BCCH BCH" },
     [0x0002] = { check_and_get_dissector("lte_rrc.bcch_bch.mbms"), "BCCH BCH MBMS" },
@@ -160,17 +221,114 @@ local gsmtapv3_nr_rrc_subtypes = {
     [0x0101] = { check_and_get_dissector("nr-rrc.sbcch.sl.bch"), "SBCCH SL-BCH" },
     [0x0102] = { check_and_get_dissector("nr-rrc.scch"), "SCCH" },
 
-    [0x0200] = { check_and_get_dissector("nr-rrc.rrc_reconf"), "RRCReconfiguration" },
-    [0x0201] = { check_and_get_dissector("nr-rrc.ue_mrdc_cap"), "UE MRDC Capabilities" },
-    [0x0202] = { check_and_get_dissector("nr-rrc.ue_nr_cap"), "UE NR Capabilities" },
-    [0x0203] = { check_and_get_dissector("nr-rrc.ue_radio_access_cap_info"), "UE Radio Access Capability" },
-    [0x0204] = { check_and_get_dissector("nr-rrc.ue_radio_paging_info"), "UE Radio Paging Information" }
+    [0x0201] = { check_and_get_dissector("nr-rrc.rrc_reconf"), "RRCReconfiguration" },
+    [0x0202] = { check_and_get_dissector("nr-rrc.rrc_reconf_compl"), "RRCReconfigurationComplete" },
+    [0x0203] = { check_and_get_dissector("nr-rrc.ue_mrdc_cap"), "UE MRDC Capabilities" },
+    [0x0204] = { check_and_get_dissector("nr-rrc.ue_nr_cap"), "UE NR Capabilities" },
+    [0x0205] = { check_and_get_dissector("nr-rrc.ue_radio_access_cap_info"), "UE Radio Access Capability" },
+    [0x0206] = { check_and_get_dissector("nr-rrc.ue_radio_paging_info"), "UE Radio Paging Information" },
+    [0x0207] = { check_and_get_dissector("nr-rrc.sib1"), "SIB1" },
+    [0x0208] = { check_and_get_dissector("nr-rrc.sib2"), "SIB2" },
+    [0x0209] = { check_and_get_dissector("nr-rrc.sib3"), "SIB3" },
+    [0x020a] = { check_and_get_dissector("nr-rrc.sib4"), "SIB4" },
+    [0x020b] = { check_and_get_dissector("nr-rrc.sib5"), "SIB5" },
+    [0x020c] = { check_and_get_dissector("nr-rrc.sib6"), "SIB6" },
+    [0x020d] = { check_and_get_dissector("nr-rrc.sib7"), "SIB7" },
+    [0x020e] = { check_and_get_dissector("nr-rrc.sib8"), "SIB8" },
+    [0x020f] = { check_and_get_dissector("nr-rrc.sib9"), "SIB9" },
+    [0x0210] = { check_and_get_dissector("nr-rrc.sib10"), "SIB10" },
+    [0x0211] = { check_and_get_dissector("nr-rrc.sib11"), "SIB11" },
+    [0x0212] = { check_and_get_dissector("nr-rrc.sib12"), "SIB12" },
+    [0x0213] = { check_and_get_dissector("nr-rrc.sib13"), "SIB13" },
+    [0x0214] = { check_and_get_dissector("nr-rrc.sib14"), "SIB14" },
+    [0x0215] = { check_and_get_dissector("nr-rrc.sib15"), "SIB15" },
+    [0x0216] = { check_and_get_dissector("nr-rrc.sib16"), "SIB16" },
+    [0x0217] = { check_and_get_dissector("nr-rrc.sib17"), "SIB17" },
+    [0x0218] = { check_and_get_dissector("nr-rrc.sib18"), "SIB18" },
+    -- [0x0219] = { check_and_get_dissector("nr-rrc.sib19"), "SIB19" },
+    -- [0x021a] = { check_and_get_dissector("nr-rrc.sib20"), "SIB20" },
+    -- [0x021b] = { check_and_get_dissector("nr-rrc.sib21"), "SIB21" },
+    -- [0x021c] = { check_and_get_dissector("nr-rrc.sib22"), "SIB22" },
+    -- [0x021d] = { check_and_get_dissector("nr-rrc.sib23"), "SIB23" },
+    -- [0x021e] = { check_and_get_dissector("nr-rrc.sib24"), "SIB24" },
+    -- [0x021f] = { check_and_get_dissector("nr-rrc.sib25"), "SIB25" },
+    -- [0x0220] = { check_and_get_dissector("nr-rrc.sib17bis"), "SIB17bis" }
+}
+
+local gsmtapv3_gsm_band_indicators = {
+    [0x0002] = "PCS 1900",
+    [0x0003] = "DCS 1800",
+    [0x0005] = "GSM 850",
+    [0x0008] = "GSM 900",
+
+    [0xf000] = "T-GSM 380",
+    [0xf001] = "T-GSM 410",
+    [0xf002] = "GSM 450",
+    [0xf003] = "GSM 480",
+    [0xf004] = "GSM 710",
+    [0xf005] = "GSM 750",
+    [0xf006] = "T-GSM 810"
 }
 
 local gsmtapv3_nas_5gs_subtypes = {
     [0x0000] = { check_and_get_dissector("nas-5gs"), "NAS/5GS plain" },
     [0x0001] = { check_and_get_dissector("nas-5gs"), "NAS/5GS" }
 }
+
+function gsmtapv3_parse_metadata(t, hdr_buffer, hdr_len)
+    local offset = 0
+
+    while offset < (hdr_len) do
+        if (offset + 4) > hdr_len then
+            break
+        end
+
+        local type = hdr_buffer(offset, 2):uint()
+        local len = hdr_buffer(offset + 2, 2):uint()
+        local type_string
+        local type_info
+        if gsmtapv3_metadata_tags[type] then
+            type_string = string.format("Type: %s (0x%04x)", gsmtapv3_metadata_tags[type][1], type)
+            type_info = gsmtapv3_metadata_tags[type][1]
+        else
+            type_string = string.format("Type: Unknown metadata (0x%04x)", type)
+            type_info = "gsmtapv3.tlv_val"
+        end
+        t:add(F_gsmtapv3_md_tlv_type, hdr_buffer(offset, 2)):set_text(type_string)
+        t:add(F_gsmtapv3_md_tlv_len, hdr_buffer(offset+2, 2)):set_text(string.format("Length: %d", len))
+        offset = offset + 4
+
+        md_field = proto_fields_metadata[type]
+        md_tag = gsmtapv3_metadata_tags[type]
+        if md_tag[3] == ftypes.UINT16 then
+            t:add(md_field, hdr_buffer(offset, 2))
+        elseif md_tag[3] == ftypes.UINT32 then
+            t:add(md_field, hdr_buffer(offset, 4))
+        elseif md_tag[3] == ftypes.UINT64 then
+            t:add(md_field, hdr_buffer(offset, 8))
+        elseif md_tag[3] == ftypes.STRING then
+            t:add(md_field, hdr_buffer(offset, len):string(ENC_UTF_8))
+        elseif md_tag[3] == ftypes.FLOAT then
+            t:add(md_field, hdr_buffer(offset, 4))
+        else
+            if type == 0x0000 then
+                -- "Packet timestamp"
+                if len == 12 then
+                    -- sec 8, usec 4
+                    time_sec = hdr_buffer(offset, 8):uint64():tonumber()
+                    time_nsec = hdr_buffer(offset+8, 4):uint()
+                    t:add(md_field, hdr_buffer(offset, len), NSTime.new(time_sec, time_nsec))
+                end
+                print(hdr_buffer(offset, len):bytes())
+            else
+                t:add(F_gsmtapv3_md_tlv_val, hdr_buffer(offset, len)):set_text(string.format("Value: %s", tostring(hdr_buffer(offset, len):bytes())))
+            end
+        end
+
+        offset = offset + len
+
+    end
+end
 
 function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
     -- GSMTAPv3
@@ -204,6 +362,7 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
             gsmtapv3_nr_rrc_subtypes[subtype][1]:call(gsmtap_data:tvb(), pinfo, treeitem)
         elseif type == 0x0504 then
             pinfo.cols.info = ""
@@ -213,6 +372,7 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
             gsmtapv3_nas_5gs_subtypes[subtype][1]:call(gsmtap_data:tvb(), pinfo, treeitem)
         else
             pinfo.cols.info = "GSMTAPv3"

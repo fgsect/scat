@@ -5,6 +5,7 @@ import struct
 import datetime
 import sys
 import string
+import math
 from enum import IntEnum, unique
 try:
     import libscrc
@@ -314,6 +315,75 @@ class gsmtapv3_types(IntEnum):
     NAS_5GS = 0x0504
 
 @unique
+class gsmtapv3_metadata_tags(IntEnum):
+    PACKET_TIMESTAMP = 0x0000
+    PACKET_COMMENT = 0x0001
+    CHANNEL_NUMBER = 0x0002
+    FREQUENCY = 0x0003
+    BAND_INDICATOR = 0x0004
+    BSIC_PSC_PCI = 0x0005
+
+    GSM_TIMESLOT = 0x0006
+    GSM_SUBSLOT = 0x0007
+    SFN = 0x0008
+    SUBFN = 0x0009
+    HFN = 0x000a
+    ANT_NUM = 0x000d
+
+    SIGNAL_LEVEL = 0x0100
+    RSSI = 0x0101
+    SNR = 0x0102
+    SINR = 0x0103
+    RSCP = 0x0104
+    ECIO = 0x0105
+    RSRP = 0x0106
+    RSRQ = 0x0107
+    SS_RSRP = 0x0108
+    CSI_RSRP = 0x0109
+    SRS_RSRP = 0x010a
+    SS_RSRQ = 0x010b
+    CSI_RSRQ = 0x010c
+    SS_SINR = 0x010d
+    CSI_SINR = 0x010e
+
+    CK = 0x0200
+    IK = 0x0201
+    K_NASENC = 0x0202
+    K_NASINT = 0x0203
+    K_RRCENC = 0x0204
+    K_RRCINT = 0x0205
+    K_UPENC = 0x0206
+    K_UPINT = 0x0207
+
+@unique
+class gsmtapv3_lte_rrc_types(IntEnum):
+    BCCH_BCH = 0x0001
+    BCCH_BCH_MBMS = 0x0002
+    BCCH_DL_SCH = 0x0003
+    BCCH_DL_SCH_BR = 0x0004
+    BCCH_DL_SCH_MBMS = 0x0005
+    MCCH = 0x0006
+    PCCH = 0x0007
+    DL_CCCH = 0x0008
+    DL_DCCH = 0x0009
+    UL_CCCH = 0x000a
+    UL_DCCH = 0x000b
+    SC_MCCH = 0x000c
+
+    SBCCH_SL_BCH = 0x0101
+    SBCCH_SL_BCH_V2X = 0x0102
+
+    BCCH_BCH_NB = 0x0201
+    BCCH_BCH_NB_TDD = 0x0202
+    BCCH_DL_SCH_NB = 0x0203
+    PCCH_NB = 0x0204
+    DL_CCCH_NB = 0x0205
+    DL_DCCH_NB = 0x0206
+    UL_CCCH_NB = 0x0207
+    SC_MCCH_NB = 0x0208
+    UL_DCCH_NB = 0x0209
+
+@unique
 class gsmtapv3_nr_rrc_types(IntEnum):
     BCCH_BCH = 0x0001
     BCCH_DL_SCH = 0x0002
@@ -328,24 +398,58 @@ class gsmtapv3_nr_rrc_types(IntEnum):
     SBCCH_SL_BCH = 0x0101
     SCCH = 0x0102
 
+    RRC_RECONF = 0x0201
+    RRC_RECONF_COMPLETE = 0x0202
+    UE_MRDC_CAP = 0x0203
+    UE_NR_CAP = 0x0204
+    UE_RADIO_ACCESS_CAP_INFO = 0x0205
+    UE_RADIO_PAGING_INFO = 0x0206
+    SIB1 = 0x0207
+    SIB2 = 0x0208
+    SIB3 = 0x0209
+    SIB4 = 0x020a
+    SIB5 = 0x020b
+    SIB6 = 0x020c
+    SIB7 = 0x020d
+    SIB8 = 0x020e
+    SIB9 = 0x020f
+    SIB10 = 0x0210
+    SIB11 = 0x0211
+    SIB12 = 0x0212
+    SIB13 = 0x0213
+    SIB14 = 0x0214
+    SIB15 = 0x0215
+    SIB16 = 0x0216
+    SIB17 = 0x0217
+    SIB18 = 0x0218
+    SIB19 = 0x0219
+    SIB20 = 0x021a
+    SIB21 = 0x021b
+    SIB22 = 0x021c
+    SIB23 = 0x021d
+    SIB24 = 0x021e
+    SIB25 = 0x021f
+    SIB17BIS = 0x0220
+
 def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
     arfcn = 0, signal_dbm = 0, snr_db = 0, frame_number = 0,
     sub_type = 0, antenna_nr = 0, sub_slot = 0,
-    device_sec = 0, device_usec = 0):
+    device_sec = 0, device_usec = 0, metadata = dict()):
 
     gsmtap_v2_hdr_def = '!BBBBHBBLBBBB'
     gsmtap_v3_hdr_def = '!BBHHH'
     gsmtap_hdr = b''
-
-    # Sanity check - Wireshark GSMTAP dissector accepts only 14 bits of ARFCN
-    # Only allow in GSM for implicitly marking uplink
-    if not (payload_type == gsmtap_type.UM or payload_type == gsmtap_type.UM_BURST or
-        payload_type == gsmtap_type.ABIS or
-        payload_type == gsmtap_type.GB_LLC or payload_type == gsmtap_type.GB_SNDCP):
-        if arfcn < 0 or arfcn > (2 ** 14 - 1):
-            arfcn = 0
+    gsmtap_v3_metadata = b''
 
     if version == 2:
+        # Sanity check - Wireshark GSMTAP dissector accepts only 14 bits of ARFCN
+        # Only allow in GSM for implicitly marking uplink
+        if not (payload_type == gsmtap_type.UM or payload_type == gsmtap_type.UM_BURST or
+            payload_type == gsmtap_type.ABIS or
+            payload_type == gsmtap_type.GB_LLC or payload_type == gsmtap_type.GB_SNDCP):
+            if arfcn < 0 or arfcn > (2 ** 14 - 1):
+                arfcn = 0
+
         gsmtap_hdr = struct.pack(gsmtap_v2_hdr_def,
             2,                           # Version
             4,                           # Header Length
@@ -361,13 +465,41 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             0                            # Reserved
             )
     elif version == 3:
+        header_len = 2
+
+        t = gsmtapv3_metadata_tags
+        if device_sec > 0:
+            gsmtap_v3_metadata += struct.pack('!HHQL', t.PACKET_TIMESTAMP, 12, device_sec, device_usec * 1000)
+            header_len += 4
+        gsmtap_v3_metadata += struct.pack('!HHL', t.CHANNEL_NUMBER, 4, arfcn)
+        header_len += 2
+        for k, v in metadata.items():
+            if type(v) == int:
+                if k in (t.BAND_INDICATOR, t.BSIC_PSC_PCI, t.SUBFN, t.HFN):
+                    buf = struct.pack('!H', v)
+                elif k in (t.GSM_TIMESLOT, t.GSM_SUBSLOT, t.ANT_NUM):
+                    buf = struct.pack('!B', v)
+                elif k in (t.SIGNAL_LEVEL, t.RSSI, t.SNR, t.SINR, t.RSCP, t.ECIO, t.RSRP, t.RSRQ,
+                           t.SS_RSRP, t.CSI_RSRP, t.SRS_RSRP, t.SS_RSRQ, t.CSI_RSRQ, t.SS_SINR, t.CSI_SINR):
+                    buf = struct.pack('!f', v)
+                else:
+                    buf = struct.pack('!L', v)
+            else:
+                buf = v
+            gsmtap_v3_metadata += struct.pack('!HH', k, len(buf))
+            gsmtap_v3_metadata += buf
+            header_len += (1 + math.ceil(len(buf)/4))
+
         gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
             3,                           # Version
             0,                           # Reserved
-            2,                           # Header Length
+            header_len,                  # Header Length
             payload_type,                # Type
             sub_type,                    # Subtype
             )
+        gsmtap_hdr += gsmtap_v3_metadata
+        if len(gsmtap_hdr) < (4 * header_len):
+            gsmtap_hdr += (b'\x00' * (4 * header_len - len(gsmtap_hdr)))
     else:
         assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
 
