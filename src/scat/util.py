@@ -465,14 +465,14 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             0                            # Reserved
             )
     elif version == 3:
-        header_len = 2
+        header_len = 8
 
         t = gsmtapv3_metadata_tags
         if device_sec > 0:
             gsmtap_v3_metadata += struct.pack('!HHQL', t.PACKET_TIMESTAMP, 12, device_sec, device_usec * 1000)
-            header_len += 4
+            header_len += 16
         gsmtap_v3_metadata += struct.pack('!HHL', t.CHANNEL_NUMBER, 4, arfcn)
-        header_len += 2
+        header_len += 8
         for k, v in metadata.items():
             if type(v) == int:
                 if k in (t.BAND_INDICATOR, t.BSIC_PSC_PCI, t.SUBFN, t.HFN):
@@ -488,18 +488,18 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
                 buf = v
             gsmtap_v3_metadata += struct.pack('!HH', k, len(buf))
             gsmtap_v3_metadata += buf
-            header_len += (1 + math.ceil(len(buf)/4))
+            header_len += (4 + len(buf))
 
         gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
             3,                           # Version
             0,                           # Reserved
-            header_len,                  # Header Length
+            math.ceil(header_len/4),     # Header Length
             payload_type,                # Type
             sub_type,                    # Subtype
             )
         gsmtap_hdr += gsmtap_v3_metadata
-        if len(gsmtap_hdr) < (4 * header_len):
-            gsmtap_hdr += (b'\x00' * (4 * header_len - len(gsmtap_hdr)))
+        if len(gsmtap_hdr) < (4 * math.ceil(header_len/4)):
+            gsmtap_hdr += (b'\x00' * (4 * math.ceil(header_len/4) - len(gsmtap_hdr)))
     else:
         assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
 
