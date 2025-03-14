@@ -368,6 +368,16 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
             gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
             gsmtapv3_lte_rrc_subtypes[subtype][1]:call(gsmtap_data:tvb(), pinfo, treeitem)
+        elseif type == 0x0404 then
+            pinfo.cols.info = ""
+            itemtext = "Unknown"
+            if gsmtapv3_nas_eps_subtypes[subtype] then
+                itemtext = gsmtapv3_nas_eps_subtypes[subtype][2]
+            end
+            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            gsmtapv3_nas_eps_subtypes[subtype][1]:call(gsmtap_data:tvb(), pinfo, treeitem)
         elseif type == 0x0503 then
             pinfo.cols.info = ""
             itemtext = "Unknown"
