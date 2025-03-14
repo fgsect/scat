@@ -299,13 +299,13 @@ class DiagNrLogParser:
                 6: util.gsmtapv3_nr_rrc_types.UL_CCCH,
                 7: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
                 8: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                9: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
+                10: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
+                28: util.gsmtapv3_nr_rrc_types.UE_MRDC_CAP,
+                29: util.gsmtapv3_nr_rrc_types.UE_NR_CAP
             }
             rrc_type_map_stdout = {
-                9: "RRC_RECONFIGURATION",
-                10: "RRC_RECONFIGURATION_COMPLETE",
                 25: "nr-RadioBearerConfig",
-                28: "UE_MRDC_CAPABILITY",
-                29: "UE_NR_CAPABILITY",
             }
         elif pkt_ver in (0x0e, ):
             rrc_type_map = {
@@ -317,13 +317,13 @@ class DiagNrLogParser:
                 6: util.gsmtapv3_nr_rrc_types.UL_CCCH,
                 7: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
                 8: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                9: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
+                10: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
+                31: util.gsmtapv3_nr_rrc_types.UE_MRDC_CAP,
+                32: util.gsmtapv3_nr_rrc_types.UE_NR_CAP,
+                33: util.gsmtapv3_nr_rrc_types.UE_NR_CAP
             }
             rrc_type_map_stdout = {
-                9: "RRC_RECONFIGURATION",
-                10: "RRC_RECONFIGURATION_COMPLETE",
-                31: "UE_MRDC_CAPABILITY",
-                32: "UE_NR_CAPABILITY",
-                33: "UE_NR_CAPABILITY",
             }
         elif pkt_ver in (0x11, 0x13, ):
             rrc_type_map = {
@@ -335,13 +335,13 @@ class DiagNrLogParser:
                 6: util.gsmtapv3_nr_rrc_types.UL_CCCH,
                 7: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
                 8: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                9: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
+                10: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
             }
             rrc_type_map_stdout = {
-                9: "RRC_RECONFIGURATION",
-                10: "RRC_RECONFIGURATION_COMPLETE",
                 29: "nr-RadioBearerConfig",
             }
-        elif pkt_ver in (0x14, 0x17, 0x1a):
+        elif pkt_ver in (0x14, 0x17):
            rrc_type_map = {
                 1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
                 2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
@@ -352,10 +352,27 @@ class DiagNrLogParser:
                 7: util.gsmtapv3_nr_rrc_types.UL_CCCH,
                 8: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
                 9: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                10: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
+                11: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
            }
            rrc_type_map_stdout = {
-                10: "RRC_RECONFIGURATION",
-                11: "RRC_RECONFIGURATION_COMPLETE",
+                36: "nr-RadioBearerConfig",
+            }
+        elif pkt_ver in (0x1a, ):
+           rrc_type_map = {
+                1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+                2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+                4: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+                5: util.gsmtapv3_nr_rrc_types.MCCH,
+                6: util.gsmtapv3_nr_rrc_types.PCCH,
+                7: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+                8: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
+                9: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                11: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
+                12: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
+           }
+           rrc_type_map_stdout = {
                 36: "nr-RadioBearerConfig",
             }
 
