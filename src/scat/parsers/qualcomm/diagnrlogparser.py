@@ -365,7 +365,8 @@ class DiagNrLogParser:
 
         if item.pdu_id in rrc_type_map.keys():
             type_str = rrc_type_map[item.pdu_id]
-            stdout += "NR RRC OTA Packet: NR-ARFCN: {}, PCI: {}".format(item.nrarfcn, item.pci)
+            gsmtapv3_metadata = dict()
+            gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = item.pci
             if ncgi:
                 mcc_mnc = util.unpack_mcc_mnc(ncgi[36:60].bytes)
                 cell_id = ncgi[0:36].uint
@@ -380,12 +381,13 @@ class DiagNrLogParser:
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 3,
                 payload_type = util.gsmtapv3_types.NR_RRC,
-                arfcn = 0,
+                arfcn = item.nrarfcn,
                 sub_type = nr_pdu_id_gsmtap,
                 device_sec = ts_sec,
-                device_usec = ts_usec)
+                device_usec = ts_usec,
+                metadata = gsmtapv3_metadata)
 
-            return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts, 'stdout': stdout}
+            return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
         else:
             if item.pdu_id in rrc_type_map_stdout.keys():
                 type_str = rrc_type_map_stdout[item.pdu_id]
