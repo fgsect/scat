@@ -58,7 +58,7 @@ class DiagNrLogParser:
 
         self.nr_pkt_ver = namedtuple('QcDiagNrPktVer', 'rel_min rel_maj')
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
 
     def parse_float_q7(self, data_to_convert):

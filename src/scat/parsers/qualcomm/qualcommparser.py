@@ -62,6 +62,7 @@ class QualcommParser:
         self.check_crc = True
         self.layers = []
         self.display_format = 'x'
+        self.gsmtapv3 = False
 
         self.name = 'qualcomm'
         self.shortname = 'qc'
@@ -101,12 +102,12 @@ class QualcommParser:
     def set_writer(self, writer):
         self.writer = writer
 
-    def update_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         for p in self.diag_event_parsers:
-            p.set_display_format(display_format)
+            p.update_parameters(display_format, gsmtapv3)
 
         for p in self.diag_log_parsers:
-            p.set_display_format(display_format)
+            p.update_parameters(display_format, gsmtapv3)
 
     def set_parameter(self, params):
         for p in params:
@@ -132,7 +133,10 @@ class QualcommParser:
                 self.layers = params[p]
             elif p == 'format':
                 self.display_format = params[p]
-                self.update_display_format(self.display_format)
+            elif p == 'gsmtapv3':
+                self.gsmtapv3 = params[p]
+
+        self.update_parameters(self.display_format, self.gsmtapv3)
 
     def sanitize_radio_id(self, radio_id):
         if radio_id <= 0:

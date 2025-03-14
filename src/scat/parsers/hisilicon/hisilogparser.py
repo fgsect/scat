@@ -13,8 +13,10 @@ class HisiLogParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         self.process = {
             0x10051082: lambda x, y, z: self.hisi_lte_current_cell_info(x, y, z),
@@ -24,8 +26,9 @@ class HisiLogParser:
             0x20020000: lambda x, y, z: self.hisi_0x20020000(x, y, z),
         }
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     def hisi_lte_ota_msg(self, pkt_header, pkt_data, args):
         # Direction: 1: DL, 2: UL

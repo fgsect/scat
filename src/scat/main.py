@@ -58,6 +58,7 @@ def scat_main():
     parser.add_argument('-V', '--version', action='version', version='SCAT {}'.format(__version__))
     parser.add_argument('-L', '--layer', help='Specify the layers to see as GSMTAP packets (comma separated).\nAvailable layers: {}, Default: "ip,nas,rrc"'.format(', '.join(valid_layers)), type=str, default='ip,nas,rrc')
     parser.add_argument('-f', '--format', help='Select display format for LAC/RAC/TAC/CID: [d]ecimal, he[x]adecimal (default), [b]oth.', type=str, default='x', choices=['d', 'x', 'b'])
+    parser.add_argument('-3', '--gsmtapv3', help='Enable GSMTAPv3 for 2G/3G/4G. Default: enabled only for 5G NR', action='store_true')
 
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
@@ -184,7 +185,8 @@ def scat_main():
             'combine-stdout': args.combine_stdout,
             'disable-crc-check': args.disable_crc_check,
             'layer': layers,
-            'format': args.format})
+            'format': args.format,
+            'gsmtapv3': args.gsmtapv3})
     elif args.type == 'sec':
         current_parser.set_parameter({
             'model': args.model,
@@ -194,14 +196,16 @@ def scat_main():
             'combine-stdout': args.combine_stdout,
             'layer': layers,
             'all-items': args.all_items,
-            'format': args.format})
+            'format': args.format,
+            'gsmtapv3': args.gsmtapv3})
     elif args.type == 'hisi':
         current_parser.set_parameter({
             'msgs': args.msgs,
             'combine-stdout': args.combine_stdout,
             'disable-crc-check': args.disable_crc_check,
             'layer': layers,
-            'format': args.format})
+            'format': args.format,
+            'gsmtapv3': args.gsmtapv3})
 
     # Run process
     if args.serial or args.usb:

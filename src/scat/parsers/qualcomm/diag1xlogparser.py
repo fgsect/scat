@@ -19,8 +19,10 @@ class Diag1xLogParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         self.process = {
             # SIM
@@ -34,8 +36,9 @@ class Diag1xLogParser:
             0x156E: lambda x, y, z: self.parse_sip_message(x, y, z),
         }
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     def parse_ip(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)

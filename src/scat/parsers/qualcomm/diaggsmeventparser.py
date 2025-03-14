@@ -10,8 +10,10 @@ class DiagGsmEventParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         # Event IDs are available at:
         # https://source.codeaurora.org/quic/la/platform/vendor/qcom-opensource/wlan/qcacld-2.0/tree/CORE/VOSS/inc/event_defs.h
@@ -21,8 +23,9 @@ class DiagGsmEventParser:
             450: (self.parse_event_gsm_message_received, 'GSM_MESSAGE_RECEIVED'),
         }
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     def build_header(func):
         @wraps(func)

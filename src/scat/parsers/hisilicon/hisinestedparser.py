@@ -13,16 +13,19 @@ class HisiNestedParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         self.process = {
             0x00020101: lambda x, y, z: self.hisi_l3_ota(x, y, z),
             0xfd010101: lambda x, y, z: self.hisi_debug_msg(x, y, z),
         }
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     def hisi_l3_ota(self, pkt_header, pkt_data, args):
         if pkt_data[0] == 0x22:

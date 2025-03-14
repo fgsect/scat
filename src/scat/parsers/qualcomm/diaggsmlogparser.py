@@ -27,8 +27,10 @@ class DiagGsmLogParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         self.no_process = {
             0x5226: 'GPRS MAC Signaling Message',
@@ -67,8 +69,9 @@ class DiagGsmLogParser:
             i(c.LOG_GSM_DSDS_RR_CELL_INFORMATION_C): lambda x, y, z: self.parse_gsm_dsds_cell_info(x, y, z),
         }
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     # GSM
 

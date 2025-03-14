@@ -17,6 +17,7 @@ class UnisocParser:
         self.combine_stdout = False
 
         self.display_format = 'x'
+        self.gsmtapv3 = False
 
         self.name = 'unisoc'
         self.shortname = 'sprd'
@@ -53,6 +54,8 @@ class UnisocParser:
                 self.layers = params[p]
             elif p == 'format':
                 self.display_format = params[p]
+            elif p == 'gsmtapv3':
+                self.gsmtapv3 = params[p]
 
     def init_diag(self):
         pass

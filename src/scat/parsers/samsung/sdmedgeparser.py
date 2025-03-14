@@ -14,8 +14,10 @@ class SdmEdgeParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         g = (sdmcmd.sdm_command_group.CMD_EDGE_DATA << 8)
         c = sdmcmd.sdm_edge_data
@@ -31,8 +33,9 @@ class SdmEdgeParser:
     def set_icd_ver(self, version):
         self.icd_ver = version
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     def sdm_edge_dummy(self, pkt, num):
         pkt = pkt[15:-1]

@@ -16,8 +16,10 @@ class DiagWcdmaLogParser:
 
         if self.parent:
             self.display_format = self.parent.display_format
+            self.gsmtapv3 = self.parent.gsmtapv3
         else:
             self.display_format = 'x'
+            self.gsmtapv3 = False
 
         i = diagcmd.diag_log_get_wcdma_item_id
         c = diagcmd.diag_log_code_wcdma
@@ -38,8 +40,9 @@ class DiagWcdmaLogParser:
             i(c.LOG_WCDMA_SIGNALING_MSG_C): lambda x, y, z: self.parse_wcdma_rrc(x, y, z),
         }
 
-    def set_display_format(self, display_format):
+    def update_parameters(self, display_format, gsmtapv3):
         self.display_format = display_format
+        self.gsmtapv3 = gsmtapv3
 
     def get_real_rscp(self, rscp):
         return rscp - 21
