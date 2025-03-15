@@ -262,6 +262,8 @@ class DiagNrLogParser:
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
         item_struct = namedtuple('QcDiagNrRrcOtaPacket', 'rrc_rel_maj rrc_rel_min rbid pci nrarfcn sfn_subfn pdu_id sib_mask len')
         item_struct_v17 = namedtuple('QcDiagNrRrcOtaPacketV17', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len')
+        item_struct_v19 = namedtuple('QcDiagNrRrcOtaPacketV19', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len unk1')
+        item_struct_v23 = namedtuple('QcDiagNrRrcOtaPacketV23', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len unk1 unk2 unk3 unk4')
 
         if pkt_ver in (0x09, ): # Version 9
             item = item_struct._make(struct.unpack('<BBBHIIBIH', pkt_body[4:24]))
@@ -273,10 +275,10 @@ class DiagNrLogParser:
             item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIH', pkt_body[4:31]))
             msg_content = pkt_body[31:]
         elif pkt_ver in (0x13, 0x14): # Version 19, 20
-            item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIHx', pkt_body[4:32]))
+            item = item_struct_v19._make(struct.unpack('<BBBH Q I3sBIHB', pkt_body[4:32]))
             msg_content = pkt_body[32:]
         elif pkt_ver in (0x17, 0x1a): # Version 23, 26
-            item = item_struct_v17._make(struct.unpack('<BBBH Q I3sBIH4x', pkt_body[4:35]))
+            item = item_struct_v23._make(struct.unpack('<BBBH Q I3sBIHBBBB', pkt_body[4:35]))
             msg_content = pkt_body[35:]
         else:
             if self.parent:
