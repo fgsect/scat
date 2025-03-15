@@ -164,10 +164,6 @@ local gsmtapv3_metadata_tags = {
 proto_fields_metadata = {}
 
 for k, v in pairs(gsmtapv3_metadata_tags) do
-    print(k)
-    print(v[1])
-    print(v[2])
-    print(v[3])
     -- if not(v[3] == ftypes.NONE) then
         proto_fields_metadata[k] = ProtoField.new(v[1], v[2], v[3])
         table.insert(gsmtap_wrapper_proto.fields, proto_fields_metadata[k])
@@ -323,7 +319,6 @@ function gsmtapv3_parse_metadata(t, hdr_buffer, hdr_len)
                     time_nsec = hdr_buffer(offset+8, 4):uint()
                     t:add(md_field, hdr_buffer(offset, len), NSTime.new(time_sec, time_nsec))
                 end
-                print(hdr_buffer(offset, len):bytes())
             else
                 t:add(F_gsmtapv3_md_tlv_val, hdr_buffer(offset, len)):set_text(string.format("Value: %s", tostring(hdr_buffer(offset, len):bytes())))
             end
