@@ -517,7 +517,7 @@ def create_osmocore_logging_header(timestamp = datetime.datetime.now(),
         filename = filename.encode('utf-8')
 
     logging_hdr = struct.pack('!LL16sLB3x16s32sL',
-        int(timestamp.timestamp()), # uint32_t sec
+        int(timestamp.timestamp()) % 4294967296, # uint32_t sec
         timestamp.microsecond, # uint32_t usec
         process_name, # uint8_t proc_name[16]
         pid, # uint32_t pid
