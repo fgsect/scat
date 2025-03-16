@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 
-from scat.parsers.qualcomm import diagcmd
 from functools import wraps
-import scat.util as util
-
-import struct
+import binascii
 import calendar, datetime
 import logging
-import binascii
+import struct
+
+from scat.parsers.qualcomm import diagcmd
+import scat.util as util
 
 class DiagLteEventParser:
     def __init__(self, parent):

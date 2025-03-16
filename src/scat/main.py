@@ -5,12 +5,12 @@ import scat.iodevices
 import scat.writers
 import scat.parsers
 
-import os, sys
 import argparse
-import signal
 import faulthandler
-import logging
 import importlib.metadata
+import logging
+import os, sys
+import signal
 
 current_parser = None
 logger = logging.getLogger('scat')

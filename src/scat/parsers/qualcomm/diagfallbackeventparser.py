@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 
 from functools import wraps
-import scat.util as util
 import logging
+
+import scat.util as util
 
 class DiagFallbackEventParser:
     def __init__(self, parent):

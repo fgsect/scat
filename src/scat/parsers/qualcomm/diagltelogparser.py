@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import struct
+from collections import namedtuple
+from packaging import version
+import binascii
+import bitstring
 import calendar
 import logging
-import binascii
-from collections import namedtuple
-import bitstring
-from packaging import version
+import struct
 
 bitstring_ver = version.parse(bitstring.__version__)
 if bitstring_ver >= version.parse('4.2.0'):
@@ -18,8 +18,8 @@ elif bitstring_ver >= version.parse('3.1.7'):
 else:
     raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
 
-import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
+import scat.util as util
 
 class DiagLteLogParser:
     def __init__(self, parent):

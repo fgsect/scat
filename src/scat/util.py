@@ -1,20 +1,20 @@
 #!/usr/bin/python3
 # coding: utf8
 
-import struct
-import datetime
-import sys
-import string
-import math
 from enum import IntEnum, unique
+from packaging import version
+import bitstring
+import datetime
+import math
+import string
+import struct
+
 try:
     import libscrc
     has_libscrc = True
 except ModuleNotFoundError:
     has_libscrc = False
 
-import bitstring
-from packaging import version
 
 bitstring_ver = version.parse(bitstring.__version__)
 if bitstring_ver >= version.parse('4.2.0'):

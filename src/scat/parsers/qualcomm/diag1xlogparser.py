@@ -1,12 +1,10 @@
 #!/usr/bin/env python3
 
-import scat.util as util
-
-import struct
-import calendar
-import logging
 from collections import namedtuple
 import binascii
+import calendar
+import logging
+import struct
 
 import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd

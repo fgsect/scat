@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
-import struct
-import logging
-import binascii
-from collections import namedtuple
 
-import scat.parsers.samsung.sdmcmd as sdmcmd
-import bitstring
+from collections import namedtuple
 from packaging import version
+import binascii
+import bitstring
+import logging
+import struct
 
 bitstring_ver = version.parse(bitstring.__version__)
 if bitstring_ver >= version.parse('4.2.0'):
@@ -18,6 +17,8 @@ elif bitstring_ver >= version.parse('3.1.7'):
     bitstring.set_lsb0(True)
 else:
     raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
+
+import scat.parsers.samsung.sdmcmd as sdmcmd
 
 class SdmControlParser:
     def __init__(self, parent, icd_ver=(0, 0)):

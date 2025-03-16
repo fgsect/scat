@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 
-import struct
+from collections import namedtuple
 import calendar
 import logging
-from collections import namedtuple
+import struct
 
-import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
+import scat.util as util
 
 class DiagUmtsLogParser:
     def __init__(self, parent):

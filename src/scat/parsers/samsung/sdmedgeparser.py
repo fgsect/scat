@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 
-import struct
-import binascii
 from collections import namedtuple
+import binascii
+import struct
 
 import scat.parsers.samsung.sdmcmd as sdmcmd
 import scat.util as util

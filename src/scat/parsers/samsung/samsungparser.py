@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # coding: utf8
 
-import scat.util as util
-import struct
-import logging
-import datetime
 from inspect import currentframe, getframeinfo
 from pathlib import Path
-import os, sys
 import binascii
+import datetime
+import logging
+import os, sys
+import scat.util as util
+import struct
 
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser

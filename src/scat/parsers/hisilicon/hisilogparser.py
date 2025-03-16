@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
 
 from collections import namedtuple
-import scat.util as util
 import binascii
-
-import struct
 import logging
+import struct
+
+import scat.util as util
 
 class HisiLogParser:
     def __init__(self, parent, model=None):

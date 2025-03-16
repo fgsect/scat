@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 
-import struct
-import logging
-import binascii
 from collections import namedtuple
+import binascii
 import ipaddress
+import logging
+import struct
 
 import scat.parsers.samsung.sdmcmd as sdmcmd
 import scat.util as util

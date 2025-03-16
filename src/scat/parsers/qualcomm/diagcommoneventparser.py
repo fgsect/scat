@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
-from scat.parsers.qualcomm import diagcmd
-from functools import wraps
-import scat.util as util
 
-import struct
+from functools import wraps
 import calendar, datetime
 import logging
+import struct
 import uuid
+
+from scat.parsers.qualcomm import diagcmd
+import scat.util as util
 
 class DiagCommonEventParser:
     def __init__(self, parent):

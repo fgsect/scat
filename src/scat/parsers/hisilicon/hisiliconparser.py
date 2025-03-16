@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 # coding: utf8
 
-import scat.util as util
-import struct
-import logging
 from collections import namedtuple
 from inspect import currentframe, getframeinfo
 from pathlib import Path
+import logging
 import os, sys
+import struct
 
+import scat.util as util
 from scat.parsers.hisilicon.hisilogparser import HisiLogParser
 from scat.parsers.hisilicon.hisinestedparser import HisiNestedParser
 
