@@ -49,7 +49,50 @@ class diag_log_code_1x(IntEnum):
     LOG_INTERNAL_CORE_DUMP_C = 0x158                              # 0x1158 Internal - Core Dump
     LOG_DATA_PROTOCOL_LOGGING_C = 0x1eb                           # 0x11EB Protocol Services Data
     LOG_GENERIC_SIM_TOOLKIT_TASK_C = 0x272                        # 0x1272 Generic SIM Toolkit Task
+    LOG_QMI_LINK_01_RX_MSG_C = 0x38e                              # 0x138E QMI Link 1 RX Message
+    LOG_QMI_LINK_01_TX_MSG_C = 0x38f                              # 0x138E QMI Link 1 TX Message
+    LOG_QMI_LINK_02_RX_MSG_C = 0x390                              # 0x138E QMI Link 2 RX Message
+    LOG_QMI_LINK_02_TX_MSG_C = 0x391                              # 0x138E QMI Link 2 TX Message
+    LOG_QMI_LINK_03_RX_MSG_C = 0x392                              # 0x138E QMI Link 3 RX Message
+    LOG_QMI_LINK_03_TX_MSG_C = 0x393                              # 0x138E QMI Link 3 TX Message
+    LOG_QMI_LINK_04_RX_MSG_C = 0x394                              # 0x138E QMI Link 4 RX Message
+    LOG_QMI_LINK_04_TX_MSG_C = 0x395                              # 0x138E QMI Link 4 TX Message
+    LOG_QMI_LINK_05_RX_MSG_C = 0x396                              # 0x138E QMI Link 5 RX Message
+    LOG_QMI_LINK_05_TX_MSG_C = 0x397                              # 0x138E QMI Link 5 TX Message
+    LOG_QMI_LINK_06_RX_MSG_C = 0x398                              # 0x138E QMI Link 6 RX Message
+    LOG_QMI_LINK_06_TX_MSG_C = 0x399                              # 0x138E QMI Link 6 TX Message
+    LOG_QMI_LINK_07_RX_MSG_C = 0x39a                              # 0x138E QMI Link 7 RX Message
+    LOG_QMI_LINK_07_TX_MSG_C = 0x39b                              # 0x138E QMI Link 7 TX Message
+    LOG_QMI_LINK_08_RX_MSG_C = 0x39c                              # 0x138E QMI Link 8 RX Message
+    LOG_QMI_LINK_08_TX_MSG_C = 0x39d                              # 0x138E QMI Link 8 TX Message
+    LOG_QMI_LINK_09_RX_MSG_C = 0x39e                              # 0x138E QMI Link 9 RX Message
+    LOG_QMI_LINK_09_TX_MSG_C = 0x39f                              # 0x138E QMI Link 9 TX Message
+    LOG_QMI_LINK_10_RX_MSG_C = 0x3a0                              # 0x138E QMI Link 10 RX Message
+    LOG_QMI_LINK_10_TX_MSG_C = 0x3a1                              # 0x138E QMI Link 10 TX Message
+    LOG_QMI_LINK_11_RX_MSG_C = 0x3a2                              # 0x138E QMI Link 11 RX Message
+    LOG_QMI_LINK_11_TX_MSG_C = 0x3a3                              # 0x138E QMI Link 11 TX Message
+    LOG_QMI_LINK_12_RX_MSG_C = 0x3a4                              # 0x138E QMI Link 12 RX Message
+    LOG_QMI_LINK_12_TX_MSG_C = 0x3a5                              # 0x138E QMI Link 12 TX Message
+    LOG_QMI_LINK_13_RX_MSG_C = 0x3a6                              # 0x138E QMI Link 13 RX Message
+    LOG_QMI_LINK_13_TX_MSG_C = 0x3a7                              # 0x138E QMI Link 13 TX Message
+    LOG_QMI_LINK_14_RX_MSG_C = 0x3a8                              # 0x138E QMI Link 14 RX Message
+    LOG_QMI_LINK_14_TX_MSG_C = 0x3a9                              # 0x138E QMI Link 14 TX Message
+    LOG_QMI_LINK_15_RX_MSG_C = 0x3aa                              # 0x138E QMI Link 15 RX Message
+    LOG_QMI_LINK_15_TX_MSG_C = 0x3ab                              # 0x138E QMI Link 15 TX Message
+    LOG_QMI_LINK_16_RX_MSG_C = 0x3ac                              # 0x138E QMI Link 16 RX Message
+    LOG_QMI_LINK_16_TX_MSG_C = 0x3ad                              # 0x138E QMI Link 16 TX Message
+    LOG_QMI_LINK_17_RX_MSG_C = 0x80b                              # 0x138E QMI Link 17 RX Message
+    LOG_QMI_LINK_17_TX_MSG_C = 0x80c                              # 0x138E QMI Link 17 TX Message
+    LOG_QMI_LINK_18_RX_MSG_C = 0x80d                              # 0x138E QMI Link 18 RX Message
+    LOG_QMI_LINK_18_TX_MSG_C = 0x80e                              # 0x138E QMI Link 18 TX Message
+    LOG_QMI_LINK_19_RX_MSG_C = 0x80f                              # 0x138E QMI Link 19 RX Message
+    LOG_QMI_LINK_19_TX_MSG_C = 0x810                              # 0x138E QMI Link 19 TX Message
+    LOG_QMI_LINK_20_RX_MSG_C = 0x811                              # 0x138E QMI Link 20 RX Message
+    LOG_QMI_LINK_20_TX_MSG_C = 0x812                              # 0x138E QMI Link 20 TX Message
+    LOG_QMI_LINK_21_RX_MSG_C = 0x92b                              # 0x138E QMI Link 21 RX Message
+    LOG_QMI_LINK_21_TX_MSG_C = 0x02c                              # 0x138E QMI Link 21 TX Message
     LOG_UIM_DS_DATA_C = 0x4ce                                     # 0x14CE UIM DS Data
+    LOG_QMI_CALL_FLOW_C = 0x4cf                                   # 0x14CF QMI Call Flow
     LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C = 0x572 # 0x1572 Network IP Rm Tx 80 Bytes
     LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C = 0x573 # 0x1573 Network IP Rm Rx 80 Bytes
     LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_FULL_C = 0x574     # 0x1574 Network IP Rm Tx Full
@@ -70,6 +113,7 @@ class diag_log_code_1x(IntEnum):
     LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_FULL_C = 0x583           # 0x1583 Flow Rm Tx Full
     LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C = 0x584       # 0x1584 Flow Um Tx 80 Bytes
     LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C = 0x585           # 0x1585 Flow Um Tx Full
+    LOG_QMI_SUPPORTED_INTERFACES_C = 0x588                        # 0x1588 QMI Supported Interfaces
     LOG_IMS_SIP_MESSAGE = 0x56E                                   # 0x156E IMS SIP Message
 
 # Origin: http://cgit.osmocom.org/osmo-qcdiag/tree/src/protocol/diag_log_wcdma.h
@@ -294,6 +338,54 @@ def log_mask_scat_1x(num_max_items=0x0847, layers=[]):
             diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C,
             diag_log_code_1x.LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C,
             diag_log_code_1x.LOG_IMS_SIP_MESSAGE,
+        ]
+
+    if 'qmi' in layers:
+        log_items += [
+            diag_log_code_1x.LOG_QMI_CALL_FLOW_C,
+            diag_log_code_1x.LOG_QMI_SUPPORTED_INTERFACES_C,
+            diag_log_code_1x.LOG_QMI_LINK_01_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_01_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_02_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_02_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_03_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_03_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_04_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_04_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_05_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_05_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_06_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_06_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_07_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_07_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_08_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_08_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_09_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_09_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_10_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_10_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_11_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_11_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_12_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_12_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_13_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_13_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_14_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_14_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_15_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_15_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_16_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_16_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_17_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_17_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_18_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_18_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_19_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_19_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_20_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_20_TX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_21_RX_MSG_C,
+            diag_log_code_1x.LOG_QMI_LINK_21_TX_MSG_C,
         ]
 
     return create_log_config_set_mask(DIAG_SUBSYS_ID_1X, num_max_items, *log_items)

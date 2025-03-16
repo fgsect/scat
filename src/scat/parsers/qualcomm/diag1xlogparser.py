@@ -6,6 +6,20 @@ import struct
 import calendar
 import logging
 from collections import namedtuple
+import binascii
+
+import scat.util as util
+import scat.parsers.qualcomm.diagcmd as diagcmd
+
+try:
+    import gi
+    gi.require_version('Qmi', '1.0')
+    from gi.repository import Qmi
+    has_gobject = True
+except ModuleNotFoundError:
+    has_gobject = False
+except ValueError:
+    has_gobject = False
 
 class Diag1xLogParser:
     def __init__(self, parent):
@@ -24,16 +38,64 @@ class Diag1xLogParser:
             self.display_format = 'x'
             self.gsmtapv3 = False
 
+        i = diagcmd.diag_log_get_1x_item_id
+        x = diagcmd.diag_log_code_1x
         self.process = {
             # SIM
             #0x1098: lambda x, y, z: self.parse_sim(x, y, z, 0), # RUIM Debug
             #0x14CE: lambda x, y, z: self.parse_sim(x, y, z, 1), # UIM DS Data
 
             # Generic
-            0x11EB: lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
+            i(x.LOG_DATA_PROTOCOL_LOGGING_C): lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
+
+            # QMI
+            i(x.LOG_QMI_LINK_01_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 1, False),
+            i(x.LOG_QMI_LINK_01_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 1, True),
+            i(x.LOG_QMI_LINK_02_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 2, False),
+            i(x.LOG_QMI_LINK_02_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 2, True),
+            i(x.LOG_QMI_LINK_03_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 3, False),
+            i(x.LOG_QMI_LINK_03_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 3, True),
+            i(x.LOG_QMI_LINK_04_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 4, False),
+            i(x.LOG_QMI_LINK_04_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 4, True),
+            i(x.LOG_QMI_LINK_05_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 5, False),
+            i(x.LOG_QMI_LINK_05_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 5, True),
+            i(x.LOG_QMI_LINK_06_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 6, False),
+            i(x.LOG_QMI_LINK_06_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 6, True),
+            i(x.LOG_QMI_LINK_07_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 7, False),
+            i(x.LOG_QMI_LINK_07_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 7, True),
+            i(x.LOG_QMI_LINK_08_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 8, False),
+            i(x.LOG_QMI_LINK_08_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 8, True),
+            i(x.LOG_QMI_LINK_09_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 9, False),
+            i(x.LOG_QMI_LINK_09_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 9, True),
+            i(x.LOG_QMI_LINK_10_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 10, False),
+            i(x.LOG_QMI_LINK_10_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 10, True),
+            i(x.LOG_QMI_LINK_11_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 11, False),
+            i(x.LOG_QMI_LINK_11_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 11, True),
+            i(x.LOG_QMI_LINK_12_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 12, False),
+            i(x.LOG_QMI_LINK_12_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 12, True),
+            i(x.LOG_QMI_LINK_13_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 13, False),
+            i(x.LOG_QMI_LINK_13_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 13, True),
+            i(x.LOG_QMI_LINK_14_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 14, False),
+            i(x.LOG_QMI_LINK_14_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 14, True),
+            i(x.LOG_QMI_LINK_15_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 15, False),
+            i(x.LOG_QMI_LINK_15_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 15, True),
+            i(x.LOG_QMI_LINK_16_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 16, False),
+            i(x.LOG_QMI_LINK_16_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 16, True),
+            i(x.LOG_QMI_LINK_17_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 17, False),
+            i(x.LOG_QMI_LINK_17_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 17, True),
+            i(x.LOG_QMI_LINK_18_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 18, False),
+            i(x.LOG_QMI_LINK_18_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 18, True),
+            i(x.LOG_QMI_LINK_19_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 19, False),
+            i(x.LOG_QMI_LINK_19_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 19, True),
+            i(x.LOG_QMI_LINK_20_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 20, False),
+            i(x.LOG_QMI_LINK_20_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 20, True),
+            i(x.LOG_QMI_LINK_21_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 21, False),
+            i(x.LOG_QMI_LINK_21_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 21, True),
+            i(x.LOG_QMI_CALL_FLOW_C): lambda x, y, z: self.parse_qmi_call_flow(x, y, z),
+            i(x.LOG_QMI_SUPPORTED_INTERFACES_C): lambda x, y, z: self.parse_qmi_supported_interfaces(x, y, z),
 
             # IMS
-            0x156E: lambda x, y, z: self.parse_sip_message(x, y, z),
+            i(x.LOG_IMS_SIP_MESSAGE): lambda x, y, z: self.parse_sip_message(x, y, z),
         }
 
     def update_parameters(self, display_format, gsmtapv3):
@@ -79,6 +141,42 @@ class Diag1xLogParser:
                 self.pending_pkts[pkt_id][segment_num] = item_data
             else:
                 self.pending_pkts[pkt_id] = {segment_num: item_data}
+
+    def parse_qmi_message(self, pkt_header, pkt_body, args, qmi_port, is_tx):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+        stdout = ''
+
+        if not has_gobject:
+            if self.parent:
+                self.parent.logger.log(logging.ERROR, 'Decoding QMI message requires PyGObject and libqmi-glib package')
+                return
+
+        stdout += 'QMI Port: {}, Direction: {}, Raw data: {}'.format(qmi_port, 'TX' if is_tx else 'RX', binascii.hexlify(pkt_body).decode())
+        try:
+            q = Qmi.message_new_from_raw(pkt_body)
+            stdout += ', {}'.format(str(q))
+        except gi.repository.GLib.GError as e:
+            stdout += ', error: {}'.format(e)
+
+        return {'stdout': stdout, 'ts': pkt_ts}
+
+    def parse_qmi_call_flow(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        stdout = 'QMI_CALL_FLOW: {}'.format(binascii.hexlify(pkt_body).decode())
+        return {'stdout': stdout, 'ts': pkt_ts}
+
+    def parse_qmi_supported_interfaces(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        stdout = 'QMI_IFACES: {}'.format(binascii.hexlify(pkt_body).decode())
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_sim(self, pkt_header, pkt_body, args, sim_id):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)

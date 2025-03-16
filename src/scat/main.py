@@ -47,7 +47,7 @@ def scat_main():
             c = getattr(scat.parsers, parser_module)()
             parser_dict[c.shortname] = c
 
-    valid_layers = ['ip', 'nas', 'rrc', 'pdcp', 'rlc', 'mac']
+    valid_layers = ['ip', 'nas', 'rrc', 'pdcp', 'rlc', 'mac', 'qmi']
 
     parser = argparse.ArgumentParser(description='Reads diagnostic messages from smartphone baseband.')
     parser.register('action', 'listusb', ListUSBAction)
