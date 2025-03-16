@@ -25,6 +25,9 @@ class DiagNrLogParser:
     def __init__(self, parent):
         self.parent = parent
 
+        self.rrc_segments = dict()
+        self.first_segment_item = None
+
         if self.parent:
             self.display_format = self.parent.display_format
         else:
@@ -263,7 +266,7 @@ class DiagNrLogParser:
         item_struct = namedtuple('QcDiagNrRrcOtaPacket', 'rrc_rel_maj rrc_rel_min rbid pci nrarfcn sfn_subfn pdu_id sib_mask len')
         item_struct_v17 = namedtuple('QcDiagNrRrcOtaPacketV17', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len')
         item_struct_v19 = namedtuple('QcDiagNrRrcOtaPacketV19', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len unk1')
-        item_struct_v23 = namedtuple('QcDiagNrRrcOtaPacketV23', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len unk1 unk2 unk3 unk4')
+        item_struct_v23 = namedtuple('QcDiagNrRrcOtaPacketV23', 'rrc_rel_maj rrc_rel_min rbid pci ncgi nrarfcn sfn_subfn pdu_id sib_mask len unk1 unk2 unk3 segment_id')
 
         if pkt_ver in (0x09, ): # Version 9
             item = item_struct._make(struct.unpack('<BBBHIIBIH', pkt_body[4:24]))
@@ -290,6 +293,26 @@ class DiagNrLogParser:
             ncgi = bitstring.Bits(uint=item.ncgi, length=60)
         else:
             ncgi = None
+
+        if pkt_ver >= 0x17:
+            if item.segment_id == 0:
+                # Not segmented RRC, check previously cached
+                pass
+            elif item.segment_id in range(1, 7):
+                # Part of the segment, leading is 1
+                self.rrc_segments[item.segment_id] = msg_content
+                self.first_segment_item = item
+                return None
+            elif item.segment_id == 7:
+                # End of segmented RRC
+                segment_joined = b''
+                for i in range(1, 7):
+                    if i in self.rrc_segments:
+                        segment_joined += self.rrc_segments[i]
+                segment_joined += msg_content
+                msg_content = segment_joined
+                self.rrc_segments = dict()
+                self.first_segment_item = None
 
         if pkt_ver in (0x09, 0x0c):
             rrc_type_map = {

@@ -32,6 +32,9 @@ class DiagLteLogParser:
             self.display_format = 'x'
             self.gsmtapv3 = False
 
+        self.rrc_segments = dict()
+        self.first_segment_item = None
+
         self.no_process = {
         }
 
@@ -1097,7 +1100,7 @@ class DiagLteLogParser:
         item_struct = namedtuple('QcDiagLteRrcOtaPacket', 'rrc_rel_maj rrc_rel_min rbid pci earfcn sfn_subfn pdu_num len')
         item_struct_v5 = namedtuple('QcDiagLteRrcOtaPacketV5', 'rrc_rel_maj rrc_rel_min rbid pci earfcn sfn_subfn pdu_num sib_mask len')
         item_struct_v25 = namedtuple('QcDiagLteRrcOtaPacketV25', 'rrc_rel_maj rrc_rel_min nr_rrc_rel_maj nr_rrc_rel_min rbid pci earfcn sfn_subfn pdu_num sib_mask len')
-        item_struct_v30 = namedtuple('QcDiagLteRrcOtaPacketV30', 'rrc_rel_maj rrc_rel_min nr_rrc_rel_maj nr_rrc_rel_min rbid pci earfcn sfn_subfn pdu_num sib_mask len unk1 unk2 unk3')
+        item_struct_v30 = namedtuple('QcDiagLteRrcOtaPacketV30', 'rrc_rel_maj rrc_rel_min nr_rrc_rel_maj nr_rrc_rel_min rbid pci earfcn sfn_subfn pdu_num sib_mask len unk1 unk2 segment_id')
         item = None
 
         if pkt_version >= 30:
@@ -1126,6 +1129,26 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(msg_content), item.len))
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
+
+        if pkt_version >= 30:
+            if item.segment_id == 0:
+                # Not segmented RRC, check previously cached
+                pass
+            elif item.segment_id in range(1, 7):
+                # Part of the segment, leading is 1
+                self.rrc_segments[item.segment_id] = msg_content
+                self.first_segment_item = item
+                return None
+            elif item.segment_id == 7:
+                # End of segmented RRC
+                segment_joined = b''
+                for i in range(1, 7):
+                    if i in self.rrc_segments:
+                        segment_joined += self.rrc_segments[i]
+                segment_joined += msg_content
+                msg_content = segment_joined
+                self.rrc_segments = dict()
+                self.first_segment_item = None
 
         sfn_subfn_bits = bitstring.Bits(uint=item.sfn_subfn, length=16)
         subfn = sfn_subfn_bits[0:4].uint
