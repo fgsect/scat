@@ -1204,8 +1204,8 @@ class DiagLteLogParser:
                 8: (t_v2.UL_CCCH, t_v3.UL_CCCH),
                 9: (t_v2.UL_DCCH, t_v3.UL_DCCH)
             }
-        elif pkt_version in (0x13, 0x1a, 0x1b, 0x1e):
-            # RRC Packet v19, v26, v27, v30
+        elif pkt_version in (0x13, 0x1a, 0x1b, 0x1d, 0x1e):
+            # RRC Packet v19, v26, v27, v29, v30
             rrc_subtype_map = {
                 1: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
                 3: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
