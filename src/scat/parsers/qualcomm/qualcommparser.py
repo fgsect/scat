@@ -5,6 +5,21 @@
 # Part of the source code:
 # (C) 2013-2016 by Harald Welte <laforge@gnumonks.org>
 
+from collections import namedtuple
+from inspect import currentframe, getframeinfo
+from packaging import version
+from pathlib import Path
+import binascii
+import bitstring
+import datetime
+import logging
+import os, sys
+import re
+import scat.util as util
+import struct
+import uuid
+import zlib
+
 from scat.parsers.qualcomm import diagcmd
 from scat.parsers.qualcomm.diaggsmlogparser import DiagGsmLogParser
 from scat.parsers.qualcomm.diagwcdmalogparser import DiagWcdmaLogParser
@@ -18,16 +33,15 @@ from scat.parsers.qualcomm.diaglteeventparser import DiagLteEventParser
 from scat.parsers.qualcomm.diaggsmeventparser import DiagGsmEventParser
 from scat.parsers.qualcomm.diagfallbackeventparser import DiagFallbackEventParser
 
-import scat.util as util
-import struct
-import datetime
-import logging
-from collections import namedtuple
-import binascii
-from inspect import currentframe, getframeinfo
-from pathlib import Path
-import os, sys
-import re
+bitstring_ver = version.parse(bitstring.__version__)
+if bitstring_ver >= version.parse('4.2.0'):
+    bitstring.options.lsb0 = True
+elif bitstring_ver >= version.parse('4.0.0'):
+    bitstring.lsb0 = True
+elif bitstring_ver >= version.parse('3.1.7'):
+    bitstring.set_lsb0(True)
+else:
+    raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
 
 class QualcommParser:
     def __init__(self):
@@ -109,6 +123,24 @@ class QualcommParser:
         for p in self.diag_log_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
+    def load_qsr4_hash(self, filename):
+        zlib_content = b''
+        content = b''
+        with open(filename, 'rb') as qsr4_file:
+            header = qsr4_file.read(64)
+            if header[0:4] != b'\x7fQDB':
+                self.logger.log(logging.ERROR, '{} is not a valid QSR4 hash file: magic does not match'.format(filename))
+                return
+            qsr4_uuid = uuid.UUID(bytes=header[4:20])
+            self.logger.log(logging.INFO, 'Loading QSR4 hash file with UUID {}'.format(qsr4_uuid))
+            zlib_content = qsr4_file.read()
+
+        try:
+            content = zlib.decompress(zlib_content)
+        except zlib.error as e:
+            self.logger.log(logging.ERROR, 'Error while decompressing zlib content: {}'.format(e))
+            return
+
     def set_parameter(self, params):
         for p in params:
             if p == 'log_level':
@@ -118,6 +150,7 @@ class QualcommParser:
                 self.parse_msgs = True
             elif p == 'qsr4-hash':
                 self.qsr4_hash_filename = params[p]
+                self.load_qsr4_hash(self.qsr4_hash_filename)
                 self.parse_msgs = True
             elif p == 'events':
                 self.parse_events = params[p]
@@ -708,7 +741,34 @@ class QualcommParser:
     def parse_diag_qsr_ext_msg(self, pkt):
         return None
 
+    qsr4_ext_msg_terse = namedtuple('QcDiagQsr4ExtMsgTerse', 'cmd_code ts_type num_size_args drop_cnt timestamp hash unk')
     def parse_diag_qsr4_ext_msg(self, pkt):
+        if len(pkt) < 18:
+            return None
+        terse = self.qsr4_ext_msg_terse._make(struct.unpack('<BBBBQLH', pkt[0:18]))
+        extra = pkt[18:]
+        arg_num_size = bitstring.Bits(uint=terse.num_size_args, length=8)
+        arg_num = arg_num_size[0:4].uint
+        arg_size = arg_num_size[4:8].uint
+        args = []
+
+        if len(extra) != arg_num * arg_size:
+            self.logger.log(logging.ERROR, 'Argument data size mismatch: expected {}, got {}'.format(arg_num * arg_size, len(extra)))
+            return None
+        if arg_size == 1:
+            args = list(struct.unpack('<' + 'B' * arg_num, extra))
+        elif arg_size == 2:
+            args = list(struct.unpack('<' + 'H' * arg_num, extra))
+        elif arg_size == 3:
+            tmp_args = struct.unpack('3s' * arg_num, extra)
+            args = [bitstring.Bits(bytes=reversed(x)).uint for x in tmp_args]
+        elif arg_size == 4:
+            args = list(struct.unpack('<' + 'L' * arg_num, extra))
+        else:
+            if arg_size != 0:
+                self.logger.log(logging.ERROR, 'Argument data size mismatch: expected {}, got {}'.format(arg_num * arg_size, len(extra)))
+                return None
+
         return None
 
     def parse_diag_version(self, pkt):
