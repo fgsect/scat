@@ -45,7 +45,7 @@ local function check_and_get_dissector(name)
             return Dissector.get(name)
         end
     end
-    warn("Cannot find dissector " .. name .. ", falling back to data")
+    print("Cannot find dissector " .. name .. ", falling back to data")
     return Dissector.get("data")
 end
 
@@ -241,14 +241,14 @@ local gsmtapv3_nr_rrc_subtypes = {
     [0x0216] = { check_and_get_dissector("nr-rrc.sib16"), "SIB16" },
     [0x0217] = { check_and_get_dissector("nr-rrc.sib17"), "SIB17" },
     [0x0218] = { check_and_get_dissector("nr-rrc.sib18"), "SIB18" },
-    -- [0x0219] = { check_and_get_dissector("nr-rrc.sib19"), "SIB19" },
-    -- [0x021a] = { check_and_get_dissector("nr-rrc.sib20"), "SIB20" },
-    -- [0x021b] = { check_and_get_dissector("nr-rrc.sib21"), "SIB21" },
-    -- [0x021c] = { check_and_get_dissector("nr-rrc.sib22"), "SIB22" },
-    -- [0x021d] = { check_and_get_dissector("nr-rrc.sib23"), "SIB23" },
-    -- [0x021e] = { check_and_get_dissector("nr-rrc.sib24"), "SIB24" },
-    -- [0x021f] = { check_and_get_dissector("nr-rrc.sib25"), "SIB25" },
-    -- [0x0220] = { check_and_get_dissector("nr-rrc.sib17bis"), "SIB17bis" }
+    [0x0219] = { check_and_get_dissector("nr-rrc.sib19"), "SIB19" },
+    [0x021a] = { check_and_get_dissector("nr-rrc.sib20"), "SIB20" },
+    [0x021b] = { check_and_get_dissector("nr-rrc.sib21"), "SIB21" },
+    [0x021c] = { check_and_get_dissector("nr-rrc.sib22"), "SIB22" },
+    [0x021d] = { check_and_get_dissector("nr-rrc.sib23"), "SIB23" },
+    [0x021e] = { check_and_get_dissector("nr-rrc.sib24"), "SIB24" },
+    [0x021f] = { check_and_get_dissector("nr-rrc.sib25"), "SIB25" },
+    [0x0220] = { check_and_get_dissector("nr-rrc.sib17bis"), "SIB17bis" }
 }
 
 local gsmtapv3_gsm_band_indicators = {
