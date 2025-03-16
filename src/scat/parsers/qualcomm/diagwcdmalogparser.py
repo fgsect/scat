@@ -1,14 +1,14 @@
 #!/usr/bin/env python3
 
-import struct
+from collections import namedtuple
+import binascii
 import calendar
 import logging
 import math
-from collections import namedtuple
-import binascii
+import struct
 
-import scat.util as util
 import scat.parsers.qualcomm.diagcmd as diagcmd
+import scat.util as util
 
 class DiagWcdmaLogParser:
     def __init__(self, parent):
