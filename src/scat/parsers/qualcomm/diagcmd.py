@@ -5,22 +5,27 @@ import struct
 # Diag command constants
 # Origin: http://cgit.osmocom.org/osmo-qcdiag/tree/src/protocol/diagcmd.h
 
-DIAG_VERNO_F = 0x00
-DIAG_STATUS_F = 0x0c
-DIAG_LOG_F = 0x10            # Log packet Request/Reponse
-DIAG_DIAG_VER_F = 0x1c       # Version response
-DIAG_TS_F = 0x1d
-DIAG_SUBSYS_CMD_F = 0x4b
-DIAG_EVENT_REPORT_F = 0x60   # Static Event reporting
-DIAG_STATUS_SNAPSHOT_F = 0x63
-DIAG_LOG_CONFIG_F = 0x73     # Logging configuration packet
-DIAG_EXT_MSG_F = 0x79        # Request for extended message report
-DIAG_EXT_BUILD_ID_F = 0x7c
-DIAG_EXT_MSG_CONFIG_F = 0x7d # Request for Extended message report
-DIAG_SUBSYS_CMD_VER_2_F = 0x80
-DIAG_QSR_EXT_MSG_TERSE_F = 0x92  # QSR extended messages
+DIAG_VERNO_F              = 0x00
+DIAG_STATUS_F             = 0x0c
+DIAG_LOG_F                = 0x10 # Log packet Request/Reponse
+DIAG_BAD_CMD_F            = 0x13
+DIAG_DIAG_VER_F           = 0x1c # Version response
+DIAG_TS_F                 = 0x1d
+DIAG_SUBSYS_CMD_F         = 0x4b
+DIAG_EVENT_REPORT_F       = 0x60 # Static Event reporting
+DIAG_STATUS_SNAPSHOT_F    = 0x63
+DIAG_LOG_CONFIG_F         = 0x73 # Logging configuration packet
+DIAG_EXT_MSG_F            = 0x79 # Request for extended message report
+DIAG_EXT_BUILD_ID_F       = 0x7c
+DIAG_EXT_MSG_CONFIG_F     = 0x7d # Request for Extended message report
+DIAG_SUBSYS_CMD_VER_2_F   = 0x80
+DIAG_EVENT_MASK_GET_F     = 0x81
+DIAG_EVENT_MASK_SET_F     = 0x82
+DIAG_QSR_EXT_MSG_TERSE_F  = 0x92 # QSR extended messages
+DIAG_MULTI_RADIO_CMD_F    = 0x98 # Found on newer dual SIMs
 DIAG_QSR4_EXT_MSG_TERSE_F = 0x99 # QSR4 extended messages
-DIAG_MULTI_RADIO_CMD_F = 0x98    # Found on newer dual SIMs
+DIAG_MSG_SMALL_F          = 0x9c
+DIAG_QSH_TRACE_PAYLOAD_F  = 0x9d
 
 DIAG_SUBSYS_ID_1X = 0x01
 DIAG_SUBSYS_ID_WCDMA = 0x04
