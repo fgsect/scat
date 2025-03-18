@@ -227,9 +227,13 @@ class QualcommParser:
                 self.logger.setLevel(params[p])
             elif p == 'qsr-hash':
                 self.qsr_hash_filename = params[p]
+                if not self.qsr4_hash_filename:
+                    continue
                 self.parse_msgs = True
             elif p == 'qsr4-hash':
                 self.qsr4_hash_filename = params[p]
+                if not self.qsr4_hash_filename:
+                    continue
                 try:
                     qsr_hash_loaded = self.load_qsr4_hash(self.qsr4_hash_filename)
                 except ValueError as e:
