@@ -423,29 +423,31 @@ class QualcommParser:
                     self.logger.log(logging.DEBUG, util.xxd(pkt))
             pkt = pkt[:-2]
 
-        if pkt[0] == diagcmd.DIAG_LOG_F:
+        if pkt[0] == diagcmd.DIAG_VERNO_F:
+            return self.parse_diag_version(pkt)
+        elif pkt[0] == diagcmd.DIAG_LOG_F:
             return self.parse_diag_log(pkt, args)
         elif pkt[0] == diagcmd.DIAG_EVENT_REPORT_F and self.parse_events:
             return self.parse_diag_event(pkt)
-        elif pkt[0] == diagcmd.DIAG_EXT_MSG_F and self.parse_msgs:
-            return self.parse_diag_ext_msg(pkt)
-        elif pkt[0] == diagcmd.DIAG_QSR_EXT_MSG_TERSE_F and self.parse_msgs:
-            return self.parse_diag_qsr_ext_msg(pkt)
-        elif pkt[0] == diagcmd.DIAG_QSR4_EXT_MSG_TERSE_F and self.parse_msgs:
-            return self.parse_diag_qsr4_ext_msg(pkt)
-        elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
-            return self.parse_diag_multisim(pkt)
-        elif pkt[0] == diagcmd.DIAG_VERNO_F:
-            return self.parse_diag_version(pkt)
-        elif pkt[0] == diagcmd.DIAG_EXT_BUILD_ID_F:
-            return self.parse_diag_ext_build_id(pkt)
         elif pkt[0] == diagcmd.DIAG_LOG_CONFIG_F:
             return self.parse_diag_log_config(pkt)
+        elif pkt[0] == diagcmd.DIAG_EXT_MSG_F and self.parse_msgs:
+            return self.parse_diag_ext_msg(pkt)
+        elif pkt[0] == diagcmd.DIAG_EXT_BUILD_ID_F:
+            return self.parse_diag_ext_build_id(pkt)
         elif pkt[0] == diagcmd.DIAG_EXT_MSG_CONFIG_F:
             return self.parse_diag_ext_msg_config(pkt)
+        elif pkt[0] == diagcmd.DIAG_QSR_EXT_MSG_TERSE_F and self.parse_msgs:
+            return self.parse_diag_qsr_ext_msg(pkt)
+        elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
+            return self.parse_diag_multisim(pkt)
+        elif pkt[0] == diagcmd.DIAG_QSR4_EXT_MSG_TERSE_F and self.parse_msgs:
+            return self.parse_diag_qsr4_ext_msg(pkt)
+        elif pkt[0] == diagcmd.DIAG_QSH_TRACE_PAYLOAD_F and self.parse_msgs:
+            return self.parse_diag_qsh_trace_msg(pkt)
         else:
-            #print("Not parsing non-Log packet %02x" % pkt[0])
-            #util.xxd(pkt)
+            self.logger.log(logging.DEBUG, 'Not parsing DIAG command {:#02x}'.format(pkt[0]))
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return None
 
     def run_diag(self, writer_qmdl = None):
@@ -625,32 +627,6 @@ class QualcommParser:
 
     log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
 
-    def parse_diag_log(self, pkt, args=None):
-        """Parses the DIAG_LOG_F packet.
-
-        Parameters:
-        pkt (bytes): DIAG_LOG_F data without trailing CRC
-        args (dict): 'radio_id' (int): used SIM or subscription ID on multi-SIM devices
-        """
-        if len(pkt) < 16:
-            return
-
-        pkt_header = self.log_header._make(struct.unpack('<BBHHHQ', pkt[0:16]))
-        pkt_body = pkt[16:]
-
-        if len(pkt_body) != (pkt_header.length2 - 12):
-            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length2, len(pkt_body)+12))
-
-        if pkt_header.log_id in self.process.keys():
-            return self.process[pkt_header.log_id](pkt_header, pkt_body, args)
-        elif pkt_header.log_id in self.no_process.keys():
-            #print("Not handling XDM Header 0x%04x (%s)" % (xdm_hdr[1], self.no_process[xdm_hdr[1]]))
-            return None
-        else:
-            #print("Unhandled XDM Header 0x%04x" % xdm_hdr[1])
-            #util.xxd(pkt)
-            return None
-
     def _snprintf(self, fmtstr, fmtargs):
         # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x', '%p'}
         cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXp])|%%)')
@@ -697,66 +673,46 @@ class QualcommParser:
 
         return log_content_formatted
 
-    ext_msg_header = namedtuple('QcDiagExtMsgHeader', 'cmd_code ts_type num_args drop_cnt timestamp line_no message_subsys_id reserved1')
+    def parse_diag_version(self, pkt):
+        header = namedtuple('QcDiagVersion', 'compile_date compile_time release_date release_time chipset')
+        if len(pkt) < 47:
+            return None
+        ver_info = header._make(struct.unpack('<11s 8s 11s 8s 8s', pkt[1:47]))
 
-    def parse_diag_ext_msg(self, pkt):
-        """Parses the DIAG_EXT_MSG_F packet.
+        stdout = 'Compile: {}/{}, Release: {}/{}, Chipset: {}'.format(
+            ver_info.compile_date.decode(errors="backslashreplace"),
+            ver_info.compile_time.decode(errors="backslashreplace"),
+            ver_info.release_date.decode(errors="backslashreplace"),
+            ver_info.release_time.decode(errors="backslashreplace"),
+            ver_info.chipset.decode(errors="backslashreplace"))
 
-        Parameters:
-        pkt (bytes): DIAG_EXT_MSG_F data without trailing CRC
-        """
-        # 79 | 00 | 00 | 00 | 00 00 1c fc 0f 16 e4 00 | e6 04 | 94 13 | 02 00 00 00
-        # cmd_code, ts_type, num_args, drop_cnt, TS, Line number, Message subsystem ID, ?
-        # Message: two null-terminated strings, one for log and another for filename
-        pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        pkt_args = list(struct.unpack('<{}L'.format(pkt_header.num_args), pkt[20:20+4*pkt_header.num_args]))
-        pkt_body = pkt[20 + 4 * pkt_header.num_args:]
-        pkt_body = pkt_body.rstrip(b'\0').rsplit(b'\0', maxsplit=1)
+        return {'stdout': stdout}
 
-        if len(pkt_body) == 2:
-            src_fname = pkt_body[1]
-            log_content = pkt_body[0].decode(errors='backslashreplace')
-        else:
-            src_fname = b''
-            log_content = pkt_body[0].decode(errors='backslashreplace')
-
-        log_content_formatted = self._snprintf(log_content, pkt_args)
-
-        osmocore_log_hdr = util.create_osmocore_logging_header(
-            timestamp = pkt_ts,
-            subsys_name = str(pkt_header.message_subsys_id).encode('utf-8'),
-            filename = src_fname,
-            line_number = pkt_header.line_no
-        )
-
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.OSMOCORE_LOG)
-
-        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
-
-    multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
-
-    def parse_diag_multisim(self, pkt):
-        """Parses the DIAG_MULTI_RADIO_CMD_F packet. This function calls nexted DIAG log packet with correct radio ID attached.
+    def parse_diag_log(self, pkt, args=None):
+        """Parses the DIAG_LOG_F packet.
 
         Parameters:
-        pkt (bytes): DIAG_MULTI_RADIO_CMD_F data without trailing CRC
+        pkt (bytes): DIAG_LOG_F data without trailing CRC
+        args (dict): 'radio_id' (int): used SIM or subscription ID on multi-SIM devices
         """
-        # 98 | 01 | 00 00 | 01 00 00 00 -> Subscription ID=1
-        # 98 | 01 | 00 00 | 02 00 00 00 -> Subscription ID=2
-        # Subscription ID is base 1, 0 or -1 is also observed (we treat it as 1)
-        if len(pkt) < 8:
+        if len(pkt) < 16:
             return
 
-        pkt_header = self.multisim_header._make(struct.unpack('<BBHL', pkt[0:8]))
-        pkt_body = pkt[8:]
+        pkt_header = self.log_header._make(struct.unpack('<BBHHHQ', pkt[0:16]))
+        pkt_body = pkt[16:]
 
-        ret = self.parse_diag(pkt_body, hdlc_encoded=False, has_crc=False, args={'radio_id': self.sanitize_radio_id(pkt_header.radio_id)})
-        if type(ret) == dict:
-            ret['radio_id'] = self.sanitize_radio_id(pkt_header.radio_id)
-        return ret
+        if len(pkt_body) != (pkt_header.length2 - 12):
+            self.logger.log(logging.WARNING, "Packet length mismatch: expected {}, got {}".format(pkt_header.length2, len(pkt_body)+12))
+
+        if pkt_header.log_id in self.process.keys():
+            return self.process[pkt_header.log_id](pkt_header, pkt_body, args)
+        elif pkt_header.log_id in self.no_process.keys():
+            #print("Not handling XDM Header 0x%04x (%s)" % (xdm_hdr[1], self.no_process[xdm_hdr[1]]))
+            return None
+        else:
+            #print("Unhandled XDM Header 0x%04x" % xdm_hdr[1])
+            #util.xxd(pkt)
+            return None
 
     event_header = namedtuple('QcDiagEventHeader', 'cmd_code msg_len')
 
@@ -834,8 +790,151 @@ class QualcommParser:
 
         return {'cp': event_pkts, 'ts': ts}
 
+    def parse_diag_log_config(self, pkt):
+        if len(pkt) < 8:
+            return None
+        header = namedtuple('QcDiagLogConfig', 'pkt_id cmd_id')
+        header_val = header._make(struct.unpack('<LL', pkt[0:8]))
+        payload = pkt[8:]
+        stdout = 'Log Config: '
+
+        if header_val.cmd_id == diagcmd.LOG_CONFIG_DISABLE_OP:
+            stdout += 'Disable'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_ID_RANGES_OP:
+            stdout += 'Retrieve ID ranges: '
+            ranges = payload[4:]
+            num_ranges = int(len(ranges)/4)
+            for i in range(num_ranges):
+                val = struct.unpack('<L', ranges[4*i:4*(i+1)])[0]
+                if val > 0:
+                    stdout += '{}: {}, '.format(i, val)
+                    self.log_id_range[i] = val
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_VALID_MASK_OP:
+            stdout += 'Retrieve valid mask'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_SET_MASK_OP:
+            stdout += 'Set mask'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+        elif header_val.cmd_id == diagcmd.LOG_CONFIG_GET_LOGMASK_OP:
+            stdout += 'Get mask'
+            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
+
+        return {'stdout': stdout}
+
+    ext_msg_header = namedtuple('QcDiagExtMsgHeader', 'cmd_code ts_type num_args drop_cnt timestamp line_no message_subsys_id reserved1')
+
+    def parse_diag_ext_msg(self, pkt):
+        """Parses the DIAG_EXT_MSG_F packet.
+
+        Parameters:
+        pkt (bytes): DIAG_EXT_MSG_F data without trailing CRC
+        """
+        # 79 | 00 | 00 | 00 | 00 00 1c fc 0f 16 e4 00 | e6 04 | 94 13 | 02 00 00 00
+        # cmd_code, ts_type, num_args, drop_cnt, TS, Line number, Message subsystem ID, ?
+        # Message: two null-terminated strings, one for log and another for filename
+        pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_args = list(struct.unpack('<{}L'.format(pkt_header.num_args), pkt[20:20+4*pkt_header.num_args]))
+        pkt_body = pkt[20 + 4 * pkt_header.num_args:]
+        pkt_body = pkt_body.rstrip(b'\0').rsplit(b'\0', maxsplit=1)
+
+        if len(pkt_body) == 2:
+            src_fname = pkt_body[1]
+            log_content = pkt_body[0].decode(errors='backslashreplace')
+        else:
+            src_fname = b''
+            log_content = pkt_body[0].decode(errors='backslashreplace')
+
+        log_content_formatted = self._snprintf(log_content, pkt_args)
+
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = pkt_ts,
+            subsys_name = str(pkt_header.message_subsys_id).encode('utf-8'),
+            filename = src_fname,
+            line_number = pkt_header.line_no
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
+
+    def parse_diag_ext_build_id(self, pkt):
+        if len(pkt) < 12:
+            return None
+
+        stdout = 'Build ID: {}'.format(pkt[12:-2].decode(errors='backslashreplace'))
+        return {'stdout': stdout}
+
+    def parse_diag_ext_msg_config(self, pkt):
+        if len(pkt) < 2:
+            return None
+
+        if pkt[1] == 0x01:
+            # Ranges
+            ext_msg_range_header = namedtuple('QcDiagExtMsgRange', 'cmd_code ts_type unk1 num_ranges unk2')
+            if len(pkt) < 8:
+                return None
+            pkt_header = ext_msg_range_header._make(struct.unpack('<BBHHH', pkt[0:8]))
+            stdout = 'Extended message range: '
+            id_ranges = []
+
+            pos = 8
+            if len(pkt) < (8 + 4 * (pkt_header.num_ranges)):
+                return None
+            for i in range(pkt_header.num_ranges):
+                id_range = struct.unpack('<HH', pkt[pos:pos+4])
+                stdout += '{}-{}, '.format(id_range[0], id_range[1])
+                id_ranges.append((id_range[0], id_range[1]))
+                pos += 4
+
+            return {'stdout': stdout, 'id_range': id_ranges}
+        elif pkt[1] == 0x02:
+            # Levels
+            ext_msg_level_header = namedtuple('QcDiagExtMsgLevel', 'cmd_code ts_type start_id end_id unk1')
+            if len(pkt) < 8:
+                return None
+            pkt_header = ext_msg_level_header._make(struct.unpack('<BBHHH', pkt[0:8]))
+            stdout = 'Extended message level: \n'
+            levels = []
+
+            pos = 8
+            if len(pkt) < (8 + 4 * (pkt_header.end_id - pkt_header.start_id + 1)):
+                return None
+            for i in range(pkt_header.end_id - pkt_header.start_id + 1):
+                level = struct.unpack('<L', pkt[pos:pos+4])[0]
+                stdout += 'Message ID {}: {:#x}\n'.format(pkt_header.start_id + i, level)
+                levels.append((pkt_header.start_id + i, level))
+                pos += 4
+
+            return {'stdout': stdout, 'start': pkt_header.start_id, 'end': pkt_header.end_id, 'level': levels}
+
     def parse_diag_qsr_ext_msg(self, pkt):
         return None
+
+    multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
+
+    def parse_diag_multisim(self, pkt):
+        """Parses the DIAG_MULTI_RADIO_CMD_F packet. This function calls nexted DIAG log packet with correct radio ID attached.
+
+        Parameters:
+        pkt (bytes): DIAG_MULTI_RADIO_CMD_F data without trailing CRC
+        """
+        # 98 | 01 | 00 00 | 01 00 00 00 -> Subscription ID=1
+        # 98 | 01 | 00 00 | 02 00 00 00 -> Subscription ID=2
+        # Subscription ID is base 1, 0 or -1 is also observed (we treat it as 1)
+        if len(pkt) < 8:
+            return
+
+        pkt_header = self.multisim_header._make(struct.unpack('<BBHL', pkt[0:8]))
+        pkt_body = pkt[8:]
+
+        ret = self.parse_diag(pkt_body, hdlc_encoded=False, has_crc=False, args={'radio_id': self.sanitize_radio_id(pkt_header.radio_id)})
+        if type(ret) == dict:
+            ret['radio_id'] = self.sanitize_radio_id(pkt_header.radio_id)
+        return ret
 
     qsr4_ext_msg_terse = namedtuple('QcDiagQsr4ExtMsgTerse', 'cmd_code ts_type num_size_args drop_cnt timestamp hash unk')
     def parse_diag_qsr4_ext_msg(self, pkt):
@@ -884,102 +983,8 @@ class QualcommParser:
 
             return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
-    def parse_diag_version(self, pkt):
-        header = namedtuple('QcDiagVersion', 'compile_date compile_time release_date release_time chipset')
-        if len(pkt) < 47:
-            return None
-        ver_info = header._make(struct.unpack('<11s 8s 11s 8s 8s', pkt[1:47]))
-
-        stdout = 'Compile: {}/{}, Release: {}/{}, Chipset: {}'.format(
-            ver_info.compile_date.decode(errors="backslashreplace"),
-            ver_info.compile_time.decode(errors="backslashreplace"),
-            ver_info.release_date.decode(errors="backslashreplace"),
-            ver_info.release_time.decode(errors="backslashreplace"),
-            ver_info.chipset.decode(errors="backslashreplace"))
-
-        return {'stdout': stdout}
-
-    def parse_diag_ext_build_id(self, pkt):
-        if len(pkt) < 12:
-            return None
-
-        stdout = 'Build ID: {}'.format(pkt[12:-2].decode(errors='backslashreplace'))
-        return {'stdout': stdout}
-
-    def parse_diag_log_config(self, pkt):
-        if len(pkt) < 8:
-            return None
-        header = namedtuple('QcDiagLogConfig', 'pkt_id cmd_id')
-        header_val = header._make(struct.unpack('<LL', pkt[0:8]))
-        payload = pkt[8:]
-        stdout = 'Log Config: '
-
-        if header_val.cmd_id == diagcmd.LOG_CONFIG_DISABLE_OP:
-            stdout += 'Disable'
-            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
-        elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_ID_RANGES_OP:
-            stdout += 'Retrieve ID ranges: '
-            ranges = payload[4:]
-            num_ranges = int(len(ranges)/4)
-            for i in range(num_ranges):
-                val = struct.unpack('<L', ranges[4*i:4*(i+1)])[0]
-                if val > 0:
-                    stdout += '{}: {}, '.format(i, val)
-                    self.log_id_range[i] = val
-        elif header_val.cmd_id == diagcmd.LOG_CONFIG_RETRIEVE_VALID_MASK_OP:
-            stdout += 'Retrieve valid mask'
-            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
-        elif header_val.cmd_id == diagcmd.LOG_CONFIG_SET_MASK_OP:
-            stdout += 'Set mask'
-            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
-        elif header_val.cmd_id == diagcmd.LOG_CONFIG_GET_LOGMASK_OP:
-            stdout += 'Get mask'
-            stdout += ', Extra: {}'.format(binascii.hexlify(payload).decode())
-
-        return {'stdout': stdout}
-
-    def parse_diag_ext_msg_config(self, pkt):
-        if len(pkt) < 2:
-            return None
-
-        if pkt[1] == 0x01:
-            # Ranges
-            ext_msg_range_header = namedtuple('QcDiagExtMsgRange', 'cmd_code ts_type unk1 num_ranges unk2')
-            if len(pkt) < 8:
-                return None
-            pkt_header = ext_msg_range_header._make(struct.unpack('<BBHHH', pkt[0:8]))
-            stdout = 'Extended message range: '
-            id_ranges = []
-
-            pos = 8
-            if len(pkt) < (8 + 4 * (pkt_header.num_ranges)):
-                return None
-            for i in range(pkt_header.num_ranges):
-                id_range = struct.unpack('<HH', pkt[pos:pos+4])
-                stdout += '{}-{}, '.format(id_range[0], id_range[1])
-                id_ranges.append((id_range[0], id_range[1]))
-                pos += 4
-
-            return {'stdout': stdout, 'id_range': id_ranges}
-        elif pkt[1] == 0x02:
-            # Levels
-            ext_msg_level_header = namedtuple('QcDiagExtMsgLevel', 'cmd_code ts_type start_id end_id unk1')
-            if len(pkt) < 8:
-                return None
-            pkt_header = ext_msg_level_header._make(struct.unpack('<BBHHH', pkt[0:8]))
-            stdout = 'Extended message level: \n'
-            levels = []
-
-            pos = 8
-            if len(pkt) < (8 + 4 * (pkt_header.end_id - pkt_header.start_id + 1)):
-                return None
-            for i in range(pkt_header.end_id - pkt_header.start_id + 1):
-                level = struct.unpack('<L', pkt[pos:pos+4])[0]
-                stdout += 'Message ID {}: {:#x}\n'.format(pkt_header.start_id + i, level)
-                levels.append((pkt_header.start_id + i, level))
-                pos += 4
-
-            return {'stdout': stdout, 'start': pkt_header.start_id, 'end': pkt_header.end_id, 'level': levels}
+    def parse_diag_qsh_trace_msg(self, pkt):
+        return None
 
 __entry__ = QualcommParser
 
