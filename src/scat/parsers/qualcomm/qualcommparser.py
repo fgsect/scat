@@ -983,7 +983,44 @@ class QualcommParser:
 
             return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
+    qsh_trace_msg_terse = namedtuple('QcDiagQshTraceMsgTerse', 'cmd_code unk1 client_id unk3 arg_count unk5 unk6 unk7 unk_inc hash')
     def parse_diag_qsh_trace_msg(self, pkt):
+        if len(pkt) < 16:
+            return None
+        terse = self.qsh_trace_msg_terse._make(struct.unpack('<B BBBBBBB L L', pkt[0:16]))
+        num_args = terse.arg_count - 0x13
+
+        if terse.hash in self.qsr4_mtrace_content:
+            extra = pkt[16:]
+            assert len(extra)//4 == num_args
+            if num_args > 0:
+                args = list(struct.unpack('<' + 'L' * num_args, extra))
+            else:
+                args = []
+
+            q = self.qsr4_mtrace_content[terse.hash]
+            if q.line.find('|') >= 0:
+                line_num = 0
+                level = 0
+                log_content_formatted = q.line
+            else:
+                line_num = int(q.line)
+                level = int(q.level)
+                log_content_formatted = self._snprintf(q.string, args)
+
+            osmocore_log_hdr = util.create_osmocore_logging_header(
+                level = level,
+                process_name = q.tag,
+                subsys_name = q.client,
+                filename = q.file,
+                line_number = line_num
+            )
+
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+            return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')]}
         return None
 
 __entry__ = QualcommParser
