@@ -135,7 +135,7 @@ class QualcommParser:
             header = qsr4_file.read(64)
             if header[0:4] != b'\x7fQDB':
                 self.logger.log(logging.ERROR, '{} is not a valid QSR4 hash file: magic does not match'.format(filename))
-                return
+                return False
             qsr4_uuid = uuid.UUID(bytes=header[4:20])
             self.logger.log(logging.INFO, 'Loading QSR4 hash file with UUID {}'.format(qsr4_uuid))
             zlib_content = qsr4_file.read()
@@ -144,7 +144,7 @@ class QualcommParser:
             content = zlib.decompress(zlib_content)
         except zlib.error as e:
             self.logger.log(logging.ERROR, 'Error while decompressing zlib content: {}'.format(e))
-            return
+            return False
 
         mode = 0
         tag_oneline_re = re.compile(r'\<(\w*)\>\s*([\w\-=.]*)\s*\<\\(\w*)\>')
@@ -217,7 +217,11 @@ class QualcommParser:
                         # print('{:08x} {}'.format(int(qtrace_str[0]), qtrace_str[1]))
                         self.qsr4_qtrace_str_content[int(qtrace_str[0])] = qtrace_str[1]
 
+        if len(self.qsr4_content) > 0:
+            return True
+
     def set_parameter(self, params):
+        qsr_hash_loaded = False
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
@@ -226,8 +230,10 @@ class QualcommParser:
                 self.parse_msgs = True
             elif p == 'qsr4-hash':
                 self.qsr4_hash_filename = params[p]
-                self.load_qsr4_hash(self.qsr4_hash_filename)
-                self.parse_msgs = True
+                try:
+                    qsr_hash_loaded = self.load_qsr4_hash(self.qsr4_hash_filename)
+                except ValueError as e:
+                    self.logger.log(logging.INFO, 'Error parsing QSR4 hash table: {}'.format(e))
             elif p == 'events':
                 self.parse_events = params[p]
             elif p == 'msgs':
@@ -245,6 +251,8 @@ class QualcommParser:
             elif p == 'gsmtapv3':
                 self.gsmtapv3 = params[p]
 
+        if qsr_hash_loaded:
+            self.parse_msgs = True
         self.update_parameters(self.display_format, self.gsmtapv3)
 
     def sanitize_radio_id(self, radio_id):
