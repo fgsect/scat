@@ -12,6 +12,7 @@ from pathlib import Path
 import binascii
 import bitstring
 import datetime
+import io
 import logging
 import os, sys
 import re
@@ -78,6 +79,10 @@ class QualcommParser:
         self.display_format = 'x'
         self.gsmtapv3 = False
 
+        self.qsr4_content = {}
+        self.qsr4_mtrace_content = {}
+        self.qsr4_qtrace_str_content = {}
+
         self.name = 'qualcomm'
         self.shortname = 'qc'
 
@@ -140,6 +145,77 @@ class QualcommParser:
         except zlib.error as e:
             self.logger.log(logging.ERROR, 'Error while decompressing zlib content: {}'.format(e))
             return
+
+        mode = 0
+        tag_oneline_re = re.compile(r'\<(\w*)\>\s*([\w\-=.]*)\s*\<\\(\w*)\>')
+        tag_open_re = re.compile(r'^\<(\w*)\>$')
+        tag_close_re = re.compile(r'^\<\\(\w*)\>$')
+
+        txt_qsr4_uuid = ''
+        txt_qsr4_version = ''
+        txt_qsr4_baseline = ''
+
+        content_t = namedtuple('Qsr4Content', 'subsys_mask ssid line file string')
+        mtrace_t = namedtuple('Qsr4MtraceContent', 'line level client file tag string')
+        for l in io.BytesIO(content):
+            l = l.decode(errors='backslashreplace').strip()
+
+            if l[0] == '#':
+                continue
+            is_tag_oneline = tag_oneline_re.match(l)
+            if is_tag_oneline:
+                g = is_tag_oneline.groups()
+                if g[0] == g[2] == 'GUID':
+                    txt_qsr4_uuid = uuid.UUID(g[1])
+                elif g[0] == g[2] == 'Version':
+                    txt_qsr4_version = g[1]
+                elif g[0] == g[2] == 'Baseline':
+                    txt_qsr4_baseline = g[1]
+            else:
+                is_tag_open = tag_open_re.match(l)
+                is_tag_close = tag_close_re.match(l)
+                if is_tag_open:
+                    tag = is_tag_open.groups()[0]
+                    if tag == 'Content':
+                        mode = 1
+                    elif tag == 'MtraceContent':
+                        mode = 2
+                    elif tag == 'QtraceStrContent':
+                        mode = 3
+                    else:
+                        raise ValueError('Tag should be one of Content, MtraceContent, QtraceStrContent')
+                elif is_tag_close:
+                    tag = is_tag_close.groups()[0]
+                    if tag == 'Content':
+                        if mode != 1:
+                            raise ValueError('Open and close tag mismatch')
+                    elif tag == 'MtraceContent':
+                        if mode != 2:
+                            raise ValueError('Open and close tag mismatch')
+                    elif tag == 'QtraceStrContent':
+                        if mode != 3:
+                            raise ValueError('Open and close tag mismatch')
+                    mode = 0
+                else:
+                    if mode == 1:
+                        content_str = l.split(':', 5)
+                        content_str[1] = int(content_str[1])
+                        content_str[2] = int(content_str[2])
+                        content_str[3] = int(content_str[3])
+                        x = content_t._make(content_str[1:])
+                        # print('{:08x} {}'.format(int(content_str[0]), x))
+                        self.qsr4_content[int(content_str[0])] = x
+                    elif mode == 2:
+                        mtrace_str = l.split(':', 6)
+                        x = mtrace_t._make(mtrace_str[1:])
+                        # print('{:08x} {}'.format(int(mtrace_str[0]), x))
+                        self.qsr4_mtrace_content[int(mtrace_str[0])] = x
+                        # line: pure int, "int|hex", "|hex"
+                        # tag: pure str, "str|hex", "str|"
+                    elif mode == 3:
+                        qtrace_str = l.split(':', 1)
+                        # print('{:08x} {}'.format(int(qtrace_str[0]), qtrace_str[1]))
+                        self.qsr4_qtrace_str_content[int(qtrace_str[0])] = qtrace_str[1]
 
     def set_parameter(self, params):
         for p in params:
@@ -563,6 +639,52 @@ class QualcommParser:
             #util.xxd(pkt)
             return None
 
+    def _snprintf(self, fmtstr, fmtargs):
+        # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x', '%p'}
+        cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXp])|%%)')
+        cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxXp]')
+        fmt_strs = cfmt.findall(fmtstr)
+        formatted_strs = []
+        log_content_pyfmt = cfmt.sub('{}', fmtstr)
+
+        i = 0
+        if len(fmtargs) != len(fmt_strs):
+            log_content_formatted = fmtstr
+        else:
+            for fmt_str in fmt_strs:
+                fmt_num = ''
+                x = cfmt_nums.match(fmt_str)
+                if x:
+                    fmt_num = x.group(1)
+                if fmt_str == '%%':
+                    formatted_strs.append('%')
+                else:
+                    if fmt_str[-1] in ('x', 'X', 'p'):
+                        if fmt_str[-1] == 'p':
+                            pyfmt_str = '{:' + fmt_num + 'x' + '}'
+                        else:
+                            pyfmt_str = '{:' + fmt_num + fmt_str[-1] + '}'
+                        formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+                    elif fmt_str[-1] in ('d'):
+                        pyfmt_str = '{:' + fmt_num + '}'
+                        if fmtargs[i] > 2147483648:
+                            formatted_strs.append(pyfmt_str.format(-(4294967296 - fmtargs[i])))
+                        else:
+                            formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+                    else:
+                        pyfmt_str = '{:' + fmt_num + '}'
+                        formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+                i += 1
+            try:
+                log_content_formatted = log_content_pyfmt.format(*formatted_strs)
+            except:
+                log_content_formatted = fmtstr
+                if len(fmtargs) > 0:
+                    log_content_formatted += ", args="
+                    log_content_formatted += ', '.join(['0x{:x}'.format(x) for x in fmtargs])
+
+        return log_content_formatted
+
     ext_msg_header = namedtuple('QcDiagExtMsgHeader', 'cmd_code ts_type num_args drop_cnt timestamp line_no message_subsys_id reserved1')
 
     def parse_diag_ext_msg(self, pkt):
@@ -587,45 +709,7 @@ class QualcommParser:
             src_fname = b''
             log_content = pkt_body[0].decode(errors='backslashreplace')
 
-        # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x'}
-        cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxX])|%%)')
-        cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxX]')
-        fmt_strs = cfmt.findall(log_content)
-        formatted_strs = []
-        log_content_pyfmt = cfmt.sub('{}', log_content)
-
-        i = 0
-        if len(pkt_args) != len(fmt_strs):
-            log_content_formatted = log_content
-        else:
-            for fmt_str in fmt_strs:
-                fmt_num = ''
-                x = cfmt_nums.match(fmt_str)
-                if x:
-                    fmt_num = x.group(1)
-                if fmt_str == '%%':
-                    formatted_strs.append('%')
-                else:
-                    if fmt_str[-1] in ('x', 'X'):
-                        pyfmt_str = '{:' + fmt_num + fmt_str[-1] + '}'
-                        formatted_strs.append(pyfmt_str.format(pkt_args[i]))
-                    elif fmt_str[-1] in ('d'):
-                        pyfmt_str = '{:' + fmt_num + '}'
-                        if pkt_args[i] > 2147483648:
-                            formatted_strs.append(pyfmt_str.format(-(4294967296 - pkt_args[i])))
-                        else:
-                            formatted_strs.append(pyfmt_str.format(pkt_args[i]))
-                    else:
-                        pyfmt_str = '{:' + fmt_num + '}'
-                        formatted_strs.append(pyfmt_str.format(pkt_args[i]))
-                i += 1
-            try:
-                log_content_formatted = log_content_pyfmt.format(*formatted_strs)
-            except:
-                log_content_formatted = log_content
-                if len(pkt_args) > 0:
-                    log_content_formatted += ", args="
-                    log_content_formatted += ', '.join(['0x{:x}'.format(x) for x in pkt_args])
+        log_content_formatted = self._snprintf(log_content, pkt_args)
 
         osmocore_log_hdr = util.create_osmocore_logging_header(
             timestamp = pkt_ts,
@@ -746,6 +830,7 @@ class QualcommParser:
         if len(pkt) < 18:
             return None
         terse = self.qsr4_ext_msg_terse._make(struct.unpack('<BBBBQLH', pkt[0:18]))
+        pkt_ts = util.parse_qxdm_ts(terse.timestamp)
         extra = pkt[18:]
         arg_num_size = bitstring.Bits(uint=terse.num_size_args, length=8)
         arg_num = arg_num_size[0:4].uint
@@ -769,7 +854,23 @@ class QualcommParser:
                 self.logger.log(logging.ERROR, 'Argument data size mismatch: expected {}, got {}'.format(arg_num * arg_size, len(extra)))
                 return None
 
-        return None
+        if terse.hash in self.qsr4_content:
+            q = self.qsr4_content[terse.hash]
+
+            osmocore_log_hdr = util.create_osmocore_logging_header(
+                timestamp = pkt_ts,
+                subsys_name = '{}/{:x}'.format(q.ssid, q.subsys_mask),
+                filename = q.file,
+                line_number = q.line
+            )
+
+            log_content_formatted = self._snprintf(q.string, args)
+
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+            return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
     def parse_diag_version(self, pkt):
         header = namedtuple('QcDiagVersion', 'compile_date compile_time release_date release_time chipset')
