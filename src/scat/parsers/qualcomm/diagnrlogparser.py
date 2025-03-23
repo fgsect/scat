@@ -290,7 +290,11 @@ class DiagNrLogParser:
             return None
 
         if pkt_ver >= 0x11:
-            ncgi = bitstring.Bits(uint=item.ncgi, length=60)
+            try:
+                ncgi = bitstring.Bits(uint=item.ncgi, length=60)
+            except bitstring.exceptions.CreationError:
+                # Telit FN990 and others: invalid or logically unfit NR CGI is created, which does not fit in 60 bytes
+                ncgi = None
         else:
             ncgi = None
 
