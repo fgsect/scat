@@ -52,7 +52,7 @@ class Diag1xLogParser:
             i(x.LOG_IMS_RTCP): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x156A),
             i(x.LOG_IMS_SIP_MESSAGE): lambda x, y, z: self.parse_sip_message(x, y, z),
             i(x.LOG_IMS_VOICE_CALL_STATS): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x17F2),
-            i(x.LOG_IMS_VOLTE_SESSION_SETUP): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x1830),
+            i(x.LOG_IMS_VOLTE_SESSION_SETUP): lambda x, y, z: self.parse_ims_session_setup(x, y, z),
             i(x.LOG_IMS_VOLTE_SESSION_END): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x1831),
             i(x.LOG_IMS_REGISTRATION): lambda x, y, z: self.parse_ims_registration(x, y, z),
 
@@ -229,6 +229,46 @@ class Diag1xLogParser:
         self.ip_id += 1
 
         return {'up': [ip_hdr+udp_hdr+sip_body], 'ts': pkt_ts}
+
+    def parse_ims_session_setup(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        version = pkt_body[0]
+
+        if version != 0x02:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown IMS Registration packet version {}'.format(version))
+                return
+
+        pos = 1
+        dialed_str_len = pkt_body[pos]
+        dialed_str = pkt_body[pos+1:pos+1+dialed_str_len].decode().strip('\x00')
+        pos += (1 + dialed_str_len)
+
+        direction = pkt_body[pos]
+        pos += 1
+
+        call_id_len = pkt_body[pos]
+        call_id = pkt_body[pos+1:pos+1+call_id_len].decode().strip('\x00')
+        pos += (1 + call_id_len)
+
+        call_type = struct.unpack('<L', pkt_body[pos:pos+4])[0]
+        pos += 4
+
+        orig_url_len = pkt_body[pos]
+        orig_url = pkt_body[pos+1:pos+1+orig_url_len].decode().strip('\x00')
+        pos += (1 + orig_url_len)
+
+        term_url_len = pkt_body[pos]
+        term_url = pkt_body[pos+1:pos+1+term_url_len].decode().strip('\x00')
+        pos += (1 + term_url_len)
+
+        ret = struct.unpack('<HLB', pkt_body[pos:pos+7]) # result, setup_delay, unk
+        pos += 7
+
+        stdout = 'IMS Session Setup: Direction: {}, Dialed String: {}, Call-Id: {}, Origin: {}, Destination: {}, Result: {}, Setup Delay: {}'.format(
+            direction, dialed_str, call_id, orig_url, term_url, ret[0], ret[1])
+
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_ims_registration(self, pkt_header, pkt_body, args):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
