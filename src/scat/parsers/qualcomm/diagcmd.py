@@ -50,10 +50,45 @@ def diag_log_get_1x_item_id(x):
 
 @unique
 class diag_log_code_1x(IntEnum):
+    # SIM
     LOG_UIM_DATA_C = 0x98                                         # 0x1098 RUIM Debug
-    LOG_INTERNAL_CORE_DUMP_C = 0x158                              # 0x1158 Internal - Core Dump
-    LOG_DATA_PROTOCOL_LOGGING_C = 0x1eb                           # 0x11EB Protocol Services Data
     LOG_GENERIC_SIM_TOOLKIT_TASK_C = 0x272                        # 0x1272 Generic SIM Toolkit Task
+    LOG_UIM_DS_DATA_C = 0x4ce                                     # 0x14CE UIM DS Data
+
+    # IP
+    LOG_DATA_PROTOCOL_LOGGING_C = 0x1eb                           # 0x11EB Protocol Services Data
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C = 0x572 # 0x1572 Network IP Rm Tx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C = 0x573 # 0x1573 Network IP Rm Rx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_FULL_C = 0x574     # 0x1574 Network IP Rm Tx Full
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_FULL_C = 0x575     # 0x1575 Network IP Rm Rx Full
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_80_BYTES_C = 0x576 # 0x1576 Network IP Um Tx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_80_BYTES_C = 0x577 # 0x1577 Network IP Um Rx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_FULL_C = 0x578     # 0x1578 Network IP Um Tx Full
+    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_FULL_C = 0x579     # 0x1579 Network IP Um Rx Full
+    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_80_BYTES_C = 0x57a       # 0x157A Link Rm Tx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_80_BYTES_C = 0x57b       # 0x157B Link Rm Rx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_FULL_C = 0x57c           # 0x157C Link Rm Tx Full
+    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_FULL_C = 0x57d           # 0x157D Link Rm Rx Full
+    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_80_BYTES_C = 0x57e       # 0x157E Link Um Tx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_80_BYTES_C = 0x57f       # 0x157F Link Um Rx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_FULL_C = 0x580           # 0x1580 Link Um Tx Full
+    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_FULL_C = 0x581           # 0x1581 Link Um Rx Full
+    LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_80_BYTES_C = 0x582       # 0x1582 Flow Rm Tx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_FULL_C = 0x583           # 0x1583 Flow Rm Tx Full
+    LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C = 0x584       # 0x1584 Flow Um Tx 80 Bytes
+    LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C = 0x585           # 0x1585 Flow Um Tx Full
+
+    # IMS
+    LOG_IMS_RTP_SN_PAYLOAD = 0x568                                # 0x1568 IMS RTP SN and Payload
+    LOG_IMS_RTP_PACKET_LOSS = 0x569                               # 0x1569 IMS RTP Packet Loss
+    LOG_IMS_RTCP = 0x56A                                          # 0x156A IMS RTCP
+    LOG_IMS_SIP_MESSAGE = 0x56E                                   # 0x156E IMS SIP Message
+    LOG_IMS_VOICE_CALL_STATS = 0x7F2                              # 0x17F2 IMS Voice Call Statistics
+    LOG_IMS_VOLTE_SESSION_SETUP = 0x830                           # 0x1830 IMS VoLTE Session Setup
+    LOG_IMS_VOLTE_SESSION_END = 0x831                             # 0x1831 IMS VoLTE Session End
+    LOG_IMS_REGISTRATION = 0x832                                  # 0x1832 IMS Registration
+
+    # QMI
     LOG_QMI_LINK_01_RX_MSG_C = 0x38e                              # 0x138E QMI Link 1 RX Message
     LOG_QMI_LINK_01_TX_MSG_C = 0x38f                              # 0x138E QMI Link 1 TX Message
     LOG_QMI_LINK_02_RX_MSG_C = 0x390                              # 0x138E QMI Link 2 RX Message
@@ -96,30 +131,11 @@ class diag_log_code_1x(IntEnum):
     LOG_QMI_LINK_20_TX_MSG_C = 0x812                              # 0x138E QMI Link 20 TX Message
     LOG_QMI_LINK_21_RX_MSG_C = 0x92b                              # 0x138E QMI Link 21 RX Message
     LOG_QMI_LINK_21_TX_MSG_C = 0x02c                              # 0x138E QMI Link 21 TX Message
-    LOG_UIM_DS_DATA_C = 0x4ce                                     # 0x14CE UIM DS Data
     LOG_QMI_CALL_FLOW_C = 0x4cf                                   # 0x14CF QMI Call Flow
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_80_BYTES_C = 0x572 # 0x1572 Network IP Rm Tx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_80_BYTES_C = 0x573 # 0x1573 Network IP Rm Rx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_TX_FULL_C = 0x574     # 0x1574 Network IP Rm Tx Full
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_RM_RX_FULL_C = 0x575     # 0x1575 Network IP Rm Rx Full
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_80_BYTES_C = 0x576 # 0x1576 Network IP Um Tx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_80_BYTES_C = 0x577 # 0x1577 Network IP Um Rx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_TX_FULL_C = 0x578     # 0x1578 Network IP Um Tx Full
-    LOG_DATA_PROTOCOL_LOGGING_NETWORK_IP_UM_RX_FULL_C = 0x579     # 0x1579 Network IP Um Rx Full
-    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_80_BYTES_C = 0x57a       # 0x157A Link Rm Tx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_80_BYTES_C = 0x57b       # 0x157B Link Rm Rx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_TX_FULL_C = 0x57c           # 0x157C Link Rm Tx Full
-    LOG_DATA_PROTOCOL_LOGGING_LINK_RM_RX_FULL_C = 0x57d           # 0x157D Link Rm Rx Full
-    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_80_BYTES_C = 0x57e       # 0x157E Link Um Tx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_80_BYTES_C = 0x57f       # 0x157F Link Um Rx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_TX_FULL_C = 0x580           # 0x1580 Link Um Tx Full
-    LOG_DATA_PROTOCOL_LOGGING_LINK_UM_RX_FULL_C = 0x581           # 0x1581 Link Um Rx Full
-    LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_80_BYTES_C = 0x582       # 0x1582 Flow Rm Tx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_FLOW_RM_TX_FULL_C = 0x583           # 0x1583 Flow Rm Tx Full
-    LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_80_BYTES_C = 0x584       # 0x1584 Flow Um Tx 80 Bytes
-    LOG_DATA_PROTOCOL_LOGGING_FLOW_UM_TX_FULL_C = 0x585           # 0x1585 Flow Um Tx Full
     LOG_QMI_SUPPORTED_INTERFACES_C = 0x588                        # 0x1588 QMI Supported Interfaces
-    LOG_IMS_SIP_MESSAGE = 0x56E                                   # 0x156E IMS SIP Message
+
+    # General
+    LOG_INTERNAL_CORE_DUMP_C = 0x158                              # 0x1158 Internal - Core Dump
 
 # Origin: http://cgit.osmocom.org/osmo-qcdiag/tree/src/protocol/diag_log_wcdma.h
 def diag_log_get_wcdma_item_id(x):
