@@ -47,7 +47,14 @@ class Diag1xLogParser:
             i(x.LOG_DATA_PROTOCOL_LOGGING_C): lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
 
             # IMS
+            i(x.LOG_IMS_RTP_SN_PAYLOAD): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x1568),
+            i(x.LOG_IMS_RTP_PACKET_LOSS): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x1569),
+            i(x.LOG_IMS_RTCP): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x156A),
             i(x.LOG_IMS_SIP_MESSAGE): lambda x, y, z: self.parse_sip_message(x, y, z),
+            i(x.LOG_IMS_VOICE_CALL_STATS): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x17F2),
+            i(x.LOG_IMS_VOLTE_SESSION_SETUP): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x1830),
+            i(x.LOG_IMS_VOLTE_SESSION_END): lambda x, y, z: self.parse_1x_stub(x, y, z, 0x1831),
+            i(x.LOG_IMS_REGISTRATION): lambda x, y, z: self.parse_ims_registration(x, y, z),
 
             # QMI
             # i(x.LOG_QMI_LINK_01_RX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 1, False),
@@ -103,7 +110,7 @@ class Diag1xLogParser:
     def parse_1x_stub(self, pkt_ts, pkt, radio_id, item_id):
         if self.parent:
             self.parent.logger.log(logging.WARNING, "DIAG_1x_STUB: {:#x}".format(item_id))
-            self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt).decode()))
+            self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt)))
 
     # SIM
     def parse_sim(self, pkt_header, pkt_body, args, sim_id):
@@ -222,6 +229,36 @@ class Diag1xLogParser:
         self.ip_id += 1
 
         return {'up': [ip_hdr+udp_hdr+sip_body], 'ts': pkt_ts}
+
+    def parse_ims_registration(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        version = pkt_body[0]
+
+        if version != 0x01:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown IMS Registration packet version {}'.format(version))
+                return
+
+        reg_type = pkt_body[1]
+        pos = 2
+        call_id_len = pkt_body[pos]
+        call_id = pkt_body[pos+1:pos+1+call_id_len].decode().strip('\x00')
+        pos += (1 + call_id_len)
+
+        request_uri_len = pkt_body[pos]
+        request_uri = pkt_body[pos+1:pos+1+request_uri_len].decode().strip('\x00')
+        pos += (1 + request_uri_len)
+
+        to_len = pkt_body[pos]
+        to = pkt_body[pos+1:pos+1+to_len].decode().strip('\x00')
+        pos += (1 + to_len)
+
+        result = struct.unpack('<H', pkt_body[pos:pos+2])[0]
+
+        stdout = 'IMS Registration: Type: {}, Request URI: {}, Call-Id: {}, To: {}, Result: {}'.format(reg_type,
+            request_uri, call_id, to, result)
+
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     # QMI
     def parse_qmi_message(self, pkt_header, pkt_body, args, qmi_port, is_tx):
