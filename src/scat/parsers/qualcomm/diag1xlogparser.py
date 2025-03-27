@@ -40,8 +40,8 @@ class Diag1xLogParser:
         x = diagcmd.diag_log_code_1x
         self.process = {
             # SIM
-            #0x1098: lambda x, y, z: self.parse_sim(x, y, z, 0), # RUIM Debug
-            #0x14CE: lambda x, y, z: self.parse_sim(x, y, z, 1), # UIM DS Data
+            # i(x.LOG_UIM_DATA_C): lambda x, y, z: self.parse_sim(x, y, z), # RUIM Debug
+            # i(x.LOG_UIM_DS_DATA_C): lambda x, y, z: self.parse_dual_sim(x, y, z), # UIM DS Data
 
             # IP
             i(x.LOG_DATA_PROTOCOL_LOGGING_C): lambda x, y, z: self.parse_ip(x, y, z), # Protocol Services Data
@@ -123,14 +123,17 @@ class Diag1xLogParser:
         pos = 1
         rx_buf = b''
         tx_buf = b''
+        subtype = 0
 
         while pos < len(msg_content):
             if msg_content[pos] == 0x10:
                 # 0x10: TX (to SIM)
+                subtype = 0x05
                 tx_buf += bytes([msg_content[pos + 1]])
                 pos += 2
             elif msg_content[pos] == 0x80:
                 # 0x80: RX (from SIM)
+                subtype = 0x06
                 rx_buf += bytes([msg_content[pos + 1]])
                 pos += 2
             elif msg_content[pos] == 0x01:
@@ -140,25 +143,46 @@ class Diag1xLogParser:
                 self.parent.logger.log(logging.WARNING, 'Not handling unknown type 0x%02x' % msg_content[pos])
                 break
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.SIM)
+    def parse_dual_sim(self, pkt_header, pkt_body, args):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
 
-        if len(self.last_tx[sim_id]) == 0:
-            if len(tx_buf) > 0:
-                self.last_tx[sim_id] = tx_buf
-                return
+        msg_content = pkt_body
+        # msg[0]: length
+        pos = 1
+        rx_buf = [b'', b'']
+        tx_buf = [b'', b'']
+        subtype = 0
+        ts = [None, None]
+
+        # data_type, slot_id, data (PDU: 1b, TS: 8b)
+
+        while pos < len(msg_content):
+            if msg_content[pos] == 0x10:
+                # 0x10: TX (to SIM)
+                subtype = 0x05
+                sim_id = msg_content[pos + 1]
+                if sim_id == 0 or sim_id == 1:
+                    tx_buf[sim_id] += bytes([msg_content[pos + 2]])
+                pos += 3
+            elif msg_content[pos] == 0x80:
+                # 0x80: RX (from SIM)
+                subtype = 0x06
+                sim_id = msg_content[pos + 1]
+                if sim_id == 0 or sim_id == 1:
+                    rx_buf[sim_id] += bytes([msg_content[pos + 2]])
+                pos += 3
+            elif msg_content[pos] == 0x01:
+                # 0x01: Timestamp
+                sim_id = msg_content[pos + 1]
+                if sim_id == 0 or sim_id == 1:
+                    ts[sim_id] = struct.unpack('<Q', msg_content[pos+2:pos+10])[0]
+                    ts[sim_id] = util.parse_qxdm_ts(ts[sim_id])
+                pos += 10
             else:
-                return {'cp': [gsmtap_hdr + rx_buf], 'ts': pkt_ts}
-        elif len(self.last_tx[sim_id]) > 0:
-            if len(rx_buf) > 0:
-                last_sim_tx = self.last_tx[sim_id] + rx_buf
-                self.last_tx[sim_id] = b''
-                return {'cp': [gsmtap_hdr + last_sim_tx], 'ts': pkt_ts}
-            else:
-                last_sim_tx = self.last_tx[sim_id]
-                self.last_tx[sim_id] = b''
-                return {'cp': [gsmtap_hdr + last_sim_tx, gsmtap_hdr + tx_buf], 'ts': pkt_ts}
+                self.parent.logger.log(logging.WARNING, 'Not handling unknown type 0x%02x' % msg_content[pos])
+                break
 
     # IP
     def parse_ip(self, pkt_header, pkt_body, args):
