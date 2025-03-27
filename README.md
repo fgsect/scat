@@ -31,8 +31,12 @@ Therefore, please also keep the QMDL/SDM files if you need to preserve 5G signal
 
 Cellular device must expost the diagnostic port via USB.
 This is largely device-dependent and we can not give generic solution for all devices.
-[This external website](https://cacombos.com/contribute) provides some instructions on either opening up the diagnostic port or collecting the baseband dump file.
-You can also search the Internet with keyword `(your device name) qpst` to get the method of exposing the diagnostic port for Qualcomm-based smartphones.
+You can check out following websites for some instructions on either opening up the diagnostic port or collecting the baseband dump file:
+
+* https://band.radio/diag
+* https://cacombos.com/contribute
+
+Try also searching the Internet with keyword `(your device name) qpst` to get the method of exposing the diagnostic port for Qualcomm-based smartphones.
 The [wiki page](https://github.com/fgsect/scat/wiki/Devices) collects information on tested devices and any device-specific quirks.
 
 If your smartphone does not expose the diagnostic port via USB, you can try using the baseband dump features existing in some smartphones.
