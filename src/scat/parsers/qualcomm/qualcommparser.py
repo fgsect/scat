@@ -329,7 +329,7 @@ class QualcommParser:
             self.postprocess_parse_result(result)
 
         emr = lambda x, y: diagcmd.create_extended_message_config_set_mask(x, y)
-        if 'id_range' in result:
+        if result and 'id_range' in result:
             self.emr_id_range = result['id_range']
             for x in result['id_range']:
                 self.io_device.write_then_read_discard(util.generate_packet(emr(x[0], x[1])), 0x1000, False)
