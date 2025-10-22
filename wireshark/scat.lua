@@ -330,6 +330,20 @@ function gsmtapv3_parse_metadata(t, hdr_buffer, hdr_len)
 end
 
 function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
+    -- Detect inner IP packets and forward them to the IP dissector
+    if tvbuffer:len() > 1 then
+        local first = tvbuffer(0,1):uint()
+        local ipver = bit.rshift(first, 4)
+        if ipver == 4 then
+            pinfo.cols.protocol = "IPv4"
+            Dissector.get("ip"):call(tvbuffer, pinfo, treeitem)
+            return
+        elseif ipver == 6 then
+            pinfo.cols.protocol = "IPv6"
+            Dissector.get("ipv6"):call(tvbuffer, pinfo, treeitem)
+            return
+        end
+    end
     -- GSMTAPv3
     local version = tvbuffer(0, 1):uint()
     if version == 3 then
