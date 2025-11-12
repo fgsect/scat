@@ -32,6 +32,8 @@ class SdmCommonParser:
             # g | c.COMMON_SMS_INFO: lambda x: self.sdm_common_dummy(x, 0x04),
             # g | 0x05: lambda x: self.sdm_common_dummy(x, 0x05),
             g | c.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
+            g | c.COMMON_NR_RRC_SIGNALING_INFO: lambda x: self.sdm_common_nr_rrc_signaling(x),
+            g | c.COMMON_NR_NAS_SIGNALING_INFO: lambda x: self.sdm_common_nr_nas_signaling(x),
         }
 
     def set_icd_ver(self, version):
@@ -310,3 +312,62 @@ class SdmCommonParser:
             del self.multi_message_chunk[pkt_header.msgid]
             return self._parse_sdm_common_signaling(sdm_pkt_hdr, pkt_header.type, pkt_header.subtype,
                 pkt_header.direction, len(newpkt_body), newpkt_body)
+
+    def sdm_common_nr_rrc_signaling(self, pkt):
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmCommonNrRrcSignalingHeader', 'total_frag frag_index id type direction length')
+        pkt_header = header._make(struct.unpack('<BBBBBH', pkt[0:7]))
+        msg_content = pkt[7:]
+
+        chan_map_ul = {
+            0x00: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+            0x04: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+        }
+        chan_map_dl = {
+            0x00: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+            0x02: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+            0x03: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+            0x04: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+        }
+
+        nr_pdu_id_gsmtap = 0
+        if pkt_header.direction == 0:
+            if pkt_header.type in chan_map_dl:
+                nr_pdu_id_gsmtap = chan_map_dl[pkt_header.type]
+            else:
+                nr_pdu_id_gsmtap = 0
+        elif pkt_header.direction == 1:
+            if pkt_header.type in chan_map_ul:
+                nr_pdu_id_gsmtap = chan_map_ul[pkt_header.type]
+            else:
+                nr_pdu_id_gsmtap = 0
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unknown direction 0x{:02x}'.format(pkt_header.direction))
+            return
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtapv3_types.NR_RRC,
+            arfcn = 0,
+            sub_type = nr_pdu_id_gsmtap)
+
+        return {'cp': [gsmtap_hdr + msg_content]}
+
+    def sdm_common_nr_nas_signaling(self, pkt):
+        pkt = pkt[15:-1]
+        header = namedtuple('SdmCommonNrNasSignalingHeader', 'direction length unknown type')
+        pkt_header = header._make(struct.unpack('<BHBB', pkt[0:5]))
+        msg_content = pkt[5:]
+
+        if len(msg_content) != pkt_header.length:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Message length ({}) different from expected ({})'.format(len(msg_content), pkt_header.length))
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtapv3_types.NAS_5GS,
+            arfcn = 0,
+            sub_type = 0)
+
+        return {'cp': [gsmtap_hdr + msg_content]}

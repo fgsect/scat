@@ -88,10 +88,14 @@ class sdm_control_message(IntEnum):
 @unique
 class sdm_common_data(IntEnum):
     COMMON_BASIC_INFO             = 0x00
+    COMMON_CELL_INFO              = 0x01
     COMMON_DATA_INFO              = 0x02
     COMMON_SIGNALING_INFO         = 0x03
     COMMON_SMS_INFO               = 0x04
+    COMMON_HPLMN_TIMER_INFO       = 0x05
     COMMON_MULTI_SIGNALING_INFO   = 0x06
+    COMMON_NR_RRC_SIGNALING_INFO  = 0x08
+    COMMON_NR_NAS_SIGNALING_INFO  = 0x09
 
 @unique
 class sdm_lte_data(IntEnum):
@@ -163,6 +167,10 @@ class sdm_lte_data(IntEnum):
     LTE_VOLTE_RX_OVERALL_STAT_INFO = 0x73
     LTE_VOLTE_TX_RTP_STAT_INFO   = 0x74
     LTE_VOLTE_RX_RTP_STAT_INFO   = 0x75
+    LTE_VOLTE_RX_RTP_FRAME_INFO  = 0x76
+    LTE_VOLTE_RTP_CALL_STATS     = 0x77
+    LTE_VOLTE_TX_RTP_INFO        = 0x78
+    LTE_VOLTE_RX_RTP_INFO        = 0x79
 
 @unique
 class sdm_edge_data(IntEnum):
@@ -242,7 +250,7 @@ def create_sdm_item_selection(item_count, *items):
     return ret
 
 def scat_sdm_common_selection(layers=[]):
-    return create_sdm_item_selection(0x07,
+    log_items = [
         (sdm_common_data.COMMON_BASIC_INFO, True),
         (0x01, True),
         (sdm_common_data.COMMON_DATA_INFO, True),
@@ -250,7 +258,18 @@ def scat_sdm_common_selection(layers=[]):
         (sdm_common_data.COMMON_SMS_INFO, True),
         (0x05, True),
         (sdm_common_data.COMMON_MULTI_SIGNALING_INFO, True),
-    )
+    ]
+
+    if 'rrc' in layers:
+        log_items += [
+            (sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, True),
+        ]
+    if 'nas' in layers:
+        log_items += [
+            (sdm_common_data.COMMON_NR_NAS_SIGNALING_INFO, True),
+        ]
+
+    return create_sdm_item_selection(len(log_items), *log_items)
 
 def scat_sdm_lte_selection(layers=[]):
     log_items = [
@@ -276,6 +295,10 @@ def scat_sdm_lte_selection(layers=[]):
         (sdm_lte_data.LTE_VOLTE_RX_OVERALL_STAT_INFO, True),
         (sdm_lte_data.LTE_VOLTE_TX_RTP_STAT_INFO, True),
         (sdm_lte_data.LTE_VOLTE_RX_RTP_STAT_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_RX_RTP_FRAME_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_RTP_CALL_STATS, True),
+        (sdm_lte_data.LTE_VOLTE_TX_RTP_INFO, True),
+        (sdm_lte_data.LTE_VOLTE_RX_RTP_INFO, True),
     ]
 
     if 'rrc' in layers:
