@@ -355,6 +355,8 @@ class gsmtapv3_metadata_tags(IntEnum):
     K_UPENC = 0x0206
     K_UPINT = 0x0207
 
+    END_OF_METADATA = 0xfffe
+
 @unique
 class gsmtapv3_lte_rrc_types(IntEnum):
     BCCH_BCH = 0x0001
@@ -489,6 +491,7 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             gsmtap_v3_metadata += struct.pack('!HH', k, len(buf))
             gsmtap_v3_metadata += buf
             header_len += (4 + len(buf))
+        gsmtap_v3_metadata += struct.pack('!H', t.END_OF_METADATA)
 
         gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
             3,                           # Version
@@ -498,8 +501,6 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             sub_type,                    # Subtype
             )
         gsmtap_hdr += gsmtap_v3_metadata
-        if len(gsmtap_hdr) < (4 * math.ceil(header_len/4)):
-            gsmtap_hdr += (b'\x00' * (4 * math.ceil(header_len/4) - len(gsmtap_hdr)))
     else:
         assert (version == 2) or (version == 3), "GSMTAP version should be either 2 or 3"
 
