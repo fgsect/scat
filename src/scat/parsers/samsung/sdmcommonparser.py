@@ -13,6 +13,7 @@ class SdmCommonParser:
         self.parent = parent
         self.icd_ver = icd_ver
         self.multi_message_chunk = {}
+        self.multi_nr_rrc_message_chunk = {}
         self.ip_id = 0
 
         if self.parent:
@@ -318,6 +319,30 @@ class SdmCommonParser:
         header = namedtuple('SdmCommonNrRrcSignalingHeader', 'total_frag frag_index id type direction length')
         pkt_header = header._make(struct.unpack('<BBBBBH', pkt[0:7]))
         msg_content = pkt[7:]
+
+        if pkt_header.total_frag > 1:
+            if pkt_header.id not in self.multi_nr_rrc_message_chunk:
+                # New msgid
+                self.multi_nr_rrc_message_chunk[pkt_header.id] = {'total_chunks': pkt_header.total_frag}
+
+            if pkt_header.frag_index in self.multi_nr_rrc_message_chunk[pkt_header.id]:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, "Message chunk {} already exists for message id {}".format(
+                        pkt_header.frag_index, pkt_header.id))
+            self.multi_nr_rrc_message_chunk[pkt_header.id][pkt_header.frag_index] = msg_content
+
+            is_not_full = False
+            for i in range(1, pkt_header.total_frag+1):
+                if not i in self.multi_nr_rrc_message_chunk[pkt_header.id]:
+                    is_not_full = True
+
+            if not is_not_full:
+                newpkt_body = b''
+                for i in range(1, pkt_header.total_frag+1):
+                    newpkt_body += self.multi_nr_rrc_message_chunk[pkt_header.id][i]
+                msg_content = newpkt_body
+            else:
+                return
 
         chan_map_ul = {
             0x00: util.gsmtapv3_nr_rrc_types.UL_CCCH,
