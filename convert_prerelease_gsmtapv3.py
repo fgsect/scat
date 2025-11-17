@@ -30,6 +30,7 @@ gsmtapv2_v3_payload_type_map = {
 class gsmtapv3_metadata_tags(IntEnum):
     PACKET_TIMESTAMP = 0x0000
     CHANNEL_NUMBER = 0x0002
+    BSIC_PSC_PCI = 0x0005
 
     SFN = 0x0008
     SUBFN = 0x0009
@@ -222,23 +223,74 @@ gsmtapv2_v3_nr_rrc_subtype_map =  {
     36: 0x0206, # UE Radio Paging Capability
 }
 
-def modify_gsmtapv3_header(payload: bytes):
+def modify_gsmtapv3_header_140(payload: bytes):
     if payload[0] != 0x03:
+        return payload
+
+    if len(payload) < 8:
+        return payload
+
+    # Version, Reserved, Header Length, Type, Subtype
+    gsmtap_hdr = struct.unpack('!BBHHH', payload[0:8])
+
+    if len(payload) < gsmtap_hdr[2] * 4:
+        return payload
+
+    gsmtap_tlv_col = payload[8:gsmtap_hdr[2] * 4]
+    payload_body = payload[gsmtap_hdr[2] * 4:]
+
+    i = 0
+    while i < len(gsmtap_tlv_col):
+        try:
+            g_t, g_l = struct.unpack('!HH', gsmtap_tlv_col[i:i+4])
+            i += 4
+            i += g_l
+        except:
+            break
+    gsmtap_tlv_col = gsmtap_tlv_col[:i] + struct.pack('!H', 0xfffe)
+
+    header_len = 8 + len(gsmtap_tlv_col)
+
+    gsmtap_hdr_new = struct.pack('!BBHHH',
+        3,                           # Version
+        0,                           # Reserved
+        math.ceil(header_len/4),     # Header Length
+        gsmtap_hdr[3],               # Type
+        gsmtap_hdr[4],               # Subtype
+        )
+
+    return gsmtap_hdr_new + gsmtap_tlv_col + payload_body
+
+def modify_gsmtapv3_header(payload: bytes):
+    if not (payload[0] == 0x03 or (payload[0] == 0x02 and payload[2] in (0x20, 0x21))):
         return payload
 
     device_sec = 0
     device_usec = 0
     payload_body = b''
     gsmtap_v3_metadata = b''
+    chan_number = 0
+    pci = -1
 
     if payload[1] == 4:
         gsmtapv3_prerelease_header = struct.unpack('!BBBBHBBLBBBB', payload[0:16])
+        chan_number = gsmtapv3_prerelease_header[4]
         payload_body = payload[16:]
     elif payload[1] == 7:
-        gsmtapv3_prerelease_header = struct.unpack('!BBBBHBBLBBBBQL', payload[0:28])
+        gsmtapv3_prerelease_header = struct.unpack('!BBBBHBBLBBBB QL', payload[0:28])
+        chan_number = gsmtapv3_prerelease_header[4]
         payload_body = payload[28:]
         device_sec = gsmtapv3_prerelease_header[12]
         device_usec = gsmtapv3_prerelease_header[13]
+    elif payload[1] == 9:
+        gsmtapv3_prerelease_header = struct.unpack('!BBBBHBBLBBBB QL LHH', payload[0:36])
+        chan_number = gsmtapv3_prerelease_header[4]
+        payload_body = payload[36:]
+        device_sec = gsmtapv3_prerelease_header[12]
+        device_usec = gsmtapv3_prerelease_header[13]
+        if gsmtapv3_prerelease_header[14] > 0:
+            chan_number = gsmtapv3_prerelease_header[14]
+        pci = gsmtapv3_prerelease_header[15]
     else:
         print(f"[-] Invalid header length: {payload[1]}")
         return payload
@@ -288,9 +340,13 @@ def modify_gsmtapv3_header(payload: bytes):
         gsmtap_v3_metadata += struct.pack('!HHQL', t.PACKET_TIMESTAMP, 12, device_sec, device_usec * 1000)
         header_len += 16
 
-    if gsmtapv3_prerelease_header[2] in (0x01, 0x03, 0x08, 0x09, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f):
-        gsmtap_v3_metadata += struct.pack('!HHL', t.CHANNEL_NUMBER, 4, gsmtapv3_prerelease_header[4])
+    if gsmtapv3_prerelease_header[2] in (0x01, 0x03, 0x08, 0x09, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x21):
+        gsmtap_v3_metadata += struct.pack('!HHL', t.CHANNEL_NUMBER, 4, chan_number)
         header_len += 8
+
+    if pci > 0:
+        gsmtap_v3_metadata += struct.pack('!HHH', t.BSIC_PSC_PCI, 2, pci)
+        header_len += 6
 
     if gsmtapv3_prerelease_header[7] > 0:
         gsmtap_v3_metadata += struct.pack('!HHL', t.SFN, 4, gsmtapv3_prerelease_header[7])
@@ -301,6 +357,7 @@ def modify_gsmtapv3_header(payload: bytes):
         header_len += 6
     
     gsmtap_v3_metadata += struct.pack('!H', t.END_OF_METADATA)
+    header_len += 2
 
     gsmtap_hdr = struct.pack('!BBHHH',
         3,                           # Version
@@ -314,14 +371,17 @@ def modify_gsmtapv3_header(payload: bytes):
     return gsmtap_hdr + payload_body
 
 
-def process_pcap(input_file: str, output_file: str):
+def process_pcap(input_file: str, output_file: str, is_140: bool):
     """Handles plain .pcap files using Scapy only (no metadata preservation)."""
     packets = rdpcap(input_file)
 
     for pkt in packets:
         if UDP in pkt and pkt[UDP].dport == 4729 and Raw in pkt:
             payload = pkt[Raw].load
-            new_payload = modify_gsmtapv3_header(payload)
+            if is_140:
+                new_payload = modify_gsmtapv3_header_140(payload)
+            else:
+                new_payload = modify_gsmtapv3_header(payload)
             if new_payload != payload:
                 pkt[Raw].load = new_payload
                 del pkt[UDP].len
@@ -331,7 +391,7 @@ def process_pcap(input_file: str, output_file: str):
     print(f"[✓] .pcap processed and written to: {output_file}")
 
 
-def process_pcapng(input_file: str, output_file: str):
+def process_pcapng(input_file: str, output_file: str, is_140: bool):
     """Handles .pcapng files using pcapng + scapy (with metadata preservation)."""
     with open(input_file, 'rb') as infile, open(output_file, 'wb') as outfile:
         scanner = FileScanner(infile)
@@ -358,7 +418,10 @@ def process_pcapng(input_file: str, output_file: str):
 
             if UDP in pkt and pkt[UDP].dport == 4729 and Raw in pkt:
                 raw = pkt[Raw].load
-                new_raw = modify_gsmtapv3_header(raw)
+                if is_140:
+                    new_raw = modify_gsmtapv3_header_140(raw)
+                else:
+                    new_raw = modify_gsmtapv3_header(raw)
                 if new_raw != raw:
                     pkt[Raw].load = new_raw
                     del pkt['IP'].len
@@ -385,10 +448,12 @@ def main():
     parser = argparse.ArgumentParser(description="Modify UDP/4729 packets in .pcap or .pcapng file.")
     parser.add_argument('--input', '-i', required=True, help="Input capture file (.pcap or .pcapng)")
     parser.add_argument('--output', '-o', help="Optional output file (default: *_modified.ext)")
+    parser.add_argument('--scat140', '-1', action="store_true", help="Parse input file using GSMTAPv3 definition of SCAT 1.4.0")
 
     args = parser.parse_args()
     input_file = args.input
     output_file = args.output
+    is_140 = args.scat140
 
     if not os.path.isfile(input_file):
         print(f"[!] File not found: {input_file}")
@@ -403,9 +468,9 @@ def main():
         output_file = input_file.replace(ext, f"_modified{ext}")
 
     if ext == ".pcapng":
-        process_pcapng(input_file, output_file)
+        process_pcapng(input_file, output_file, is_140)
     elif ext == ".pcap":
-        process_pcap(input_file, output_file)
+        process_pcap(input_file, output_file, is_140)
     else:
         print(f"[!] Unsupported file type: {ext}")
         print("    Supported: .pcap, .pcapng")
