@@ -488,6 +488,8 @@ class QualcommParser:
             return self.parse_diag_qsr4_ext_msg(pkt)
         elif pkt[0] == diagcmd.DIAG_QSH_TRACE_PAYLOAD_F and self.parse_msgs:
             return self.parse_diag_qsh_trace_msg(pkt)
+        elif pkt[0] == diagcmd.DIAG_SECURE_LOG_F:
+            return self.parse_diag_secure_log(pkt)
         else:
             self.logger.log(logging.DEBUG, 'Not parsing DIAG command {:#02x}'.format(pkt[0]))
             self.logger.log(logging.DEBUG, util.xxd(pkt))
@@ -1091,6 +1093,15 @@ class QualcommParser:
                 payload_type = util.gsmtap_type.OSMOCORE_LOG)
 
             return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')]}
+        return None
+
+    def parse_diag_secure_log(self, pkt):
+        """Parses the DIAG_SECURE_LOG_F packet.
+
+        Parameters:
+        pkt (bytes): DIAG_SECURE_LOG_F data without trailing CRC
+        """
+
         return None
 
 __entry__ = QualcommParser
