@@ -750,11 +750,11 @@ class QualcommParser:
         if pkt_header.log_id in self.process.keys():
             return self.process[pkt_header.log_id](pkt_header, pkt_body, args)
         elif pkt_header.log_id in self.no_process.keys():
-            #print("Not handling XDM Header 0x%04x (%s)" % (xdm_hdr[1], self.no_process[xdm_hdr[1]]))
+            self.logger.log(logging.DEBUG, 'Skip processing DIAG log item {:#06x}'.format(pkt_header.log_id))
             return None
         else:
-            #print("Unhandled XDM Header 0x%04x" % xdm_hdr[1])
-            #util.xxd(pkt)
+            self.logger.log(logging.DEBUG, 'Not parsing DIAG log item {:#06x}'.format(pkt_header.log_id))
+            self.logger.log(logging.DEBUG, util.xxd(pkt))
             return None
 
     event_header = namedtuple('QcDiagEventHeader', 'cmd_code msg_len')
