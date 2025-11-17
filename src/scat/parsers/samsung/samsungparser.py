@@ -274,6 +274,7 @@ class SamsungParser:
         self.logger.log(logging.INFO, 'Stopping diag')
         # DIAG Disable
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_STOP, b'\x00\x00\x00\x00'), 0x1000, False)
+        self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', 0, 0)), 0x1000, False)
 
     def run_dump(self):
         self.logger.log(logging.INFO, 'Starting diag from dump')

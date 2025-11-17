@@ -360,11 +360,15 @@ class SdmCommonParser:
             if pkt_header.type in chan_map_dl:
                 nr_pdu_id_gsmtap = chan_map_dl[pkt_header.type]
             else:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown NR RRC channel 0x{:02x}'.format(pkt_header.type))
                 nr_pdu_id_gsmtap = 0
         elif pkt_header.direction == 1:
             if pkt_header.type in chan_map_ul:
                 nr_pdu_id_gsmtap = chan_map_ul[pkt_header.type]
             else:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown NR RRC channel 0x{:02x}'.format(pkt_header.type))
                 nr_pdu_id_gsmtap = 0
         else:
             if self.parent:
