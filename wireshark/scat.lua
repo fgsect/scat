@@ -275,11 +275,12 @@ function gsmtapv3_parse_metadata(t, buffer, buffer_len)
     local offset = 0
 
     while offset < (buffer_len) do
-        if (offset + 4) > buffer_len then
+        if (offset + 2) > buffer_len then
             break
         end
 
         local type = buffer(offset, 2):uint()
+
         if type == 0xfffe then
             offset = offset + 2
             break
@@ -337,7 +338,7 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
         local type = tvbuffer(4, 2):uint()
         local subtype = tvbuffer(6, 2):uint()
 
-        local gsmtap_data_start_pos = 10
+        local gsmtap_data_start_pos = 8
 
         local t = treeitem:add(gsmtap_wrapper_proto, tvbuffer())
         local itemtext = "Unknown"
