@@ -492,6 +492,7 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
             gsmtap_v3_metadata += buf
             header_len += (4 + len(buf))
         gsmtap_v3_metadata += struct.pack('!H', t.END_OF_METADATA)
+        header_len += 2
 
         gsmtap_hdr = struct.pack(gsmtap_v3_hdr_def,
             3,                           # Version
