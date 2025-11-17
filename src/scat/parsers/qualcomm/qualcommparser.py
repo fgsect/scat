@@ -79,6 +79,7 @@ class QualcommParser:
         self.display_format = 'x'
         self.gsmtapv3 = False
 
+        self.qsr_content = {}
         self.qsr4_content = {}
         self.qsr4_mtrace_content = {}
         self.qsr4_qtrace_str_content = {}
@@ -127,6 +128,41 @@ class QualcommParser:
 
         for p in self.diag_log_parsers:
             p.update_parameters(display_format, gsmtapv3)
+
+    def load_qsr_hash(self, filename):
+        tag_oneline_re = re.compile(r'\<(\w*)\>\s*([\w\-=.]*)\s*\</(\w*)\>')
+        file_version_lo = ''
+        file_version_hi = ''
+        file_date = ''
+        file_crc = 0
+        content_t = namedtuple('QsrContent', 'file string')
+
+        with open(filename, 'rb') as qsr_file:
+            for line in qsr_file:
+                l = line.decode(errors='backslashreplace').strip()
+                if l[0] == '#':
+                    continue
+
+                is_tag_oneline = tag_oneline_re.match(l)
+                if is_tag_oneline:
+                    g = is_tag_oneline.groups()
+                    if g[0] == g[2] == 'version_lo':
+                        file_version_lo = g[1]
+                    elif g[0] == g[2] == 'version_hi':
+                        file_version_hi = g[1]
+                    elif g[0] == g[2] == 'Date':
+                        file_date = g[1]
+                    elif g[0] == g[2] == 'CRC':
+                        file_crc = int(g[1])
+                else:
+                    content_str = l.split(':', 3)
+                    x = content_t._make(content_str[1:])
+                    self.qsr_content[int(content_str[0])] = x
+
+        if len(self.qsr_content) > 0:
+            return True
+        else:
+            return False
 
     def load_qsr4_hash(self, filename):
         zlib_content = b''
@@ -219,6 +255,8 @@ class QualcommParser:
 
         if len(self.qsr4_content) > 0:
             return True
+        else:
+            return False
 
     def set_parameter(self, params):
         qsr_hash_loaded = False
@@ -227,9 +265,12 @@ class QualcommParser:
                 self.logger.setLevel(params[p])
             elif p == 'qsr-hash':
                 self.qsr_hash_filename = params[p]
-                if not self.qsr4_hash_filename:
+                if not self.qsr_hash_filename:
                     continue
-                self.parse_msgs = True
+                try:
+                    qsr_hash_loaded = self.load_qsr_hash(self.qsr_hash_filename)
+                except ValueError as e:
+                    self.logger.log(logging.INFO, 'Error parsing QSR hash table: {}'.format(e))
             elif p == 'qsr4-hash':
                 self.qsr4_hash_filename = params[p]
                 if not self.qsr4_hash_filename:
@@ -437,8 +478,10 @@ class QualcommParser:
             return self.parse_diag_ext_build_id(pkt)
         elif pkt[0] == diagcmd.DIAG_EXT_MSG_CONFIG_F:
             return self.parse_diag_ext_msg_config(pkt)
+        elif pkt[0] == diagcmd.DIAG_EXT_MSG_TERSE_F and self.parse_msgs:
+            return self.parse_diag_ext_msg_terse(pkt)
         elif pkt[0] == diagcmd.DIAG_QSR_EXT_MSG_TERSE_F and self.parse_msgs:
-            return self.parse_diag_qsr_ext_msg(pkt)
+            return self.parse_diag_qsr_ext_msg_terse(pkt)
         elif pkt[0] == diagcmd.DIAG_MULTI_RADIO_CMD_F:
             return self.parse_diag_multisim(pkt)
         elif pkt[0] == diagcmd.DIAG_QSR4_EXT_MSG_TERSE_F and self.parse_msgs:
@@ -636,7 +679,7 @@ class QualcommParser:
         log_content_pyfmt = cfmt.sub('{}', fmtstr)
 
         i = 0
-        if len(fmtargs) != len(fmt_strs):
+        if len(fmtargs) < len(fmt_strs):
             log_content_formatted = fmtstr
         else:
             for fmt_str in fmt_strs:
@@ -911,8 +954,35 @@ class QualcommParser:
 
             return {'stdout': stdout, 'start': pkt_header.start_id, 'end': pkt_header.end_id, 'level': levels}
 
-    def parse_diag_qsr_ext_msg(self, pkt):
+    def parse_diag_ext_msg_terse(self, pkt):
         return None
+
+    def parse_diag_qsr_ext_msg_terse(self, pkt):
+        pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        pkt_args = list(struct.unpack('<{}L'.format(pkt_header.num_args), pkt[24:24+4*pkt_header.num_args]))
+        msg_hash = struct.unpack('<L', pkt[20:24])[0]
+        fname = ''
+
+        if msg_hash in self.qsr_content:
+            q = self.qsr_content[msg_hash]
+            fname = q.file
+            log_content_formatted = self._snprintf(q.string, pkt_args)
+        else:
+            log_content_formatted = f'QSR Ext Msg Terse: {msg_hash}, {pkt_args}'
+
+        osmocore_log_hdr = util.create_osmocore_logging_header(
+            timestamp = pkt_ts,
+            subsys_name = str(pkt_header.message_subsys_id).encode('utf-8'),
+            filename = fname,
+            line_number = pkt_header.line_no
+        )
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 2,
+            payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+        return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
     multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
 

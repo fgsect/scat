@@ -18,6 +18,7 @@ DIAG_LOG_CONFIG_F         = 0x73 # Logging configuration packet
 DIAG_EXT_MSG_F            = 0x79 # Request for extended message report
 DIAG_EXT_BUILD_ID_F       = 0x7c
 DIAG_EXT_MSG_CONFIG_F     = 0x7d # Request for Extended message report
+DIAG_EXT_MSG_TERSE_F      = 0x7e
 DIAG_SUBSYS_CMD_VER_2_F   = 0x80
 DIAG_EVENT_MASK_GET_F     = 0x81
 DIAG_EVENT_MASK_SET_F     = 0x82
