@@ -215,5 +215,60 @@ class TestSdmCommonParser(unittest.TestCase):
         }
         self.assertDictEqual(result, expected)
 
+    def test_sdm_common_nr_rrc_signaling(self):
+        # BCCH BCH
+        payload = binascii.unhexlify('010101020004005d2624c4')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_rrc_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050300010002000400000000fffe5d2624c4')]}
+        self.assertDictEqual(result, expected)
+
+        # BCCH DL-SCH
+        payload = binascii.unhexlify('01018403008d007c800c02093100802ff3401a19035300800c50010810ca8a081b00d0000033618c215f853b8200800011141b900eb4000088a0008041b04228178ca57248ec5a1f0c71006f103611a8c0000019eae36c916809824c666a36d3802404e3126e254d80be0f9b37020a729b98a0000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_rrc_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050300020002000400000000fffe7c800c02093100802ff3401a19035300800c50010810ca8a081b00d0000033618c215f853b8200800011141b900eb4000088a0008041b04228178ca57248ec5a1f0c71006f103611a8c0000019eae36c916809824c666a36d3802404e3126e254d80be0f9b37020a729b98a0000000000000000000000000000000000000000000000000000000000000000000')]}
+        self.assertDictEqual(result, expected)
+
+        # DL DCCH
+        payload = binascii.unhexlify('01018d0400070028808fc00b6020')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_rrc_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050300040002000400000000fffe28808fc00b6020')]}
+        self.assertDictEqual(result, expected)
+        # UL DCCH
+        payload = binascii.unhexlify('01018c04011e0010c01d4c391177e004179000bf262f220ea61c8f2f693f82e04f070f0f00')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_rrc_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050300090002000400000000fffe10c01d4c391177e004179000bf262f220ea61c8f2f693f82e04f070f0f00')]}
+        self.assertDictEqual(result, expected)
+
+        # DL CCCH
+        payload = binascii.unhexlify('01018b00006e00204020c6d2b80160021ef5f90020cbd800f84460820f380841ac5970249819100ee1002000044506e18020000446c8408096407cc07cdc108a05e3295c923b1687c02662209203203101109003028120106119c7222934149a08400608563126e254fff518ca53d4084560002600')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_rrc_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050300030002000400000000fffe204020c6d2b80160021ef5f90020cbd800f84460820f380841ac5970249819100ee1002000044506e18020000446c8408096407cc07cdc108a05e3295c923b1687c02662209203203101109003028120106119c7222934149a08400608563126e254fff518ca53d4084560002600')]}
+        self.assertDictEqual(result, expected)
+        # UL CCCH
+        payload = binascii.unhexlify('01018a00010600174da3638466')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_RRC_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_rrc_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050300070002000400000000fffe174da3638466')]}
+        self.assertDictEqual(result, expected)
+
+    def test_sdm_common_nr_nas_signaling(self):
+        payload = binascii.unhexlify('013a00005c7e005c00350162f220f1ff010a9bcaad7bb82d608ab0038dd8b4b739b313b8971311efc6107487d798a30e774304b22ea59c58014a6a040d27c0')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_NAS_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_nas_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050400000002000400000000fffe7e005c00350162f220f1ff010a9bcaad7bb82d608ab0038dd8b4b739b313b8971311efc6107487d798a30e774304b22ea59c58014a6a040d27c0')]}
+        self.assertDictEqual(result, expected)
+
+        payload = binascii.unhexlify('00070000447e00441b16012c')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_COMMON_DATA, sdmcmd.sdm_common_data.COMMON_NR_NAS_SIGNALING_INFO, payload, timestamp=0x0)
+        result = self.parser.sdm_common_nr_nas_signaling(packet)
+        expected = {'cp': [binascii.unhexlify('03000005050400000002000400000000fffe7e00441b16012c')]}
+        self.assertDictEqual(result, expected)
+
+
 if __name__ == '__main__':
     unittest.main()
