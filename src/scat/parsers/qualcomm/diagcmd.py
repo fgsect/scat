@@ -27,6 +27,7 @@ DIAG_MULTI_RADIO_CMD_F    = 0x98 # Found on newer dual SIMs
 DIAG_QSR4_EXT_MSG_TERSE_F = 0x99 # QSR4 extended messages
 DIAG_MSG_SMALL_F          = 0x9c
 DIAG_QSH_TRACE_PAYLOAD_F  = 0x9d
+DIAG_SECURE_LOG_F         = 0x9e
 
 DIAG_SUBSYS_ID_1X = 0x01
 DIAG_SUBSYS_ID_WCDMA = 0x04
