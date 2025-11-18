@@ -16,10 +16,8 @@ if bitstring_ver >= version.parse('4.2.0'):
     bitstring.options.lsb0 = True
 elif bitstring_ver >= version.parse('4.0.0'):
     bitstring.lsb0 = True
-elif bitstring_ver >= version.parse('3.1.7'):
-    bitstring.set_lsb0(True)
 else:
-    raise Exception("SCAT requires bitstring>=3.1.7, recommends bitstring>=4.0.0")
+    raise Exception("SCAT requires bitstring>=4.0.0")
 
 class DiagGsmLogParser:
     def __init__(self, parent):
