@@ -22,6 +22,7 @@ import uuid
 import zlib
 
 from scat.iodevices.abstractio import AbstractIO
+from scat.writers.abstractwriter import AbstractWriter
 
 from scat.parsers.qualcomm import diagcmd
 from scat.parsers.qualcomm.diaggsmlogparser import DiagGsmLogParser
@@ -65,7 +66,7 @@ class QualcommParser:
         self.lte_last_tcrnti = [1, 1]
 
         self.io_device: AbstractIO
-        self.writer = None
+        self.writer: AbstractWriter
         self.parse_msgs = False
         self.parse_events = False
         self.qsr_hash_filename = ''
@@ -119,7 +120,7 @@ class QualcommParser:
     def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
-    def set_writer(self, writer):
+    def set_writer(self, writer: AbstractWriter):
         self.writer = writer
 
     def update_parameters(self, display_format: str, gsmtapv3: bool):

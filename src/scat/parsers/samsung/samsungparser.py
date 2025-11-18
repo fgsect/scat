@@ -11,6 +11,7 @@ import scat.util as util
 import struct
 
 from scat.iodevices.abstractio import AbstractIO
+from scat.writers.abstractwriter import AbstractWriter
 
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser
@@ -55,7 +56,7 @@ class SamsungParser:
         self.model = 'e333'
 
         self.io_device: AbstractIO
-        self.writer = None
+        self.writer: AbstractWriter
 
         self.name = 'samsung'
         self.shortname = 'sec'
@@ -112,7 +113,7 @@ class SamsungParser:
     def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
-    def set_writer(self, writer):
+    def set_writer(self, writer: AbstractWriter):
         self.writer = writer
 
     def update_icd_ver(self, version: tuple):

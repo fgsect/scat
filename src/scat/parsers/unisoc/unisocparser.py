@@ -9,13 +9,15 @@ import logging
 import os, sys
 import scat.util as util
 import struct
+import datetime
 
 from scat.iodevices.abstractio import AbstractIO
+from scat.writers.abstractwriter import AbstractWriter
 
 class UnisocParser:
     def __init__(self):
         self.io_device: AbstractIO
-        self.writer = None
+        self.writer: AbstractWriter
         self.combine_stdout = False
 
         self.display_format = 'x'
@@ -41,7 +43,7 @@ class UnisocParser:
     def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
-    def set_writer(self, writer):
+    def set_writer(self, writer: AbstractWriter):
         self.writer = writer
 
     def set_parameter(self, params: dict):
@@ -187,7 +189,7 @@ class UnisocParser:
         if 'ts' in parse_result:
             ts = parse_result['ts']
         else:
-            ts = None
+            ts = datetime.datetime.now()
 
         if 'cp' in parse_result:
             if 'layer' in parse_result:

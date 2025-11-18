@@ -4,8 +4,10 @@
 import datetime
 import struct
 
-class PcapWriter:
-    def __init__(self, filename, port_cp = 4729, port_up = 47290):
+from scat.writers.abstractwriter import AbstractWriter
+
+class PcapWriter(AbstractWriter):
+    def __init__(self, filename: str, port_cp: int = 4729, port_up: int = 47290):
         self.port_cp = port_cp
         self.port_up = port_up
         self.ip_id = 0
@@ -26,7 +28,7 @@ class PcapWriter:
     def __enter__(self):
         return self
 
-    def write_pkt(self, sock_content, port, radio_id=0, ts=datetime.datetime.now()):
+    def write_pkt(self, sock_content: bytes, port: int, radio_id: int=0, ts: datetime.datetime = datetime.datetime.now()) -> None:
         pcap_hdr = struct.pack('<LLLL',
                 int(ts.timestamp()) % 4294967296,
                 ts.microsecond,
@@ -63,10 +65,10 @@ class PcapWriter:
         if self.ip_id > 65535:
             self.ip_id = 0
 
-    def write_cp(self, sock_content, radio_id=0, ts=datetime.datetime.now()):
+    def write_cp(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
         self.write_pkt(sock_content, self.port_cp, radio_id, ts)
 
-    def write_up(self, sock_content, radio_id=0, ts=datetime.datetime.now()):
+    def write_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
         self.write_pkt(sock_content, self.port_up, radio_id, ts)
 
     def __exit__(self, exc_type, exc_value, traceback):

@@ -7,9 +7,11 @@ from pathlib import Path
 import logging
 import os, sys
 import struct
+import datetime
 
 import scat.util as util
 from scat.iodevices.abstractio import AbstractIO
+from scat.writers.abstractwriter import AbstractWriter
 
 from scat.parsers.hisilicon.hisilogparser import HisiLogParser
 from scat.parsers.hisilicon.hisinestedparser import HisiNestedParser
@@ -37,7 +39,7 @@ class HisiliconParser:
         self.lte_last_band_ind = [0, 0]
 
         self.io_device: AbstractIO
-        self.writer = None
+        self.writer: AbstractWriter
         self.combine_stdout = False
         self.check_crc = True
         self.layers = []
@@ -76,7 +78,7 @@ class HisiliconParser:
     def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
-    def set_writer(self, writer):
+    def set_writer(self, writer: AbstractWriter):
         self.writer = writer
 
     def update_parameters(self, display_format, gsmtapv3):
@@ -191,7 +193,7 @@ class HisiliconParser:
         if 'ts' in parse_result:
             ts = parse_result['ts']
         else:
-            ts = None
+            ts = datetime.datetime.now()
 
         if 'cp' in parse_result:
             if 'layer' in parse_result:
