@@ -3,6 +3,7 @@
 
 from enum import IntEnum, unique
 from packaging import version
+from typing import Tuple
 import bitstring
 import datetime
 import math
@@ -433,10 +434,10 @@ class gsmtapv3_nr_rrc_types(IntEnum):
     SIB25 = 0x021f
     SIB17BIS = 0x0220
 
-def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
-    arfcn = 0, signal_dbm = 0, snr_db = 0, frame_number = 0,
-    sub_type = 0, antenna_nr = 0, sub_slot = 0,
-    device_sec = 0, device_usec = 0, metadata = dict()):
+def create_gsmtap_header(version: int = 2, payload_type: int = 0, timeslot: int = 0,
+    arfcn: int = 0, signal_dbm: int = 0, snr_db: int = 0, frame_number: int = 0,
+    sub_type: int = 0, antenna_nr: int = 0, sub_slot: int = 0,
+    device_sec: int = 0, device_usec: int = 0, metadata: dict = dict()):
 
     gsmtap_v2_hdr_def = '!BBBBHBBLBBBB'
     gsmtap_v3_hdr_def = '!BBHHH'
@@ -507,7 +508,7 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
 
     return gsmtap_hdr
 
-def create_osmocore_logging_header(timestamp = datetime.datetime.now(),
+def create_osmocore_logging_header(timestamp: datetime.datetime = datetime.datetime.now(),
         process_name: str | bytes = b'', pid: int = 0, level: int = 0,
         subsys_name: str | bytes = b'', filename: str | bytes = b'', line_number: int = 0):
 
@@ -592,19 +593,19 @@ class pdcp_plane_types(IntEnum):
 
 @unique
 class pdcp_logical_channel_types(IntEnum):
-    Channel_DCCH=1,
-    Channel_BCCH=2,
-    Channel_CCCH=3,
-    Channel_PCCH=4,
-    Channel_DCCH_NB=5,
-    Channel_BCCH_NB=6,
-    Channel_CCCH_NB=7,
-    Channel_PCCH_NB=8
+    Channel_DCCH    = 1
+    Channel_BCCH    = 2
+    Channel_CCCH    = 3
+    Channel_PCCH    = 4
+    Channel_DCCH_NB = 5
+    Channel_BCCH_NB = 6
+    Channel_CCCH_NB = 7
+    Channel_PCCH_NB = 8
 
 @unique
 class pdcp_bcch_transport_types(IntEnum):
-    BCH_TRANSPORT=1,
-    DLSCH_TRANSPORT=2
+    BCH_TRANSPORT   = 1
+    DLSCH_TRANSPORT = 2
 
 @unique
 class pdcp_sn_length_types(IntEnum):
@@ -671,7 +672,7 @@ class wcdma_rlc_tags(IntEnum):
 # Calculates the equivalent UL-EARFCN of a given DL-EARFCN,
 # if the input is an SDL or unknown EARFCN the output will be equal to the input
 # Based on 3GPP TS 36.101 V16.6.0 Table 5.7.3-1
-def calculate_ul_earfcn(dl_earfcn):
+def calculate_ul_earfcn(dl_earfcn: int) -> int:
     if 0 <= dl_earfcn < 9660:        # B1-B28
         offset = 18000
     elif 9769 < dl_earfcn < 9920:    # B30-31
@@ -692,13 +693,13 @@ def calculate_ul_earfcn(dl_earfcn):
         offset = 0
     return dl_earfcn + offset
 
-def convert_mcc(mcc_digit_2, mcc_digit_1, mcc_digit_0):
+def convert_mcc(mcc_digit_2: int, mcc_digit_1: int, mcc_digit_0: int) -> str:
     if mcc_digit_2 > 0x09 or mcc_digit_1 > 0x09 or mcc_digit_0 > 0x09:
         raise ValueError('Invalid digit in MCC')
     mcc = '{:03}'.format(mcc_digit_2 * 100 + mcc_digit_1 * 10 + mcc_digit_0)
     return mcc
 
-def convert_mnc(mnc_digit_2, mnc_digit_1, mnc_digit_0):
+def convert_mnc(mnc_digit_2: int, mnc_digit_1: int, mnc_digit_0: int) -> str:
     if mnc_digit_2 > 0x09 or mnc_digit_1 > 0x09 or (mnc_digit_0 > 0x09 and mnc_digit_0 < 0xf):
         raise ValueError('Invalid digit in MNC')
     if mnc_digit_0 == 0xf:
@@ -707,7 +708,7 @@ def convert_mnc(mnc_digit_2, mnc_digit_1, mnc_digit_0):
         mnc = '{:03}'.format(mnc_digit_2 * 100 + mnc_digit_1 * 10 + mnc_digit_0)
     return mnc
 
-def unpack_mcc_mnc(mcc_mnc_bin):
+def unpack_mcc_mnc(mcc_mnc_bin: bytes) -> Tuple[str, str]:
     mcc = '000'
     mnc = '00'
 
@@ -730,7 +731,7 @@ def unpack_mcc_mnc(mcc_mnc_bin):
 
     return (mcc, mnc)
 
-def unpack_lai(lai_bin):
+def unpack_lai(lai_bin: bytes) -> Tuple[str, str, int]:
     try:
         mcc_mnc = unpack_mcc_mnc(lai_bin[0:3])
     except ValueError:
