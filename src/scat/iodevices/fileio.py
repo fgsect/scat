@@ -3,9 +3,10 @@
 
 import gzip, bz2
 import scat.util as util
+from scat.iodevices.abstractio import AbstractIO
 
-class FileIO:
-    def _open_file(self, fname):
+class FileIO(AbstractIO):
+    def _open_file(self, fname: str):
         if self.f:
             self.f.close()
 
@@ -16,7 +17,7 @@ class FileIO:
         else:
             self.f = open(fname, 'rb')
 
-    def __init__(self, fnames):
+    def __init__(self, fnames: list[str]):
         self.fnames = fnames[:]
         self.fnames.reverse()
         self.fname = ''
@@ -26,18 +27,19 @@ class FileIO:
 
         self.open_next_file()
 
-    def read(self, read_size, decode_hdlc = False):
+    def read(self, read_size: int, decode_hdlc: bool = False) -> bytes:
         buf = b''
-        try:
-            buf = self.f.read(read_size)
-            buf = bytes(buf)
-        except:
-            return b''
+        if self.f:
+            try:
+                buf = self.f.read(read_size)
+                buf = bytes(buf)
+            except:
+                return b''
         if decode_hdlc:
             buf = util.unwrap(buf)
         return buf
 
-    def open_next_file(self):
+    def open_next_file(self) -> None:
         try:
             self.fname = self.fnames.pop()
         except IndexError:
@@ -45,10 +47,10 @@ class FileIO:
             return
         self._open_file(self.fname)
 
-    def write(self, write_buf, encode_hdlc = False):
+    def write(self, write_buf: bytes, encode_hdlc: bool = False) -> None:
         pass
 
-    def write_then_read_discard(self, write_buf, read_size, encode_hdlc = False):
+    def write_then_read_discard(self, write_buf: bytes, read_size: int, encode_hdlc: bool = False) -> None:
         self.write(write_buf)
         self.read(read_size)
 

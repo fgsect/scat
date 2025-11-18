@@ -9,6 +9,8 @@ import os, sys
 import struct
 
 import scat.util as util
+from scat.iodevices.abstractio import AbstractIO
+
 from scat.parsers.hisilicon.hisilogparser import HisiLogParser
 from scat.parsers.hisilicon.hisinestedparser import HisiNestedParser
 
@@ -34,7 +36,7 @@ class HisiliconParser:
         self.lte_last_bw_ul = [0, 0]
         self.lte_last_band_ind = [0, 0]
 
-        self.io_device = None
+        self.io_device: AbstractIO
         self.writer = None
         self.combine_stdout = False
         self.check_crc = True
@@ -71,7 +73,7 @@ class HisiliconParser:
 
         self.msgs = False
 
-    def set_io_device(self, io_device):
+    def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
     def set_writer(self, writer):

@@ -10,6 +10,8 @@ import os, sys
 import scat.util as util
 import struct
 
+from scat.iodevices.abstractio import AbstractIO
+
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser
 from scat.parsers.samsung.sdmcommonparser import SdmCommonParser
@@ -52,7 +54,7 @@ class SamsungParser:
         # e335: Exynos Modem 335: TODO
         self.model = 'e333'
 
-        self.io_device = None
+        self.io_device: AbstractIO
         self.writer = None
 
         self.name = 'samsung'
@@ -107,7 +109,7 @@ class SamsungParser:
         else:
             return (0, 0)
 
-    def set_io_device(self, io_device):
+    def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
     def set_writer(self, writer):

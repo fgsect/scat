@@ -130,7 +130,7 @@ def scat_main():
             sys.exit(1)
 
     # Device preparation
-    io_device = None
+    io_device: scat.iodevices.AbstractIO
     if args.serial:
         io_device = scat.iodevices.SerialIO(args.serial, args.baudrate, not args.no_rts, not args.no_dsr)
     elif args.usb:

@@ -10,9 +10,11 @@ import os, sys
 import scat.util as util
 import struct
 
+from scat.iodevices.abstractio import AbstractIO
+
 class UnisocParser:
     def __init__(self):
-        self.io_device = None
+        self.io_device: AbstractIO
         self.writer = None
         self.combine_stdout = False
 
@@ -36,13 +38,13 @@ class UnisocParser:
             except AttributeError:
                 pass
 
-    def set_io_device(self, io_device):
+    def set_io_device(self, io_device: AbstractIO):
         self.io_device = io_device
 
     def set_writer(self, writer):
         self.writer = writer
 
-    def set_parameter(self, params):
+    def set_parameter(self, params: dict):
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
@@ -63,7 +65,7 @@ class UnisocParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt):
+    def parse_diag(self, pkt: bytes):
         pkt = pkt[2:-4]
 
         # drivers/unisoc_platform/sprdwcn/platform/wcn_txrx.h
@@ -176,7 +178,7 @@ class UnisocParser:
             self.run_dump()
             self.io_device.open_next_file()
 
-    def postprocess_parse_result(self, parse_result):
+    def postprocess_parse_result(self, parse_result: dict):
         if 'radio_id' in parse_result:
             radio_id = parse_result['radio_id']
         else:
