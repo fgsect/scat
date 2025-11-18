@@ -11,11 +11,11 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
-requires-python = ">=3.7"
+requires-python = ">=3.10"
 dependencies = [
     "pyusb>=1.0.2",
     "pyserial>=3.3",
-    "bitstring>=3.1.7",
+    "bitstring>=4.0",
     "packaging>=19.0"
 ]
 [project.optional-dependencies]
