@@ -138,6 +138,7 @@ class diag_log_code_1x(IntEnum):
 
     # General
     LOG_INTERNAL_CORE_DUMP_C = 0x158                              # 0x1158 Internal - Core Dump
+    LOG_SECURE_LOG_PUBLIC_KEY_C = 0xd15                           # 0x1D15 RSA Public Key
 
 # Origin: http://cgit.osmocom.org/osmo-qcdiag/tree/src/protocol/diag_log_wcdma.h
 def diag_log_get_wcdma_item_id(x):

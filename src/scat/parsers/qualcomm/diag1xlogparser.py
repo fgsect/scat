@@ -101,6 +101,9 @@ class Diag1xLogParser:
             # i(x.LOG_QMI_LINK_21_TX_MSG_C): lambda x, y, z: self.parse_qmi_message(x, y, z, 21, True),
             i(x.LOG_QMI_CALL_FLOW_C): lambda x, y, z: self.parse_qmi_call_flow(x, y, z),
             i(x.LOG_QMI_SUPPORTED_INTERFACES_C): lambda x, y, z: self.parse_qmi_supported_interfaces(x, y, z),
+
+            # General
+            i(x.LOG_SECURE_LOG_PUBLIC_KEY_C): lambda x, y, z: self.parse_secure_log_pubkey(x, y, z),
         }
 
     def update_parameters(self, display_format: str, gsmtapv3: bool):
@@ -359,4 +362,25 @@ class Diag1xLogParser:
         ts_usec = pkt_ts.microsecond
 
         stdout = 'QMI_IFACES: {}'.format(binascii.hexlify(pkt_body).decode())
+        return {'stdout': stdout, 'ts': pkt_ts}
+
+    def parse_secure_log_pubkey(self, pkt_header, pkt_body: bytes, args: dict):
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        item_struct = namedtuple('QcDiag1xSecLogPubkey', 'unk1 unk2 unk3 unk4 unk5 unk6 rsa_pubkey_len unk_len')
+        if len(pkt_body) < 10:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Log item length shorter than expected')
+                return
+
+        item = item_struct._make(struct.unpack('<BBBBBB HH', pkt_body[0:10]))
+        stdout = 'Secure DIAG public key ({} {} {} {} {} {})'.format(item.unk1, item.unk2, item.unk3, item.unk4, item.unk5, item.unk6)
+        try:
+            stdout += '\n{}'.format(pkt_body[10:10+item.rsa_pubkey_len].decode())
+            stdout += '\nAdditional information: {}'.format(binascii.hexlify(pkt_body[10+item.rsa_pubkey_len:10+item.rsa_pubkey_len+item.unk_len]).decode())
+        except:
+            pass
+
         return {'stdout': stdout, 'ts': pkt_ts}

@@ -1095,14 +1095,36 @@ class QualcommParser:
             return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')]}
         return None
 
+    secure_log = namedtuple('QcDiagSecureLog', 'cmd_code unk1 unk2 unk3 unk4 unk5 unk6 unk7 seqnr unk8 item_len log_id')
     def parse_diag_secure_log(self, pkt: bytes):
         """Parses the DIAG_SECURE_LOG_F packet.
 
         Parameters:
         pkt (bytes): DIAG_SECURE_LOG_F data without trailing CRC
         """
+        if len(pkt) < 24:
+            self.logger.log(logging.WARNING, "Packet shorter than expected")
+            return None
+        log_header = self.secure_log._make(struct.unpack('<B BHHHBBH L L H H', pkt[0:24]))
 
-        return None
+        stdout = 'Secure log: Sequence number {}, Log item ID {:#06x}, {} {} {} {} {} {} {} {}\n'.format(log_header.seqnr,
+                                                                                                    log_header.log_id,
+                                                                                                    log_header.unk1,
+                                                                                                    log_header.unk2,
+                                                                                                    log_header.unk3,
+                                                                                                    log_header.unk4,
+                                                                                                    log_header.unk5,
+                                                                                                    log_header.unk6,
+                                                                                                    log_header.unk7,
+                                                                                                    log_header.unk8)
+
+        pkt_body = pkt[24:]
+        if len(pkt_body) + 4 != log_header.item_len:
+            self.logger.log(logging.WARNING, "Log length does not match (expected {}, got {})".format(log_header.item_len, len(pkt_body) + 4))
+
+        stdout += 'Encrypted body: {}'.format(binascii.hexlify(pkt_body).decode())
+
+        return {'stdout': stdout}
 
 __entry__ = QualcommParser
 
