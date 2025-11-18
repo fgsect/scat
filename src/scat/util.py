@@ -3,7 +3,6 @@
 
 from enum import IntEnum, unique
 from packaging import version
-from typing import Tuple
 import bitstring
 import datetime
 import math
@@ -706,7 +705,7 @@ def convert_mnc(mnc_digit_2: int, mnc_digit_1: int, mnc_digit_0: int) -> str:
         mnc = '{:03}'.format(mnc_digit_2 * 100 + mnc_digit_1 * 10 + mnc_digit_0)
     return mnc
 
-def unpack_mcc_mnc(mcc_mnc_bin: bytes) -> Tuple[str, str]:
+def unpack_mcc_mnc(mcc_mnc_bin: bytes) -> tuple[str, str]:
     mcc = '000'
     mnc = '00'
 
@@ -729,7 +728,7 @@ def unpack_mcc_mnc(mcc_mnc_bin: bytes) -> Tuple[str, str]:
 
     return (mcc, mnc)
 
-def unpack_lai(lai_bin: bytes) -> Tuple[str, str, int]:
+def unpack_lai(lai_bin: bytes) -> tuple[str, str, int]:
     try:
         mcc_mnc = unpack_mcc_mnc(lai_bin[0:3])
     except ValueError:
