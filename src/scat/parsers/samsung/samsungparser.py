@@ -9,6 +9,7 @@ import logging
 import os, sys
 import scat.util as util
 import struct
+from typing import Any
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
@@ -124,7 +125,7 @@ class SamsungParser:
         for p in self.sdm_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
-    def set_parameter(self, params: dict):
+    def set_parameter(self, params: dict[str, Any]):
         for p in params:
             if p == 'model':
                 self.model = params[p]
@@ -206,7 +207,7 @@ class SamsungParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt: bytes):
+    def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
         return self.parse_diag_log(pkt)
 
     def run_diag(self, writer_sdmraw=None):
@@ -384,7 +385,7 @@ class SamsungParser:
                 self.run_diag()
             self.io_device.open_next_file()
 
-    def postprocess_parse_result(self, parse_result: dict):
+    def postprocess_parse_result(self, parse_result: dict[str, Any]):
         if 'radio_id' in parse_result:
             radio_id = parse_result['radio_id']
         else:
@@ -418,6 +419,7 @@ class SamsungParser:
             if len(parse_result['stdout']) > 0:
                 if self.combine_stdout:
                     for l in parse_result['stdout'].split('\n'):
+                        f = currentframe()
                         osmocore_log_hdr = util.create_osmocore_logging_header(
                             timestamp = ts,
                             process_name = Path(sys.argv[0]).name,
@@ -425,7 +427,7 @@ class SamsungParser:
                             level = 3,
                             subsys_name = self.__class__.__name__,
                             filename = Path(__file__).name,
-                            line_number = getframeinfo(currentframe()).lineno
+                            line_number = getframeinfo(f).lineno if f else 0
                         )
                         gsmtap_hdr = util.create_gsmtap_header(
                             version = 2,
@@ -435,7 +437,7 @@ class SamsungParser:
                     for l in parse_result['stdout'].split('\n'):
                         print('Radio {}: {}'.format(radio_id, l))
 
-    def parse_diag_log(self, pkt: bytes):
+    def parse_diag_log(self, pkt: bytes) -> dict[str, Any] | None:
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
             self.logger.log(logging.DEBUG, util.xxd(pkt))

@@ -10,6 +10,7 @@ import os, sys
 import scat.util as util
 import struct
 import datetime
+from typing import Any
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
@@ -46,7 +47,7 @@ class UnisocParser:
     def set_writer(self, writer: AbstractWriter):
         self.writer = writer
 
-    def set_parameter(self, params: dict):
+    def set_parameter(self, params: dict[str, Any]):
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
@@ -67,7 +68,7 @@ class UnisocParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt: bytes):
+    def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
         pkt = pkt[2:-4]
 
         # drivers/unisoc_platform/sprdwcn/platform/wcn_txrx.h
@@ -180,7 +181,7 @@ class UnisocParser:
             self.run_dump()
             self.io_device.open_next_file()
 
-    def postprocess_parse_result(self, parse_result: dict):
+    def postprocess_parse_result(self, parse_result: dict[str, Any]):
         if 'radio_id' in parse_result:
             radio_id = parse_result['radio_id']
         else:
@@ -213,6 +214,7 @@ class UnisocParser:
             if len(parse_result['stdout']) > 0:
                 if self.combine_stdout:
                     for l in parse_result['stdout'].split('\n'):
+                        f = currentframe()
                         osmocore_log_hdr = util.create_osmocore_logging_header(
                             timestamp = ts,
                             process_name = Path(sys.argv[0]).name,
@@ -220,7 +222,7 @@ class UnisocParser:
                             level = 3,
                             subsys_name = self.__class__.__name__,
                             filename = Path(__file__).name,
-                            line_number = getframeinfo(currentframe()).lineno
+                            line_number = getframeinfo(f).lineno if f else 0
                         )
                         gsmtap_hdr = util.create_gsmtap_header(
                             version = 2,

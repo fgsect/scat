@@ -20,6 +20,7 @@ import scat.util as util
 import struct
 import uuid
 import zlib
+from typing import Any
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
@@ -259,7 +260,7 @@ class QualcommParser:
         else:
             return False
 
-    def set_parameter(self, params: dict):
+    def set_parameter(self, params: dict[str, Any]):
         qsr_hash_loaded = False
         for p in params:
             if p == 'log_level':
@@ -442,7 +443,7 @@ class QualcommParser:
         else:
             self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_scat_lte(layers=self.layers)), 0x1000)
 
-    def parse_diag(self, pkt, hdlc_encoded = True, has_crc = True, args = None):
+    def parse_diag(self, pkt, hdlc_encoded = True, has_crc = True, args = None) -> dict[str, Any] | None:
         # Should contain DIAG command and CRC16
         # pkt should not contain trailing 0x7E, and either HDLC encoded or not
         # When the pkt is not HDLC encoded, hdlc_encoded should be set to True
@@ -621,7 +622,7 @@ class QualcommParser:
                 self.run_diag()
             self.io_device.open_next_file()
 
-    def postprocess_parse_result(self, parse_result: dict):
+    def postprocess_parse_result(self, parse_result: dict[str, Any]):
         if 'radio_id' in parse_result:
             radio_id = parse_result['radio_id']
         else:
@@ -654,6 +655,7 @@ class QualcommParser:
             if len(parse_result['stdout']) > 0:
                 if self.combine_stdout:
                     for l in parse_result['stdout'].split('\n'):
+                        f = currentframe()
                         osmocore_log_hdr = util.create_osmocore_logging_header(
                             timestamp = ts,
                             process_name = Path(sys.argv[0]).name,
@@ -661,7 +663,7 @@ class QualcommParser:
                             level = 3,
                             subsys_name = self.__class__.__name__,
                             filename = Path(__file__).name,
-                            line_number = getframeinfo(currentframe()).lineno
+                            line_number = getframeinfo(f).lineno if f else 0
                         )
                         gsmtap_hdr = util.create_gsmtap_header(
                             version = 2,
@@ -734,7 +736,7 @@ class QualcommParser:
 
         return {'stdout': stdout}
 
-    def parse_diag_log(self, pkt: bytes, args=None):
+    def parse_diag_log(self, pkt: bytes, args: dict[str, Any] | None=None):
         """Parses the DIAG_LOG_F packet.
 
         Parameters:

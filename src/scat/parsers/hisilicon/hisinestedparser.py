@@ -23,6 +23,10 @@ class HisiNestedParser:
             0xfd010101: lambda x, y, z: self.hisi_debug_msg(x, y, z),
         }
 
+        self.no_process = {
+
+        }
+
     def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3

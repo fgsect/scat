@@ -26,6 +26,10 @@ class HisiLogParser:
             0x20020000: lambda x, y, z: self.hisi_0x20020000(x, y, z),
         }
 
+        self.no_process = {
+
+        }
+
     def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
