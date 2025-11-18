@@ -24,7 +24,7 @@ The Wireshark plugin is required to dissect LTE MAC and PDCP packets generated b
 
 **Information:** NR RRC/NAS-5GS messages are only available through [GSMTAPv3](https://gitea.osmocom.org/peremen/gsmtapv3).
 NR RRC/NAS-5GS PCAPs generated using SCAT 1.4.0 uses slightly different definition of GSMTAPv3.
-Please generate PCAP file again if you have QMDL/SDM file along with PCAP file, or use script `convert_gsmtapv3_scat_140.py` to convert GSMTAP header to the final format when you don't have QMDL/SDM file.
+Please generate PCAP file again if you have QMDL/SDM file along with PCAP file, or use script `convert_prerelease_gsmtapv3.py -1` to convert GSMTAP header to the final format when you don't have QMDL/SDM file.
 If you have PCAP files generated using SCAT <1.3.0 please use `convert_prerelease_gsmtapv3.py` to convert GSMTAP header to the final GSMTAPv3 release.
 
 ### Smartphones
