@@ -25,14 +25,14 @@ class SdmTraceParser:
             g | 0x90: lambda x: self.sdm_trace_0x90(x),
         }
 
-    def set_icd_ver(self, version):
+    def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def sdm_trace_0x90(self, pkt):
+    def sdm_trace_0x90(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         if self.parent:

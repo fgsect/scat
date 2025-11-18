@@ -55,14 +55,14 @@ class SdmControlParser:
             g | c.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
         }
 
-    def set_icd_ver(self, version):
+    def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def sdm_control_start_response(self, pkt):
+    def sdm_control_start_response(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         version_str = pkt[2:27]
@@ -110,7 +110,7 @@ class SdmControlParser:
         )
         return {'stdout': stdout}
 
-    def sdm_control_change_update_period_response(self, pkt):
+    def sdm_control_change_update_period_response(self, pkt: bytes):
         pkt = pkt[15:-1]
         if len(pkt) < 2:
             return None
@@ -120,7 +120,7 @@ class SdmControlParser:
         stdout = 'Change Update Period Response: {} {}'.format(item.val1, item.val2)
         return {'stdout': stdout}
 
-    def sdm_control_item_select_response(self, pkt, group):
+    def sdm_control_item_select_response(self, pkt: bytes, group: int):
         pkt = pkt[15:-1]
         group_name_map = {0x10: 'Common', 0x20: 'LTE', 0x30: 'EDGE', 0x40: 'HSPA', 0x44: 'CDMA'}
         group_text = group_name_map[group] if group in group_name_map else 'Unknown'
@@ -149,7 +149,7 @@ class SdmControlParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_dm_trace_table_get_response(self, pkt):
+    def sdm_dm_trace_table_get_response(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         item_struct = namedtuple('SdmDmTraceTableGetResponse', 'is_end two trace_group_id')
@@ -180,7 +180,7 @@ class SdmControlParser:
 
         return {'stdout': stdout}
 
-    def sdm_dm_trace_item_select_response(self, pkt):
+    def sdm_dm_trace_item_select_response(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         item_struct = namedtuple('SdmDmTraceItemSelectReponse', 'unk num_items')
@@ -210,7 +210,7 @@ class SdmControlParser:
 
         return {'stdout': stdout}
 
-    def sdm_dm_ilm_table_get_response(self, pkt):
+    def sdm_dm_ilm_table_get_response(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         item_struct = namedtuple('SdmIlmTableGetResponse', 'is_end unk total_item_count packet_item_count')
@@ -254,7 +254,7 @@ class SdmControlParser:
 
         return {'stdout': stdout}
 
-    def sdm_ilm_item_select_response(self, pkt):
+    def sdm_ilm_item_select_response(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         item_struct = namedtuple('SdmDmTraceItemSelectReponse', 'unk num_items')
@@ -277,7 +277,7 @@ class SdmControlParser:
 
         return {'stdout': stdout}
 
-    def sdm_control_tcpip_dump_response(self, pkt):
+    def sdm_control_tcpip_dump_response(self, pkt: bytes):
         pkt = pkt[15:-1]
         item_struct = namedtuple('SdmControlTcpipDumpResponse', 'dl_size ul_size')
         item = item_struct._make(struct.unpack('<HH', pkt[0:4]))
@@ -285,7 +285,7 @@ class SdmControlParser:
         stdout = 'TCP/IP Dump Response: DL max {} bytes, UL max {} bytes'.format(item.dl_size, item.ul_size)
         return {'stdout': stdout}
 
-    def sdm_dm_trigger_table_response(self, pkt):
+    def sdm_dm_trigger_table_response(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         item_struct = namedtuple('SdmTriggerTableResponse', 'num_items1 num_items2')

@@ -103,17 +103,17 @@ class Diag1xLogParser:
             i(x.LOG_QMI_SUPPORTED_INTERFACES_C): lambda x, y, z: self.parse_qmi_supported_interfaces(x, y, z),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def parse_1x_stub(self, pkt_ts, pkt, radio_id, item_id):
+    def parse_1x_stub(self, pkt_ts, pkt: bytes, radio_id: int, item_id: int):
         if self.parent:
             self.parent.logger.log(logging.WARNING, "DIAG_1x_STUB: {:#x}".format(item_id))
             self.parent.logger.log(logging.DEBUG, "Body: {}".format(util.xxd_oneline(pkt)))
 
     # SIM
-    def parse_sim(self, pkt_header, pkt_body, args, sim_id):
+    def parse_sim(self, pkt_header, pkt_body: bytes, args: dict, sim_id: int):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
@@ -143,7 +143,7 @@ class Diag1xLogParser:
                 self.parent.logger.log(logging.WARNING, 'Not handling unknown type 0x%02x' % msg_content[pos])
                 break
 
-    def parse_dual_sim(self, pkt_header, pkt_body, args):
+    def parse_dual_sim(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
@@ -185,7 +185,7 @@ class Diag1xLogParser:
                 break
 
     # IP
-    def parse_ip(self, pkt_header, pkt_body, args):
+    def parse_ip(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         item_struct = namedtuple('QcDiag1xProtocolData', 'instance protocol ifnameid direction sequence_num segment_num_is_final')
         item = item_struct._make(struct.unpack('<BBBBHH', pkt_body[0:8]))
@@ -226,7 +226,7 @@ class Diag1xLogParser:
                 self.pending_pkts[pkt_id] = {segment_num: item_data}
 
     # IMS
-    def parse_sip_message(self, pkt_header, pkt_body, args):
+    def parse_sip_message(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         item_struct = namedtuple('QcDiag1xSipMessage', 'version direction has_sdp len_call_id len_pkt len_pkt_real msg_type status_code unk4')
         item = item_struct._make(struct.unpack('<BBB BHH HHL', pkt_body[0:16]))
@@ -254,7 +254,7 @@ class Diag1xLogParser:
 
         return {'up': [ip_hdr+udp_hdr+sip_body], 'ts': pkt_ts}
 
-    def parse_ims_session_setup(self, pkt_header, pkt_body, args):
+    def parse_ims_session_setup(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         version = pkt_body[0]
 
@@ -294,7 +294,7 @@ class Diag1xLogParser:
 
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_ims_registration(self, pkt_header, pkt_body, args):
+    def parse_ims_registration(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         version = pkt_body[0]
 
@@ -325,7 +325,7 @@ class Diag1xLogParser:
         return {'stdout': stdout, 'ts': pkt_ts}
 
     # QMI
-    def parse_qmi_message(self, pkt_header, pkt_body, args, qmi_port, is_tx):
+    def parse_qmi_message(self, pkt_header, pkt_body: bytes, args: dict, qmi_port: int, is_tx: bool):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
@@ -345,7 +345,7 @@ class Diag1xLogParser:
 
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_qmi_call_flow(self, pkt_header, pkt_body, args):
+    def parse_qmi_call_flow(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
@@ -353,7 +353,7 @@ class Diag1xLogParser:
         stdout = 'QMI_CALL_FLOW: {}'.format(binascii.hexlify(pkt_body).decode())
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_qmi_supported_interfaces(self, pkt_header, pkt_body, args):
+    def parse_qmi_supported_interfaces(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond

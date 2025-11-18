@@ -26,11 +26,11 @@ class HisiLogParser:
             0x20020000: lambda x, y, z: self.hisi_0x20020000(x, y, z),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def hisi_lte_ota_msg(self, pkt_header, pkt_data, args):
+    def hisi_lte_ota_msg(self, pkt_header, pkt_data: bytes, args: dict):
         # Direction: 1: DL, 2: UL
         header = namedtuple('HisiLteOtaMessage', 'chan_type direction unk2 unk3')
         if len(pkt_data) < 16:
@@ -94,7 +94,7 @@ class HisiLogParser:
                 self.parent.log(logging.WARNING, 'Unknown LTE OTA message type {:#x}'.format(ota_hdr.chan_type))
             return None
 
-    def hisi_lte_current_cell_info(self, pkt_header, pkt_data, args):
+    def hisi_lte_current_cell_info(self, pkt_header, pkt_data: bytes, args: dict):
         # TODO: Frequency to EARFCN fallback
 
         header = namedtuple('HisiLteCurrentCellInfo', 'ul_earfcn dl_earfcn ul_freq dl_freq ul_bw dl_bw band_ind')
@@ -131,7 +131,7 @@ class HisiLogParser:
         )
         return {'stdout': stdout}
 
-    def hisi_debug_msg(self, pkt_header, pkt_data, args):
+    def hisi_debug_msg(self, pkt_header, pkt_data: bytes, args: dict):
         # TODO decode hisi ts
         if not self.parent.msgs:
             return None
@@ -163,7 +163,7 @@ class HisiLogParser:
 
         return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_prefix + pkt_data]}
 
-    def hisi_0x20020000(self, pkt_header, pkt_data, args):
+    def hisi_0x20020000(self, pkt_header, pkt_data: bytes, args: dict):
         stdout = ''
         header = namedtuple('Hisi0x20020000', 'cmdid1 unk2 seq_nr msgid cmdid2 unk6 unk7 unk8 inner_len')
 

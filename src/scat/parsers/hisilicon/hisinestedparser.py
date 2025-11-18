@@ -23,11 +23,11 @@ class HisiNestedParser:
             0xfd010101: lambda x, y, z: self.hisi_debug_msg(x, y, z),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def hisi_l3_ota(self, pkt_header, pkt_data, args):
+    def hisi_l3_ota(self, pkt_header, pkt_data: bytes, args: dict):
         if pkt_data[0] == 0x22:
             # WCDMA RRC
             header = namedtuple('HisiL3OtaWcdmaRrc', 'unk1 unk2 unk3 unk4 len type')
@@ -145,7 +145,7 @@ class HisiNestedParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown L3 OTA message type {:#04x}'.format(pkt_data[0]))
             return None
 
-    def hisi_debug_msg(self, pkt_header, pkt_data, args):
+    def hisi_debug_msg(self, pkt_header, pkt_data: bytes, args: dict):
         # TODO decode hisi ts
         if not self.parent.msgs:
             return None

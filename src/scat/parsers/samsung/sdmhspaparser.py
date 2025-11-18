@@ -32,14 +32,14 @@ class SdmHspaParser:
             g | c.HSPA_URRC_NETWORK_INFO: lambda x: self.sdm_hspa_wcdma_serving_cell(x),
         }
 
-    def set_icd_ver(self, version):
+    def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def sdm_hspa_ul1_rf_info_icd_4(self, pkt):
+    def sdm_hspa_ul1_rf_info_icd_4(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1RfInfoOld', 'uarfcn zero rssi txpwr')
 
@@ -56,7 +56,7 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_hspa_ul1_rf_info_icd_5(self, pkt):
+    def sdm_hspa_ul1_rf_info_icd_5(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1RfInfo', 'uarfcn psc rssi ecno rscp txpwr')
 
@@ -75,13 +75,13 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_hspa_ul1_rf_info(self, pkt):
+    def sdm_hspa_ul1_rf_info(self, pkt: bytes):
         if self.icd_ver >= (5, 0):
             return self.sdm_hspa_ul1_rf_info_icd_5(pkt)
         else:
             return self.sdm_hspa_ul1_rf_info_icd_4(pkt)
 
-    def sdm_hspa_ul1_serving_cell(self, pkt):
+    def sdm_hspa_ul1_serving_cell(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1ServingCell', 'psc cpich_rscp cpich_delta_rscp cpich_ecno drx_cycle')
 
@@ -100,7 +100,7 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_hspa_ul1_intra_freq_resel(self, pkt):
+    def sdm_hspa_ul1_intra_freq_resel(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1IntraFreqResel', 'psc cpich_rscp cpich_ecno')
 
@@ -126,7 +126,7 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_hspa_ul1_inter_freq_resel(self, pkt):
+    def sdm_hspa_ul1_inter_freq_resel(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmHspaUL1InterFreqResel', 'uarfcn psc cpich_rscp cpich_ecno')
         num_meas = struct.unpack('<H', pkt[0:2])[0]
@@ -152,7 +152,7 @@ class SdmHspaParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_hspa_wcdma_rrc_status(self, pkt):
+    def sdm_hspa_wcdma_rrc_status(self, pkt: bytes):
         # uint8: channel
         # 0x00 - DISCONNECTED, 0x01: CELL_DCH, 0x02: CELL_FACH, 0x03: CELL_PCH, 0x04: URA_PCH
         pkt = pkt[15:-1]
@@ -196,7 +196,7 @@ class SdmHspaParser:
         )
         return {'stdout': stdout}
 
-    def sdm_hspa_wcdma_serving_cell(self, pkt):
+    def sdm_hspa_wcdma_serving_cell(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 

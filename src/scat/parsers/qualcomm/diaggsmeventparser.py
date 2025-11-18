@@ -48,7 +48,7 @@ class DiagGsmEventParser:
         return wrapped_function
 
     @build_header
-    def parse_event_gsm_message_received(self, ts, event_id, arg_bin):
+    def parse_event_gsm_message_received(self, ts, event_id: int, arg_bin: bytes):
         # Event 450: 2018-10-25 18:40:06.858290: Binary(len=0x03) = 3f 06 03
         log_content = "{}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
 

@@ -129,7 +129,7 @@ class QualcommParser:
         for p in self.diag_log_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
-    def load_qsr_hash(self, filename):
+    def load_qsr_hash(self, filename: str):
         tag_oneline_re = re.compile(r'\<(\w*)\>\s*([\w\-=.]*)\s*\</(\w*)\>')
         file_version_lo = ''
         file_version_hi = ''
@@ -164,7 +164,7 @@ class QualcommParser:
         else:
             return False
 
-    def load_qsr4_hash(self, filename):
+    def load_qsr4_hash(self, filename: str):
         zlib_content = b''
         content = b''
         with open(filename, 'rb') as qsr4_file:
@@ -258,7 +258,7 @@ class QualcommParser:
         else:
             return False
 
-    def set_parameter(self, params):
+    def set_parameter(self, params: dict):
         qsr_hash_loaded = False
         for p in params:
             if p == 'log_level':
@@ -300,7 +300,7 @@ class QualcommParser:
             self.parse_msgs = True
         self.update_parameters(self.display_format, self.gsmtapv3)
 
-    def sanitize_radio_id(self, radio_id):
+    def sanitize_radio_id(self, radio_id: int):
         if radio_id <= 0:
             return 0
         elif radio_id > 2:
@@ -620,7 +620,7 @@ class QualcommParser:
                 self.run_diag()
             self.io_device.open_next_file()
 
-    def postprocess_parse_result(self, parse_result):
+    def postprocess_parse_result(self, parse_result: dict):
         if 'radio_id' in parse_result:
             radio_id = parse_result['radio_id']
         else:
@@ -672,7 +672,7 @@ class QualcommParser:
 
     log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
 
-    def _snprintf(self, fmtstr, fmtargs):
+    def _snprintf(self, fmtstr: str, fmtargs: list):
         # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x', '%p'}
         cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXp])|%%)')
         cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxXp]')
@@ -718,7 +718,7 @@ class QualcommParser:
 
         return log_content_formatted
 
-    def parse_diag_version(self, pkt):
+    def parse_diag_version(self, pkt: bytes):
         header = namedtuple('QcDiagVersion', 'compile_date compile_time release_date release_time chipset')
         if len(pkt) < 47:
             return None
@@ -733,7 +733,7 @@ class QualcommParser:
 
         return {'stdout': stdout}
 
-    def parse_diag_log(self, pkt, args=None):
+    def parse_diag_log(self, pkt: bytes, args=None):
         """Parses the DIAG_LOG_F packet.
 
         Parameters:
@@ -761,7 +761,7 @@ class QualcommParser:
 
     event_header = namedtuple('QcDiagEventHeader', 'cmd_code msg_len')
 
-    def parse_diag_event(self, pkt):
+    def parse_diag_event(self, pkt: bytes):
         """Parses the DIAG_EVENT_REPORT_F packet.
 
         Parameters:
@@ -835,7 +835,7 @@ class QualcommParser:
 
         return {'cp': event_pkts, 'ts': ts}
 
-    def parse_diag_log_config(self, pkt):
+    def parse_diag_log_config(self, pkt: bytes):
         if len(pkt) < 8:
             return None
         header = namedtuple('QcDiagLogConfig', 'pkt_id cmd_id')
@@ -869,7 +869,7 @@ class QualcommParser:
 
     ext_msg_header = namedtuple('QcDiagExtMsgHeader', 'cmd_code ts_type num_args drop_cnt timestamp line_no message_subsys_id reserved1')
 
-    def parse_diag_ext_msg(self, pkt):
+    def parse_diag_ext_msg(self, pkt: bytes):
         """Parses the DIAG_EXT_MSG_F packet.
 
         Parameters:
@@ -906,14 +906,14 @@ class QualcommParser:
 
         return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
-    def parse_diag_ext_build_id(self, pkt):
+    def parse_diag_ext_build_id(self, pkt: bytes):
         if len(pkt) < 12:
             return None
 
         stdout = 'Build ID: {}'.format(pkt[12:-2].decode(errors='backslashreplace'))
         return {'stdout': stdout}
 
-    def parse_diag_ext_msg_config(self, pkt):
+    def parse_diag_ext_msg_config(self, pkt: bytes):
         if len(pkt) < 2:
             return None
 
@@ -956,10 +956,10 @@ class QualcommParser:
 
             return {'stdout': stdout, 'start': pkt_header.start_id, 'end': pkt_header.end_id, 'level': levels}
 
-    def parse_diag_ext_msg_terse(self, pkt):
+    def parse_diag_ext_msg_terse(self, pkt: bytes):
         return None
 
-    def parse_diag_qsr_ext_msg_terse(self, pkt):
+    def parse_diag_qsr_ext_msg_terse(self, pkt: bytes):
         pkt_header = self.ext_msg_header._make(struct.unpack('<BBBBQHHL', pkt[0:20]))
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_args = list(struct.unpack('<{}L'.format(pkt_header.num_args), pkt[24:24+4*pkt_header.num_args]))
@@ -988,7 +988,7 @@ class QualcommParser:
 
     multisim_header = namedtuple('QcDiagMultiSimHeader', 'cmd_code reserved1 reserved2 radio_id')
 
-    def parse_diag_multisim(self, pkt):
+    def parse_diag_multisim(self, pkt: bytes):
         """Parses the DIAG_MULTI_RADIO_CMD_F packet. This function calls nexted DIAG log packet with correct radio ID attached.
 
         Parameters:
@@ -1009,7 +1009,7 @@ class QualcommParser:
         return ret
 
     qsr4_ext_msg_terse = namedtuple('QcDiagQsr4ExtMsgTerse', 'cmd_code ts_type num_size_args drop_cnt timestamp hash unk')
-    def parse_diag_qsr4_ext_msg(self, pkt):
+    def parse_diag_qsr4_ext_msg(self, pkt: bytes):
         if len(pkt) < 18:
             return None
         terse = self.qsr4_ext_msg_terse._make(struct.unpack('<BBBBQLH', pkt[0:18]))
@@ -1056,7 +1056,7 @@ class QualcommParser:
             return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')], 'ts': pkt_ts}
 
     qsh_trace_msg_terse = namedtuple('QcDiagQshTraceMsgTerse', 'cmd_code unk1 client_id unk3 arg_count unk5 unk6 unk7 unk_inc hash')
-    def parse_diag_qsh_trace_msg(self, pkt):
+    def parse_diag_qsh_trace_msg(self, pkt: bytes):
         if len(pkt) < 16:
             return None
         terse = self.qsh_trace_msg_terse._make(struct.unpack('<B BBBBBBB L L', pkt[0:16]))
@@ -1095,7 +1095,7 @@ class QualcommParser:
             return {'cp': [gsmtap_hdr + osmocore_log_hdr + log_content_formatted.encode('utf-8')]}
         return None
 
-    def parse_diag_secure_log(self, pkt):
+    def parse_diag_secure_log(self, pkt: bytes):
         """Parses the DIAG_SECURE_LOG_F packet.
 
         Parameters:

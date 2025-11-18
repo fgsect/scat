@@ -56,7 +56,7 @@ class DiagLteEventParser:
             1994: (self.parse_event_lte_rrc_state_change_trigger, 'LTE_RRC_STATE_CHANGE_TRIGGER'),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
@@ -80,13 +80,13 @@ class DiagLteEventParser:
         return wrapped_function
 
     @build_header
-    def parse_event_lte_rrc_timer_status(self, ts, event_id, arg_bin):
+    def parse_event_lte_rrc_timer_status(self, ts, event_id: int, arg_bin: bytes):
         log_content = "{}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_rrc_state_change(self, ts, event_id, arg1):
+    def parse_event_lte_rrc_state_change(self, ts, event_id: int, arg1: int):
         rrc_state_map = {
             1: "RRC_IDLE_NOT_CAMPED",
             2: "RRC_IDLE_CAMPED",
@@ -104,7 +104,7 @@ class DiagLteEventParser:
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_rrc_dl_msg(self, ts, event_id, arg1, arg2):
+    def parse_event_lte_rrc_dl_msg(self, ts, event_id: int, arg1: int, arg2: int):
         channel_dl_map = {
             1: "BCCH",
             2: "PCCH",
@@ -142,7 +142,7 @@ class DiagLteEventParser:
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_rrc_ul_msg(self, ts, event_id, arg1, arg2):
+    def parse_event_lte_rrc_ul_msg(self, ts, event_id: int, arg1: int, arg2: int):
         channel_ul_map = {
             5: "CCCH",
             6: "DCCH"
@@ -169,38 +169,38 @@ class DiagLteEventParser:
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_rrc_paging_drx_cycle(self, ts, event_id, arg1, arg2):
+    def parse_event_lte_rrc_paging_drx_cycle(self, ts, event_id: int, arg1: int, arg2: int):
         log_content = "{:02x} {:02x}".format(arg1, arg2).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_nas_msg(self, ts, event_id, arg1):
+    def parse_event_lte_nas_msg(self, ts, event_id: int, arg1: bytes):
         message_id = struct.unpack('<L', arg1[:4])[0]
         log_content = "0x{:04x}".format(message_id).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_nas_ota_msg(self, ts, event_id, arg1):
+    def parse_event_lte_nas_ota_msg(self, ts, event_id: int, arg1: int):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_emm_esm_timer(self, ts, event_id, arg1):
+    def parse_event_lte_emm_esm_timer(self, ts, event_id: int, arg1: int):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_ml1_phr_report(self, ts, event_id, arg1, arg2):
+    def parse_event_lte_ml1_phr_report(self, ts, event_id: int, arg1: int, arg2: int):
         log_content = "{:02x} {:02x}".format(arg1, arg2).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_lte_rrc_state_change_trigger(self, ts, event_id, arg1):
+    def parse_event_lte_rrc_state_change_trigger(self, ts, event_id: int, arg1: int):
         log_content = "{:02x}".format(arg1).encode('utf-8')
 
         return self.header + log_content

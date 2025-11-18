@@ -61,10 +61,10 @@ class DiagNrLogParser:
 
         self.nr_pkt_ver = namedtuple('QcDiagNrPktVer', 'rel_min rel_maj')
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
 
-    def parse_float_q7(self, data_to_convert):
+    def parse_float_q7(self, data_to_convert: int) -> float:
         if data_to_convert == 0:
             return 0
         integer = (data_to_convert >> 7) & 0xff
@@ -73,7 +73,7 @@ class DiagNrLogParser:
         return sig
 
     # ML1
-    def parse_nr_ml1_meas_db_update(self, pkt_header, pkt_body, args):
+    def parse_nr_ml1_meas_db_update(self, pkt_header, pkt_body: bytes, args: dict):
         stdout = ''
         pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
         num_layers = 0
@@ -178,7 +178,7 @@ class DiagNrLogParser:
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     # RRC
-    def parse_nr_mib_info(self, pkt_header, pkt_body, args):
+    def parse_nr_mib_info(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
 
@@ -216,7 +216,7 @@ class DiagNrLogParser:
             stdout = 'NR MIB: NR-ARFCN: {}, PCI: {:4d}, SFN: {}'.format(item.nrarfcn, item.pci, sfn)
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_nr_rrc_scell_info(self, pkt_header, pkt_body, args):
+    def parse_nr_rrc_scell_info(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
 
@@ -256,10 +256,10 @@ class DiagNrLogParser:
                 item.ul_nrarfcn, item.dl_bandwidth, item.ul_bandwidth, item.band, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_nr_rrc_conf_info(self, pkt_header, pkt_body, args):
+    def parse_nr_rrc_conf_info(self, pkt_header, pkt_body: bytes, args: dict):
         pass
 
-    def parse_nr_rrc(self, pkt_header, pkt_body, args):
+    def parse_nr_rrc(self, pkt_header, pkt_body: bytes, args: dict):
         msg_content = b''
         stdout = ''
         pkt_ver = struct.unpack('<I', pkt_body[0:4])[0]
@@ -445,7 +445,7 @@ class DiagNrLogParser:
 
             return {'layer': 'rrc', 'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_nr_cacombos(self, pkt_header, pkt_body, args):
+    def parse_nr_cacombos(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         if self.parent:
             if not self.parent.cacombos:
@@ -454,7 +454,7 @@ class DiagNrLogParser:
         return {'stdout': 'NR UE CA Combos Raw: {}'.format(binascii.hexlify(pkt_body).decode()), 'ts': pkt_ts}
 
     # NAS
-    def parse_nr_mm_state(self, pkt_header, pkt_body, args):
+    def parse_nr_mm_state(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
 
@@ -493,7 +493,7 @@ class DiagNrLogParser:
                 self.parent.logger.log(logging.WARNING, "Body: %s" % (util.xxd_oneline(pkt_body[4:])))
             return
 
-    def parse_nr_nas(self, pkt_header, pkt_body, args, cmd_id):
+    def parse_nr_nas(self, pkt_header, pkt_body: bytes, args: dict, cmd_id: int):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond

@@ -295,13 +295,13 @@ class diag_log_code_5gnr(IntEnum):
     LOG_5GNR_NAS_5GMM_PLAIN_OTA_CONTAINER_MESSAGE= 0x814 # NR NAS 5GMM Plain OTA Container Message
     LOG_5GNR_NAS_5GMM_STATE                      = 0x80C # NR NAS 5GMM State - According to MobileInsight
 
-def bytes_reqd_for_bit(bit):
+def bytes_reqd_for_bit(bit: int) -> int:
     if bit % 8 > 0:
         return int(bit / 8) + 1
     else:
         return int(bit / 8)
 
-def create_log_config_set_mask(equip_id, last_item, *bits):
+def create_log_config_set_mask(equip_id: int, last_item: int, *bits) -> bytes:
     # Command ID, Operation | equip_id, last_item, bitfields
     diag_log_config_mask_header = struct.pack('<LLLL',
         DIAG_LOG_CONFIG_F, LOG_CONFIG_SET_MASK_OP,
@@ -617,7 +617,7 @@ def log_mask_scat_nr(num_max_items=0x09ff, layers=[]):
 def log_mask_empty_tdscdma(num_max_items=0x0207):
     return create_log_config_set_mask(DIAG_SUBSYS_ID_TDSCDMA, num_max_items)
 
-def create_extended_message_config_set_mask(first_ssid, last_ssid, *masks):
+def create_extended_message_config_set_mask(first_ssid: int, last_ssid: int, *masks) -> bytes:
     # Command ID, Operation | first_ssid, last_ssid, runtime_masks
     diag_log_config_mask_header = struct.pack('<BBHHH',
         DIAG_EXT_MSG_CONFIG_F, 0x04,

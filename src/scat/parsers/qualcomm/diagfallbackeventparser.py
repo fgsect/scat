@@ -1657,11 +1657,11 @@ class DiagFallbackEventParser:
             2747: 'EVENT_WLAN_LOW_RESOURCE_FAILURE', # 0xabb
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def parse_event_fallback(self, ts, event_id, *args):
+    def parse_event_fallback(self, ts, event_id: int, *args):
         gsmtap_hdr = util.create_gsmtap_header(
             version = 2,
             payload_type = util.gsmtap_type.OSMOCORE_LOG)

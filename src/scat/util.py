@@ -508,8 +508,8 @@ def create_gsmtap_header(version = 2, payload_type = 0, timeslot = 0,
     return gsmtap_hdr
 
 def create_osmocore_logging_header(timestamp = datetime.datetime.now(),
-        process_name = '', pid = 0, level = 0,
-        subsys_name = '', filename = '', line_number = 0):
+        process_name: str | bytes = b'', pid: int = 0, level: int = 0,
+        subsys_name: str | bytes = b'', filename: str | bytes = b'', line_number: int = 0):
 
     if type(process_name) == str:
         process_name = process_name.encode('utf-8')

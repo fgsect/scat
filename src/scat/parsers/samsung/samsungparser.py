@@ -91,7 +91,7 @@ class SamsungParser:
                 pass
 
     @staticmethod
-    def model_to_icd_ver(model):
+    def model_to_icd_ver(model: str):
         if model == 'cmc221s':
             return (4, 36)
         elif model == 'e303':
@@ -113,15 +113,15 @@ class SamsungParser:
     def set_writer(self, writer):
         self.writer = writer
 
-    def update_icd_ver(self, version):
+    def update_icd_ver(self, version: tuple):
         for p in self.sdm_parsers:
             p.set_icd_ver(version)
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         for p in self.sdm_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
-    def set_parameter(self, params):
+    def set_parameter(self, params: dict):
         for p in params:
             if p == 'model':
                 self.model = params[p]
@@ -203,7 +203,7 @@ class SamsungParser:
     def prepare_diag(self):
         pass
 
-    def parse_diag(self, pkt):
+    def parse_diag(self, pkt: bytes):
         return self.parse_diag_log(pkt)
 
     def run_diag(self, writer_sdmraw=None):
@@ -381,7 +381,7 @@ class SamsungParser:
                 self.run_diag()
             self.io_device.open_next_file()
 
-    def postprocess_parse_result(self, parse_result):
+    def postprocess_parse_result(self, parse_result: dict):
         if 'radio_id' in parse_result:
             radio_id = parse_result['radio_id']
         else:
@@ -432,7 +432,7 @@ class SamsungParser:
                     for l in parse_result['stdout'].split('\n'):
                         print('Radio {}: {}'.format(radio_id, l))
 
-    def parse_diag_log(self, pkt):
+    def parse_diag_log(self, pkt: bytes):
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):
             self.logger.log(logging.WARNING, 'Invalid packet structure')
             self.logger.log(logging.DEBUG, util.xxd(pkt))

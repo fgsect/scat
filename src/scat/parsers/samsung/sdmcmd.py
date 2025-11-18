@@ -490,12 +490,12 @@ def scat_sdm_hspa_selection_ext(layers=[]):
 sdmheader = namedtuple('SdmHeader', 'length1 zero length2 stamp direction group command timestamp')
 sdmheader_ext = namedtuple('SdmHeaderExt', 'length1 zero length2 stamp direction radio_id group command timestamp')
 
-def generate_sdm_packet(direction, group, command, payload, timestamp=0):
+def generate_sdm_packet(direction: int, group: int, command: int, payload: bytes, timestamp: int=0) -> bytes:
     pkt_len = 2 + 3 + 4 + len(payload) + 2
     pkt_header = struct.pack('<HBHHBBBL', pkt_len + 3, 0, pkt_len, 0, direction, group, command, timestamp)
     return b'\x7f' + pkt_header + payload + b'\x7e'
 
-def parse_sdm_header(hdr):
+def parse_sdm_header(hdr: bytes):
     tmp_hdr = sdmheader._make(struct.unpack('<HBHHBBBL', hdr))
     radio_id = (tmp_hdr.group) >> 5
     group_real = tmp_hdr.group & 0x1F

@@ -37,14 +37,14 @@ class SdmCommonParser:
             g | c.COMMON_NR_NAS_SIGNALING_INFO: lambda x: self.sdm_common_nr_nas_signaling(x),
         }
 
-    def set_icd_ver(self, version):
+    def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def sdm_common_dummy(self, pkt, cmdid):
+    def sdm_common_dummy(self, pkt: bytes, cmdid: int):
         pkt = pkt[15:-1]
         return {'stdout': 'COMMON {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode('utf-8'))}
         # 0x02
@@ -69,7 +69,7 @@ class SdmCommonParser:
         # 02 00 00 00 00
         # 01 00 00 00 00
 
-    def sdm_common_basic_info(self, pkt):
+    def sdm_common_basic_info(self, pkt: bytes):
         pkt = pkt[15:-1]
         if len(pkt) < 11:
             self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than minimum expected (11)'.format(len(pkt)))
@@ -135,7 +135,7 @@ class SdmCommonParser:
 
         return {'stdout': stdout}
 
-    def _parse_sdm_common_signaling(self, sdm_pkt_hdr, type, subtype, direction, length, msg):
+    def _parse_sdm_common_signaling(self, sdm_pkt_hdr, type: int, subtype: int, direction: int, length: int, msg: bytes):
         if type == 0x30: # UMTS RRC
             chan_map_ul = {
                 0x30: util.gsmtap_umts_rrc_types.UL_CCCH,
@@ -271,7 +271,7 @@ class SdmCommonParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown channel type 0x{:02x}'.format(type))
             return None
 
-    def sdm_common_signaling(self, pkt):
+    def sdm_common_signaling(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
@@ -281,7 +281,7 @@ class SdmCommonParser:
 
         return self._parse_sdm_common_signaling(sdm_pkt_hdr, pkt_header.type, pkt_header.subtype, pkt_header.direction, pkt_header.length, msg_content)
 
-    def sdm_common_multi_signaling(self, pkt):
+    def sdm_common_multi_signaling(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
@@ -314,7 +314,7 @@ class SdmCommonParser:
             return self._parse_sdm_common_signaling(sdm_pkt_hdr, pkt_header.type, pkt_header.subtype,
                 pkt_header.direction, len(newpkt_body), newpkt_body)
 
-    def sdm_common_nr_rrc_signaling(self, pkt):
+    def sdm_common_nr_rrc_signaling(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmCommonNrRrcSignalingHeader', 'total_frag frag_index id type direction length')
         pkt_header = header._make(struct.unpack('<BBBBBH', pkt[0:7]))
@@ -383,7 +383,7 @@ class SdmCommonParser:
 
         return {'cp': [gsmtap_hdr + msg_content]}
 
-    def sdm_common_nr_nas_signaling(self, pkt):
+    def sdm_common_nr_nas_signaling(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmCommonNrNasSignalingHeader', 'direction length unknown type')
         pkt_header = header._make(struct.unpack('<BHBB', pkt[0:5]))

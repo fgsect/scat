@@ -33,7 +33,7 @@ class DiagCommonEventParser:
             2866: (self.parse_event_diag_process_name_id, 'DIAG_PROCESS_NAME'),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
@@ -57,22 +57,21 @@ class DiagCommonEventParser:
         return wrapped_function
 
     @build_header
-    def parse_event_ipv6_sm_event(self, ts, event_id, arg_bin):
+    def parse_event_ipv6_sm_event(self, ts, event_id: int, arg_bin: bytes):
         # Event 1682: 2023-01-01 15:02:20.275880: Binary(len=0x04) = 04 80 02 03
         log_content = "{}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
 
         return self.header + log_content
 
     @build_header
-    def parse_event_ipv6_prefix_update(self, ts, event_id, arg_bin):
+    def parse_event_ipv6_prefix_update(self, ts, event_id: int, arg_bin: bytes):
         # Event 1684: 2018-10-25 18:40:03.870095: Binary(len=0x18) = 04 80 02 03 | 00 00 00 00 | 2a 02 30 3e 28 02 48 9c | 40 00 00 00 | 00 00 00 00
         log_content = "{}".format(' '.join('{:02x}'.format(x) for x in arg_bin)).encode('utf-8')
 
         return self.header + log_content
 
-
     @build_header
-    def parse_event_diag_qshrink_id(self, ts, event_id, arg_bin):
+    def parse_event_diag_qshrink_id(self, ts, event_id: int, arg_bin: bytes):
         diag_id = arg_bin[0]
         diag_uuid = arg_bin[1:]
         diag_uuid_real = uuid.UUID(bytes_le=b'\x00'*16)
@@ -85,7 +84,7 @@ class DiagCommonEventParser:
         return self.header + log_content
 
     @build_header
-    def parse_event_diag_process_name_id(self, ts, event_id, arg_bin):
+    def parse_event_diag_process_name_id(self, ts, event_id: int, arg_bin: bytes):
         diag_id = arg_bin[0]
         diag_process_name = arg_bin[1:].decode(errors='backslashreplace')
 

@@ -25,14 +25,14 @@ class SdmIpParser:
             g | 0x10: lambda x: self.sdm_0x0710(x),
         }
 
-    def set_icd_ver(self, version):
+    def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def sdm_ip_data(self, pkt):
+    def sdm_ip_data(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         header_struct = namedtuple('SdmIpData', 'seq_num direction ethertype length')
@@ -45,7 +45,7 @@ class SdmIpParser:
         else:
             return {'layer': 'ip', 'up': [payload]}
 
-    def sdm_0x0710(self, pkt):
+    def sdm_0x0710(self, pkt: bytes):
         pkt = pkt[15:-1]
         header_struct = namedtuple('Sdm0x0710Data', 'seq_num direction')
         header = header_struct._make(struct.unpack('<HH', pkt[0:4]))

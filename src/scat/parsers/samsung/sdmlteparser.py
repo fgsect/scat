@@ -60,18 +60,18 @@ class SdmLteParser:
             g | c.LTE_VOLTE_RX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_rx_rtp_stats(x),
         }
 
-    def set_icd_ver(self, version):
+    def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def sdm_lte_dummy(self, pkt, cmdid):
+    def sdm_lte_dummy(self, pkt: bytes, cmdid: int):
         pkt = pkt[15:-1]
         return {'stdout': 'LTE {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_phy_status(self, pkt):
+    def sdm_lte_phy_status(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         if len(pkt) != 2:
@@ -83,7 +83,7 @@ class SdmLteParser:
         stdout = 'LTE PHY Status: Current SFN {}'.format(phy_status.sfn)
         return {'stdout': stdout}
 
-    def sdm_lte_phy_cell_search_meas(self, pkt):
+    def sdm_lte_phy_cell_search_meas(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
@@ -123,7 +123,7 @@ class SdmLteParser:
 
         return {'stdout': stdout.rstrip()}
 
-    def sdm_lte_phy_cell_info(self, pkt):
+    def sdm_lte_phy_cell_info(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
         header = namedtuple('SdmLtePhyCellInfo', 'plmn zero1 arfcn pci zero2 reserved1 reserved2 rsrp rsrq num_ncell')
@@ -202,7 +202,7 @@ class SdmLteParser:
                     self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
         return {'stdout': stdout.rstrip()}
 
-    def sdm_lte_l1_rf_info(self, pkt):
+    def sdm_lte_l1_rf_info(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<hhhhh'
         expected_len = struct.calcsize(struct_format)
@@ -231,7 +231,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_l1_rach_attempt(self, pkt):
+    def sdm_lte_l1_rach_attempt(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<LHHBBLHHB'
         expected_len = struct.calcsize(struct_format)
@@ -248,7 +248,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_l2_rach_info(self, pkt):
+    def sdm_lte_l2_rach_info(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<HHB'
         expected_len = struct.calcsize(struct_format)
@@ -264,7 +264,7 @@ class SdmLteParser:
             rach_info.preamble_id, rach_info.preamble_group, rach_info.num_preamble)
         return {'stdout': stdout}
 
-    def sdm_lte_l2_rnti_info(self, pkt):
+    def sdm_lte_l2_rnti_info(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<HHHHHH'
         expected_len = struct.calcsize(struct_format)
@@ -281,7 +281,7 @@ class SdmLteParser:
             rnti_info.c_rnti, rnti_info.ra_rnti, rnti_info.val6)
         return {'stdout': stdout}
 
-    def sdm_lte_l2_mac_ce(self, pkt):
+    def sdm_lte_l2_mac_ce(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<BLBHB'
         expected_len = struct.calcsize(struct_format)
@@ -298,7 +298,7 @@ class SdmLteParser:
             'None' if ce_info.trailer_len == 0 else '{} {}'.format(pkt[expected_len], binascii.hexlify(pkt[expected_len+1:expected_len+1+ce_info.trailer_len]).decode()))
         return {'stdout': stdout}
 
-    def sdm_lte_rrc_serving_cell(self, pkt):
+    def sdm_lte_rrc_serving_cell(self, pkt: bytes):
         '''
         0x50: 'LteRrcServ?', len:24
             "cid", '<L',  4 bytes, pos:4
@@ -338,7 +338,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_rrc_state(self, pkt):
+    def sdm_lte_rrc_state(self, pkt: bytes):
         '''
         0x51: 'LteRrcState' len:5
             "rrc_state", '<B', 1 byte, pos:4  # (00 - IDLE, 01 - CONNECTING, 02 - CONNECTED)
@@ -356,7 +356,7 @@ class SdmLteParser:
         stdout = 'LTE RRC State: {}'.format(rrc_state_map[rrc_state.state] if rrc_state.state in rrc_state_map else 'UNKNOWN')
         return {'stdout': stdout}
 
-    def _parse_sdm_lte_rrc_message(self, sdm_pkt_hdr, channel, direction, length, msg):
+    def _parse_sdm_lte_rrc_message(self, sdm_pkt_hdr, channel: int, direction: int, length: int, msg: bytes):
         t_v2 = util.gsmtap_lte_rrc_types
         t_v3 = util.gsmtapv3_lte_rrc_types
         rrc_subtype_dl = {
@@ -371,7 +371,7 @@ class SdmLteParser:
             4: (t_v2.UL_DCCH, t_v3.UL_DCCH),
         }
 
-        subtype = 0
+        subtype = (0, 0)
         try:
             if direction == 0:
                 subtype = rrc_subtype_dl[channel]
@@ -410,7 +410,7 @@ class SdmLteParser:
                 sub_type = subtype[0])
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg]}
 
-    def sdm_lte_rrc_ota_packet(self, pkt):
+    def sdm_lte_rrc_ota_packet(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
 
@@ -426,13 +426,13 @@ class SdmLteParser:
 
         return self._parse_sdm_lte_rrc_message(sdm_pkt_hdr, rrc_header.channel, rrc_header.direction, rrc_header.length, rrc_msg)
 
-    def sdm_lte_rrc_timer(self, pkt):
+    def sdm_lte_rrc_timer(self, pkt: bytes):
         # [02, 04, 10] 00000000
 
         pkt = pkt[15:-1]
         return {'stdout': 'LTE RRC Timer: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_rrc_asn_version(self, pkt):
+    def sdm_lte_rrc_asn_version(self, pkt: bytes):
         # Always 01? 1b - only for old revision
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
         pkt = pkt[15:-1]
@@ -468,7 +468,7 @@ class SdmLteParser:
             return self._parse_sdm_lte_rrc_message(sdm_pkt_hdr, rrc_header.channel, rrc_header.direction,
                 len(newpkt_body), newpkt_body)
 
-    def sdm_lte_rrc_rach_msg(self, pkt):
+    def sdm_lte_rrc_rach_msg(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<BBBLLL'
         expected_len = struct.calcsize(struct_format)
@@ -485,7 +485,7 @@ class SdmLteParser:
             rach_message.preamble_id, rach_message.ta, rach_message.tc_rnti)
         return {'stdout': stdout}
 
-    def sdm_lte_0x57(self, pkt):
+    def sdm_lte_0x57(self, pkt: bytes):
         '''
         0x57: '?' len:13
             "earfcn", '<L', 4 bytes, pos:7
@@ -495,7 +495,7 @@ class SdmLteParser:
         pkt = pkt[15:-1]
         return {'stdout': 'LTE 0x57: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_sim_data(self, pkt):
+    def sdm_lte_nas_sim_data(self, pkt: bytes):
         '''
         0x58: 'Sim(?)', len:13
             "mcc",  '<2s', 2 bytes, pos:4,   # bcd encoded
@@ -506,7 +506,7 @@ class SdmLteParser:
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS SIM Data: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_status_variable(self, pkt):
+    def sdm_lte_nas_status_variable(self, pkt: bytes):
         # 3 bytes
         # val1: 1, 2
         # val2: 1, 2, 3, 4, 5
@@ -515,7 +515,7 @@ class SdmLteParser:
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS Status Variable: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_msg(self, pkt):
+    def sdm_lte_nas_msg(self, pkt: bytes):
         pkt = pkt[15:-1]
         # 0x5A: LTE NAS EMM Message
         # 0x5F: LTE NAS ESM Message
@@ -545,7 +545,7 @@ class SdmLteParser:
                 arfcn = 0)
         return {'layer': 'nas', 'cp': [gsmtap_hdr + nas_msg]}
 
-    def sdm_lte_nas_plmn_selection(self, pkt):
+    def sdm_lte_nas_plmn_selection(self, pkt: bytes):
         # All zeroes?
         # 00050001
         # 01060002
@@ -555,12 +555,12 @@ class SdmLteParser:
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS PLMN Selection: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_security(self, pkt):
+    def sdm_lte_nas_security(self, pkt: bytes):
         # All zeroes?
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS Security: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_pdp(self, pkt):
+    def sdm_lte_nas_pdp(self, pkt: bytes):
         # 0000ff0000ff0000ff
         # 0001ff0000ff0000ff
         # 0501ff0000ff0000ff
@@ -569,7 +569,7 @@ class SdmLteParser:
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS PDP: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_ip(self, pkt):
+    def sdm_lte_nas_ip(self, pkt: bytes):
         # 00000000050000000000000001000000020000000000000000000000
         # 00000000322c0d000000000000000028caa003050000000000000000
         # 00000000000000000000000000000000000000000000000000000000
@@ -578,7 +578,7 @@ class SdmLteParser:
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS IP: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_volte_rtp_packet(self, pkt, cmdid):
+    def sdm_lte_volte_rtp_packet(self, pkt: bytes, cmdid: int):
         # 0x70: TX
         # 0x71: RX
         pkt = pkt[15:-1]
@@ -598,7 +598,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_volte_tx_stats(self, pkt):
+    def sdm_lte_volte_tx_stats(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmLteVolteTxStats', 'rtp_payload_type rtp_ssrc dst_port ip_type ip_addr time')
         tx_stats = header._make(struct.unpack('<BLHH16sL', pkt[0:58]))
@@ -622,7 +622,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_volte_rx_stats(self, pkt):
+    def sdm_lte_volte_rx_stats(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmLteVolteRxStats', 'rtp_ssrc dst_port ip_type ip_addr')
         rx_stats = header._make(struct.unpack('<LHH16s', pkt[0:48]))
@@ -641,7 +641,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_volte_tx_rtp_stats(self, pkt):
+    def sdm_lte_volte_tx_rtp_stats(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmLteVolteTxRtpStats', 'time pkts bytes')
         tx_stats = header._make(struct.unpack('<LLL', pkt[0:12]))
@@ -654,7 +654,7 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
-    def sdm_lte_volte_rx_rtp_stats(self, pkt):
+    def sdm_lte_volte_rx_rtp_stats(self, pkt: bytes):
         pkt = pkt[15:-1]
         header = namedtuple('SdmLteVolteRxRtpStats', 'time pkts bytes')
         rx_stats = header._make(struct.unpack('<LLL', pkt[0:12]))

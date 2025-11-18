@@ -95,25 +95,25 @@ class DiagLteLogParser:
             i(c.LOG_LTE_NAS_EMM_PLAIN_OTA_OUTGOING_MESSAGE): lambda x, y, z: self.parse_lte_nas(x, y, z, True),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
     # def parse_lte_dummy(self, pkt_header, pkt_body, args):
     #     return {'stdout': 'LTE Dummy 0x{:04x}: {}'.format(pkt_header.log_id, binascii.hexlify(pkt_body).decode())}
 
-    def parse_rsrp(self, rsrp):
+    def parse_rsrp(self, rsrp: int) -> float:
         return -180 + rsrp * 0.0625
 
-    def parse_rsrq(self, rsrq):
+    def parse_rsrq(self, rsrq: int) -> float:
         return -30 + rsrq * 0.0625
 
-    def parse_rssi(self, rssi):
+    def parse_rssi(self, rssi: int) -> float:
         return -110 + rssi * 0.0625
 
     # ML1
 
-    def parse_lte_ml1_scell_meas(self, pkt_header, pkt_body, args):
+    def parse_lte_ml1_scell_meas(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
 
@@ -191,7 +191,7 @@ class DiagLteLogParser:
         return {'stdout': 'LTE SCell: EARFCN: {}, PCI: {:3d}, Measured RSRP: {:.2f}, Measured RSSI: {:.2f}, Measured RSRQ: {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi, real_rsrq),
                 'ts': pkt_ts}
 
-    def parse_lte_ml1_ncell_meas(self, pkt_header, pkt_body, args):
+    def parse_lte_ml1_ncell_meas(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         stdout = ''
@@ -254,7 +254,7 @@ class DiagLteLogParser:
             stdout += '└── Neighbor cell {}: PCI: {:3d}, RSRP: {:.2f}, RSSI: {:.2f}, RSRQ: {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi, n_real_rsrq)
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
-    def parse_lte_ml1_scell_meas_response_cell_v36(self, cell_id, cell_bytes, rsrp_offset=16, snr_offset=80, sir_cinr_offset=104):
+    def parse_lte_ml1_scell_meas_response_cell_v36(self, cell_id: int, cell_bytes: bytes, rsrp_offset: int=16, snr_offset: int=80, sir_cinr_offset: int=104):
         interim = struct.unpack('<HHH', cell_bytes[0:6])
         val0_bits = bitstring.Bits(uint=interim[0], length=16)
         pci = val0_bits[0:9].uint
@@ -312,14 +312,14 @@ class DiagLteLogParser:
 
         return 'LTE ML1 SCell Meas Response (Cell {}): PCI: {}, SFN/SubFN: {}/{}, Serving cell index: {}, is_serving_cell: {}\n'.format(cell_id, pci, sfn, subfn, scell_idx, is_scell)
 
-    def parse_lte_ml1_scell_meas_response_cell_v48(self, cell_id, cell_bytes):
+    def parse_lte_ml1_scell_meas_response_cell_v48(self, cell_id: int, cell_bytes: bytes):
         # resid_freq_error = struct.unpack('<H', cell_bytes[84:86])[0]
         return self.parse_lte_ml1_scell_meas_response_cell_v36(cell_id, cell_bytes, snr_offset=92, sir_cinr_offset=116)
 
-    def parse_lte_ml1_scell_meas_response_cell_v60(self, cell_id, cell_bytes):
+    def parse_lte_ml1_scell_meas_response_cell_v60(self, cell_id: int, cell_bytes: bytes):
         pass
 
-    def parse_lte_ml1_scell_meas_response(self, pkt_header, pkt_body, args):
+    def parse_lte_ml1_scell_meas_response(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         stdout = ''
@@ -388,7 +388,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
-    def parse_lte_ml1_cell_info(self, pkt_header, pkt_body, args):
+    def parse_lte_ml1_cell_info(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
         prb_to_mhz = {6: 1.4, 15: 3, 25: 5, 50: 10, 75: 15, 100: 20}
         radio_id = 0
@@ -458,7 +458,7 @@ class DiagLteLogParser:
 
     # MAC
 
-    def create_lte_mac_gsmtap_packet(self, pkt_ts, is_downlink, header, body):
+    def create_lte_mac_gsmtap_packet(self, pkt_ts, is_downlink: bool, header: dict, body: bytes):
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
 
@@ -493,7 +493,7 @@ class DiagLteLogParser:
         return gsmtap_hdr + mac_hdr + body
 
 
-    def parse_lte_mac_subpkt_v1(self, pkt_header, pkt_body, args):
+    def parse_lte_mac_subpkt_v1(self, pkt_header, pkt_body: bytes, args: dict):
         num_subpacket = pkt_body[1]
         mac_pkts = []
 
@@ -679,7 +679,7 @@ class DiagLteLogParser:
         if len(mac_pkts) > 0:
             return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
 
-    def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body, args):
+    def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
 
@@ -691,7 +691,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
-    def parse_lte_mac_rach_response(self, pkt_header, pkt_body, args):
+    def parse_lte_mac_rach_response(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -702,7 +702,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
-    def parse_lte_mac_dl_block(self, pkt_header, pkt_body, args):
+    def parse_lte_mac_dl_block(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -713,7 +713,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
-    def parse_lte_mac_ul_block(self, pkt_header, pkt_body, args):
+    def parse_lte_mac_ul_block(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -726,7 +726,7 @@ class DiagLteLogParser:
 
     # PDCP
 
-    def parse_lte_pdcp_subpkt_v1(self, pkt_header, pkt_body, args):
+    def parse_lte_pdcp_subpkt_v1(self, pkt_header, pkt_body: bytes, args: dict):
         rbid = -1
         pdcp_pkts = []
 
@@ -954,7 +954,7 @@ class DiagLteLogParser:
         if len(pdcp_pkts) > 0:
             return {'layer': 'pdcp', 'up': pdcp_pkts, 'ts': pkt_ts}
 
-    def parse_lte_pdcp_dl_cip(self, pkt_header, pkt_body, args):
+    def parse_lte_pdcp_dl_cip(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -964,7 +964,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL Cipher Data packet version {:02x}'.format(pkt_version))
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
-    def parse_lte_pdcp_ul_cip(self, pkt_header, pkt_body, args):
+    def parse_lte_pdcp_ul_cip(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -985,7 +985,7 @@ class DiagLteLogParser:
     # EIA2: AES 128bit, CMAC mode (M0..M31 = COUNT, M32...M36 = BEARER, M37 = DIRECTION, M38..M63 = 0, M64... = Message)
     # TODO: what is for 32 byte number
 
-    def parse_lte_pdcp_dl_srb_int(self, pkt_header, pkt_body, args):
+    def parse_lte_pdcp_dl_srb_int(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -995,7 +995,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.WARNING, 'Unknown PDCP DL SRB Integrity Protected Data packet version {:02x}'.format(pkt_version))
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
 
-    def parse_lte_pdcp_ul_srb_int(self, pkt_header, pkt_body, args):
+    def parse_lte_pdcp_ul_srb_int(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
 
         if pkt_version == 0x01:
@@ -1007,7 +1007,7 @@ class DiagLteLogParser:
 
     # RRC
 
-    def parse_lte_mib(self, pkt_header, pkt_body, args):
+    def parse_lte_mib(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         prb_to_mhz = {6: 1.4, 15: 3, 25: 5, 50: 10, 75: 15, 100: 20}
@@ -1041,7 +1041,7 @@ class DiagLteLogParser:
 
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_lte_rrc_cell_info(self, pkt_header, pkt_body, args):
+    def parse_lte_rrc_cell_info(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
         prb_to_mhz = {6: 1.4, 15: 3, 25: 5, 50: 10, 75: 15, 100: 20}
@@ -1093,7 +1093,7 @@ class DiagLteLogParser:
                 item.ul_earfcn, item.band, bw_str, item.pci, item.mcc, item.mnc, tac_cid_fmt)
         return {'stdout': stdout, 'ts': pkt_ts}
 
-    def parse_lte_rrc(self, pkt_header, pkt_body, args):
+    def parse_lte_rrc(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_version = pkt_body[0]
         msg_content = b''
 
@@ -1284,7 +1284,7 @@ class DiagLteLogParser:
 
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
 
-    def parse_lte_cacombos(self, pkt_header, pkt_body, args):
+    def parse_lte_cacombos(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         if self.parent:
             if not self.parent.cacombos:
@@ -1294,7 +1294,7 @@ class DiagLteLogParser:
 
     # NAS
 
-    def parse_lte_nas(self, pkt_header, pkt_body, args, plain = False):
+    def parse_lte_nas(self, pkt_header, pkt_body: bytes, args: dict, plain: bool = False):
         pkt_version = pkt_body[0]
 
         item_struct = namedtuple('QcDiagLteNasMsg', 'vermaj vermid vermin')

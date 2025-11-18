@@ -27,11 +27,11 @@ class DiagUmtsLogParser:
             i(c.LOG_UMTS_DSDS_NAS_SIGNALING_MESSAGE): lambda x, y, z: self.parse_umts_ue_ota_dsds(x, y, z),
         }
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
 
-    def parse_umts_ue_ota(self, pkt_header, pkt_body, args):
+    def parse_umts_ue_ota(self, pkt_header, pkt_body: bytes, args: dict):
         radio_id = 0
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
@@ -60,6 +60,6 @@ class DiagUmtsLogParser:
 
         return {'layer': 'nas', 'cp': [gsmtap_hdr + msg_content], 'radio_id': radio_id, 'ts': pkt_ts}
 
-    def parse_umts_ue_ota_dsds(self, pkt_header, pkt_body, args):
+    def parse_umts_ue_ota_dsds(self, pkt_header, pkt_body: bytes, args: dict):
         radio_id_pkt = self.parent.sanitize_radio_id(pkt_body[0])
         return self.parse_umts_ue_ota(pkt_header, pkt_body[1:], {'radio_id': radio_id_pkt})
