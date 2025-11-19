@@ -13,6 +13,7 @@ from typing import Any
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
+from scat.parsers.abstractparser import AbstractParser
 
 from scat.parsers.samsung.sdmcmd import *
 from scat.parsers.samsung.sdmcontrolparser import SdmControlParser
@@ -26,7 +27,7 @@ from scat.parsers.samsung.sdmipparser import SdmIpParser
 def content(pkt):
     return pkt[11:-1]
 
-class SamsungParser:
+class SamsungParser(AbstractParser):
     pkg_header_len = 10
 
     def __init__(self):
@@ -111,13 +112,13 @@ class SamsungParser:
         else:
             return (0, 0)
 
-    def set_io_device(self, io_device: AbstractIO):
+    def set_io_device(self, io_device: AbstractIO) -> None:
         self.io_device = io_device
 
-    def set_writer(self, writer: AbstractWriter):
+    def set_writer(self, writer: AbstractWriter) -> None:
         self.writer = writer
 
-    def update_icd_ver(self, version: tuple):
+    def update_icd_ver(self, version: tuple[int, int]):
         for p in self.sdm_parsers:
             p.set_icd_ver(version)
 
@@ -125,7 +126,7 @@ class SamsungParser:
         for p in self.sdm_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
-    def set_parameter(self, params: dict[str, Any]):
+    def set_parameter(self, params: dict[str, Any]) -> None:
         for p in params:
             if p == 'model':
                 self.model = params[p]
@@ -155,7 +156,7 @@ class SamsungParser:
 
         self.update_parameters(self.display_format, self.gsmtapv3)
 
-    def init_diag(self):
+    def init_diag(self) -> None:
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CHANGE_UPDATE_PERIOD_REQUEST, b'\x05'))
 
@@ -204,13 +205,13 @@ class SamsungParser:
 
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)))
 
-    def prepare_diag(self):
+    def prepare_diag(self) -> None:
         pass
 
     def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
         return self.parse_diag_log(pkt)
 
-    def run_diag(self, writer_sdmraw=None):
+    def run_diag(self, writer_sdmraw: AbstractWriter | None =None) -> None:
         self.logger.log(logging.INFO, 'Starting diag')
 
         oldbuf = b''
@@ -274,7 +275,7 @@ class SamsungParser:
         except KeyboardInterrupt:
             return
 
-    def stop_diag(self):
+    def stop_diag(self) -> None:
         self.logger.log(logging.INFO, 'Stopping diag')
         # DIAG Disable
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_STOP, b'\x00\x00\x00\x00'), 0x1000, False)
@@ -373,7 +374,7 @@ class SamsungParser:
         except KeyboardInterrupt:
             return
 
-    def read_dump(self):
+    def read_dump(self) -> None:
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
             if self.io_device.fname.find('.sdmraw') > 0:

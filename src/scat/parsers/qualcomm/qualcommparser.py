@@ -24,6 +24,7 @@ from typing import Any
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
+from scat.parsers.abstractparser import AbstractParser
 
 from scat.parsers.qualcomm import diagcmd
 from scat.parsers.qualcomm.diaggsmlogparser import DiagGsmLogParser
@@ -46,7 +47,7 @@ elif bitstring_ver >= version.parse('4.0.0'):
 else:
     raise Exception("SCAT requires bitstring>=4.0.0")
 
-class QualcommParser:
+class QualcommParser(AbstractParser):
     def __init__(self):
         self.gsm_last_cell_id = [0, 0]
         self.gsm_last_arfcn = [0, 0]
@@ -118,10 +119,10 @@ class QualcommParser:
             except AttributeError:
                 pass
 
-    def set_io_device(self, io_device: AbstractIO):
+    def set_io_device(self, io_device: AbstractIO) -> None:
         self.io_device = io_device
 
-    def set_writer(self, writer: AbstractWriter):
+    def set_writer(self, writer: AbstractWriter) -> None:
         self.writer = writer
 
     def update_parameters(self, display_format: str, gsmtapv3: bool):
@@ -260,7 +261,7 @@ class QualcommParser:
         else:
             return False
 
-    def set_parameter(self, params: dict[str, Any]):
+    def set_parameter(self, params: dict[str, Any]) -> None:
         qsr_hash_loaded = False
         for p in params:
             if p == 'log_level':
@@ -310,7 +311,7 @@ class QualcommParser:
         else:
             return (radio_id - 1)
 
-    def init_diag(self):
+    def init_diag(self) -> None:
         self.logger.log(logging.INFO, 'Initializing diag')
         # Disable static event reporting
         self.io_device.read(0x1000)
@@ -401,7 +402,7 @@ class QualcommParser:
             self.io_device.write_then_read_discard(util.generate_packet(emr(0x283c, 0x283c)), 0x1000)
             self.io_device.write_then_read_discard(util.generate_packet(emr(0x286e, 0x2886)), 0x1000)
 
-    def prepare_diag(self):
+    def prepare_diag(self) -> None:
         self.logger.log(logging.INFO, 'Starting diag')
 
         emr_level_range = []
@@ -497,7 +498,7 @@ class QualcommParser:
             self.logger.log(logging.DEBUG, util.xxd(pkt))
             return None
 
-    def run_diag(self, writer_qmdl = None):
+    def run_diag(self, writer_qmdl: AbstractWriter | None = None) -> None:
         oldbuf = b''
         loop = True
         try:
@@ -530,7 +531,7 @@ class QualcommParser:
         except KeyboardInterrupt:
             return
 
-    def stop_diag(self):
+    def stop_diag(self) -> None:
         self.io_device.read(0x1000)
         self.logger.log(logging.INFO, 'Stopping diag')
         # Static event reporting Disable
@@ -608,7 +609,7 @@ class QualcommParser:
             if parse_result is not None:
                 self.postprocess_parse_result(parse_result)
 
-    def read_dump(self):
+    def read_dump(self) -> None:
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
             if self.io_device.fname.find('.qmdl') > 0:

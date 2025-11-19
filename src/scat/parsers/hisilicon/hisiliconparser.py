@@ -13,12 +13,12 @@ from typing import Any
 import scat.util as util
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
+from scat.parsers.abstractparser import AbstractParser
 
 from scat.parsers.hisilicon.hisilogparser import HisiLogParser
 from scat.parsers.hisilicon.hisinestedparser import HisiNestedParser
 
-class HisiliconParser:
-
+class HisiliconParser(AbstractParser):
     def __init__(self):
         self.gsm_last_cell_id = [0, 0]
         self.gsm_last_arfcn = [0, 0]
@@ -76,20 +76,20 @@ class HisiliconParser:
 
         self.msgs = False
 
-    def set_io_device(self, io_device: AbstractIO):
+    def set_io_device(self, io_device: AbstractIO) -> None:
         self.io_device = io_device
 
-    def set_writer(self, writer: AbstractWriter):
+    def set_writer(self, writer: AbstractWriter) -> None:
         self.writer = writer
 
-    def update_parameters(self, display_format, gsmtapv3):
+    def update_parameters(self, display_format: str, gsmtapv3: bool):
         for p in self.diag_log_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
         for p in self.diag_nested_parsers:
             p.update_parameters(display_format, gsmtapv3)
 
-    def set_parameter(self, params):
+    def set_parameter(self, params: dict[str, Any]) -> None:
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
@@ -108,10 +108,10 @@ class HisiliconParser:
 
         self.update_parameters(self.display_format, self.gsmtapv3)
 
-    def init_diag(self):
+    def init_diag(self) -> None:
         pass
 
-    def prepare_diag(self):
+    def prepare_diag(self) -> None:
         pass
 
     def parse_diag(self, pkt: bytes, hdlc_encoded: bool = True, has_crc: bool = True, args = None) -> dict[str, Any] | None:
@@ -133,13 +133,13 @@ class HisiliconParser:
 
         return self.parse_diag_log(pkt)
 
-    def run_diag(self):
+    def run_diag(self) -> None:
         pass
 
-    def stop_diag(self):
+    def stop_diag(self) -> None:
         pass
 
-    def run_dump(self):
+    def run_dump(self) -> None:
         self.logger.log(logging.INFO, 'Starting diag from dump')
 
         oldbuf = b''
@@ -175,7 +175,7 @@ class HisiliconParser:
         except KeyboardInterrupt:
             return
 
-    def read_dump(self):
+    def read_dump(self) -> None:
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
             if self.io_device.fname.find('.lpd') > 0:

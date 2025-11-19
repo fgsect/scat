@@ -14,8 +14,9 @@ from typing import Any
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
+from scat.parsers.abstractparser import AbstractParser
 
-class UnisocParser:
+class UnisocParser(AbstractParser):
     def __init__(self):
         self.io_device: AbstractIO
         self.writer: AbstractWriter
@@ -41,13 +42,13 @@ class UnisocParser:
             except AttributeError:
                 pass
 
-    def set_io_device(self, io_device: AbstractIO):
+    def set_io_device(self, io_device: AbstractIO) -> None:
         self.io_device = io_device
 
-    def set_writer(self, writer: AbstractWriter):
+    def set_writer(self, writer: AbstractWriter) -> None:
         self.writer = writer
 
-    def set_parameter(self, params: dict[str, Any]):
+    def set_parameter(self, params: dict[str, Any]) -> None:
         for p in params:
             if p == 'log_level':
                 self.logger.setLevel(params[p])
@@ -62,10 +63,10 @@ class UnisocParser:
             elif p == 'gsmtapv3':
                 self.gsmtapv3 = params[p]
 
-    def init_diag(self):
+    def init_diag(self) -> None:
         pass
 
-    def prepare_diag(self):
+    def prepare_diag(self) -> None:
         pass
 
     def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
@@ -112,10 +113,10 @@ class UnisocParser:
             self.logger.log(logging.WARNING, "Unknown channel number {:#04x}".format(pkt_header.chan_num))
             return
 
-    def run_diag(self):
+    def run_diag(self) -> None:
         pass
 
-    def stop_diag(self):
+    def stop_diag(self) -> None:
         pass
 
     def run_dump(self):
@@ -175,7 +176,7 @@ class UnisocParser:
         except KeyboardInterrupt:
             return
 
-    def read_dump(self):
+    def read_dump(self) -> None:
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
             self.run_dump()

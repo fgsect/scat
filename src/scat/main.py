@@ -4,6 +4,7 @@
 import scat.iodevices
 import scat.writers
 import scat.parsers
+import scat.parsers.abstractparser
 
 import argparse
 import faulthandler
@@ -11,8 +12,9 @@ import importlib.metadata
 import logging
 import os, sys
 import signal
+import inspect
 
-current_parser = None
+current_parser: scat.parsers.abstractparser.AbstractParser
 logger = logging.getLogger('scat')
 __version__ = importlib.metadata.version('signalcat')
 
@@ -43,8 +45,9 @@ def scat_main():
     for parser_module in dir(scat.parsers):
         if parser_module.startswith('__'):
             continue
-        if type(getattr(scat.parsers, parser_module)) == type:
-            c = getattr(scat.parsers, parser_module)()
+        m = getattr(scat.parsers, parser_module)
+        if inspect.isclass(m) and issubclass(m, scat.parsers.abstractparser.AbstractParser):
+            c = m()
             parser_dict[c.shortname] = c
 
     valid_layers = ['ip', 'nas', 'rrc', 'pdcp', 'rlc', 'mac', 'qmi']
