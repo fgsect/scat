@@ -242,6 +242,8 @@ class DiagNrLogParser:
             tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(item.tac, item.cell_id)
         elif self.display_format == 'b':
             tac_cid_fmt = 'TAC/CID: {}/{} ({:#x}/{:#x})'.format(item.tac, item.cell_id, item.tac, item.cell_id)
+        else:
+            tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(item.tac, item.cell_id)
 
         if item.mnc_digit == 2:
             stdout = 'NR RRC SCell Info: NR-ARFCN: {}/{}, Bandwidth: {}/{} MHz, Band: {}, PCI: {:4d}, MCC: {}, MNC: {:02}, {}'.format(item.dl_nrarfcn,
@@ -420,6 +422,8 @@ class DiagNrLogParser:
                     stdout += ', NR CGI: {}-{}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
                 elif self.display_format == 'b':
                     stdout += ', NR CGI: {}-{}-{} ({:#9x})'.format(mcc_mnc[0], mcc_mnc[1], cell_id, cell_id)
+                else:
+                    stdout += ', NR CGI: {}-{}-{:9x}'.format(mcc_mnc[0], mcc_mnc[1], cell_id)
             nr_pdu_id_gsmtap = rrc_type_map[item.pdu_id]
 
             gsmtap_hdr = util.create_gsmtap_header(
@@ -483,6 +487,10 @@ class DiagNrLogParser:
             elif self.display_format == 'b':
                 stdout = '5GMM State: {}/{}/{}, MCC/MNC: {}/{}, TAC: {} ({:#6x}), GUTI: {}'.format(
                     item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, tac, guti_str
+                )
+            else:
+                stdout = '5GMM State: {}/{}/{}, MCC/MNC: {}/{}, TAC: {:6x}, GUTI: {}'.format(
+                    item.mm_state, item.mm_substate, item.mm_update_status, plmn_id[0], plmn_id[1], tac, guti_str
                 )
             return {'stdout': stdout, 'ts': pkt_ts}
         else:

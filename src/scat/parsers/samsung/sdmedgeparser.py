@@ -61,6 +61,8 @@ class SdmEdgeParser:
             lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(lai_val[2], scell_info.rac, cid)
         elif self.display_format == 'b':
             lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(lai_val[2], scell_info.rac, cid, lai_val[2], scell_info.rac, cid)
+        else:
+            lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(lai_val[2], scell_info.rac, cid)
 
         stdout = 'EDGE Serving Cell Info: ARFCN: {}, BSIC: {:#x}, MCC/MNC: {}/{}, {}, RxLev: {} (RSSI: {})\n'.format(
             scell_info.arfcn, scell_info.bsic, lai_val[0], lai_val[1], lac_rac_cid_str, scell_info.rxlev, scell_info.rxlev - 110,
@@ -98,6 +100,8 @@ class SdmEdgeParser:
                 lai_str = 'MCC/MNC: {}/{}, xLAC: {:x}'.format(*lai_val)
             elif self.display_format == 'b':
                 lai_str = 'MCC/MNC: {}/{}, LAC: {} ({:#x})'.format(*lai_val, lai_val[2])
+            else:
+                lai_str = 'MCC/MNC: {}/{}, xLAC: {:x}'.format(*lai_val)
 
             stdout += "EDGE Neighbor Cell Info: Identified Cell {}: ARFCN: {}, {}, C1: {}, C2: {}, C31: {}, C32: {}, GPRS RA Colour: {}, RxLev: {} (RSSI: {})\n".format(
                 i, identified_meas_pkt.arfcn, lai_str, identified_meas_pkt.c1, identified_meas_pkt.c2,

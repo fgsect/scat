@@ -330,6 +330,8 @@ class SdmLteParser:
             tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(tac_real, cell_info.cid)
         elif self.display_format == 'b':
             tac_cid_fmt = 'TAC/CID: {}/{} ({:#x}/{:#x})'.format(tac_real, cell_info.cid, tac_real, cell_info.cid)
+        else:
+            tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(tac_real, cell_info.cid)
 
         if self.icd_ver >= (5, 41):
             stdout = 'LTE RRC Serving Cell: PLMN: {}, {}, Band: {}'.format(cell_info.plmn, tac_cid_fmt, cell_info.band_indicator)

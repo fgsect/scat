@@ -239,6 +239,8 @@ class DiagWcdmaLogParser:
             lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(item.lac, item.rac, item.cell_id)
         elif self.display_format == 'b':
             lac_rac_cid_str = 'LAC/RAC/CID: {}/{}/{} ({:#x}/{:#x}/{:#x})'.format(item.lac, item.rac, item.cell_id, item.lac, item.rac, item.cell_id)
+        else:
+            lac_rac_cid_str = 'xLAC/xRAC/xCID: {:x}/{:x}/{:x}'.format(item.lac, item.rac, item.cell_id)
 
         try:
             mcc_str = util.convert_mcc(item.mcc[0], item.mcc[1], item.mcc[2])

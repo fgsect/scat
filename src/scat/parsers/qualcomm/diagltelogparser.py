@@ -1079,6 +1079,8 @@ class DiagLteLogParser:
             tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(item.tac, item.cell_id)
         elif self.display_format == 'b':
             tac_cid_fmt = 'TAC/CID: {}/{} ({:#x}/{:#x})'.format(item.tac, item.cell_id, item.tac, item.cell_id)
+        else:
+            tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(item.tac, item.cell_id)
 
         if item.mnc_digit == 2:
             stdout = 'LTE RRC SCell Info: EARFCN: {}/{}, Band: {}, Bandwidth: {}, PCI: {}, MCC: {}, MNC: {:02}, {}'.format(item.dl_earfcn,

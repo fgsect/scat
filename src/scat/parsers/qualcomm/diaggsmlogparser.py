@@ -244,6 +244,8 @@ class DiagGsmLogParser:
             cid_str = 'MCC/MNC: {}/{}, xLAC/xCID: {:x}/{:x}'.format(*mcc_mnc_lac, item.cid)
         elif self.display_format == 'b':
             cid_str = 'MCC/MNC: {}/{}, LAC/CID: {}/{} ({:#x}/{:#x})'.format(*mcc_mnc_lac, item.cid, mcc_mnc_lac[2], item.cid)
+        else:
+            cid_str = 'MCC/MNC: {}/{}, xLAC/xCID: {:x}/{:x}'.format(*mcc_mnc_lac, item.cid)
 
         return {'stdout': 'GSM RR Cell Info: ARFCN: {}/Band: {}, BCC: {}, NCC: {}, {}'.format(arfcn, band, item.bcc, item.ncc, cid_str),
                 'ts': pkt_ts}
