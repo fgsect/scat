@@ -482,192 +482,209 @@ class DiagLteLogParser:
             util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
         gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.LTE_MAC,
+            version = 3,
+            payload_type = util.gsmtapv3_types.LTE_MAC,
             arfcn = 0,
             device_sec = ts_sec,
             device_usec = ts_usec)
 
         return gsmtap_hdr + mac_hdr + body
 
+    def parse_lte_mac_subpkt_v1_rach_attempt(self, pkt_header, subpkt_hdr, subpkt_body: bytes) -> list[bytes]:
+        ret = []
+        subpkt_mac_rach_attempt_struct = namedtuple('QcDiagLteMacSubpktRachAttempt', 'num_attempt rach_result contention msg_bitmask')
+        subpkt_mac_rach_attempt_struct_v3 = namedtuple('QcDiagLteMacSubpktRachAttemptV3', 'subid cellid num_attempt rach_result contention msg_bitmask')
+        subpkt_mac_rach_attempt = None
+
+        subpkt_mac_rach_attempt_msg1_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg1', 'preamble_index preamble_index_mask preamble_power_offset')
+        subpkt_mac_rach_attempt_msg2_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg2', 'backoff result tc_rnti ta')
+        subpkt_mac_rach_attempt_msg3_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg3', 'grant_raw grant harq_id mac_pdu')
+        rach_msg1 = None
+        rach_msg2 = None
+        rach_msg3 = None
+
+        if subpkt_hdr.version == 0x02: # Version 2
+            subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct._make(struct.unpack('<BBBB', subpkt_body[0:4]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x01: # Msg1
+                rach_msg1 = subpkt_mac_rach_attempt_msg1_struct._make(struct.unpack('<BBh', subpkt_body[4:8]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x02: # Msg2
+                rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[8:15]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
+                rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[15:32]))
+        elif subpkt_hdr.version == 0x03: # Version 3
+            subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct_v3._make(struct.unpack('<BBBBBB', subpkt_body[0:6]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x01: # Msg1
+                rach_msg1 = subpkt_mac_rach_attempt_msg1_struct._make(struct.unpack('<BBh', subpkt_body[6:10]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x02: # Msg2
+                rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[10:17]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
+                rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[17:34]))
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version {}'.format(subpkt_hdr.version))
+                self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
+            return ret
+
+        if subpkt_mac_rach_attempt.rach_result != 0x00: # RACH Failure, 0x00 == Success
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'RACH result is not success: {}'.format(subpkt_mac_rach_attempt.rach_result))
+                self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
+            return ret
+
+        if subpkt_mac_rach_attempt.msg_bitmask & 0x07 != 0x07:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Not all msgs are present: not generating RAR and MAC PDU')
+                self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
+            return ret
+
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
+        # Additional headers required for each message types
+
+        # RAR generated from Msg1/Msg2/Msg3
+        # RAR payload: E = 0, T = 1, RAPID (7b) | TA (12b), UL Grant (20b), TC-RNTI (16b)
+
+        mac_header_rar = struct.pack('!BBBBBBB',
+            util.mac_lte_radio_types.FDD_RADIO,
+            util.mac_lte_direction_types.DIRECTION_DOWNLINK,
+            util.mac_lte_rnti_types.RA_RNTI,
+            util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
+            rach_msg1.preamble_index,
+            subpkt_mac_rach_attempt.num_attempt,
+            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtap_type.LTE_MAC,
+            arfcn = 0,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
+
+        grant = struct.unpack('>L', struct.pack('<L', rach_msg3.grant_raw))[0] & 0xfffff
+        rar_body = struct.pack('!BBBHH',
+            (1 << 6) | (rach_msg1.preamble_index & 0x3f),
+            (rach_msg2.ta & 0x0ff0) >> 4,
+            ((rach_msg2.ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
+            grant & 0x00ffff,
+            rach_msg2.tc_rnti)
+
+        packet_mac_rar = gsmtap_hdr + mac_header_rar + rar_body
+        ret.append(packet_mac_rar)
+
+        # MAC PDU in Msg3
+        mac_header_msg = struct.pack('!BBBBHBBBB',
+            util.mac_lte_radio_types.FDD_RADIO,
+            util.mac_lte_direction_types.DIRECTION_UPLINK,
+            util.mac_lte_rnti_types.C_RNTI,
+            util.mac_lte_tags.MAC_LTE_RNTI_TAG,
+            rach_msg2.tc_rnti,
+            util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
+            rach_msg1.preamble_index,
+            subpkt_mac_rach_attempt.num_attempt,
+            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+
+        packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
+        ret.append(packet_mac_pdu)
+
+        return ret
+
+    def parse_lte_mac_subpkt_v1_dl_transport_block(self, pkt_header, subpkt_hdr, subpkt_body: bytes) -> list[bytes]:
+        ret = []
+        n_samples = subpkt_body[0]
+        subpkt_mac_dl_tb_struct = namedtuple('QcDiagLteMacSubpktDlTransportBlock', 'sfn_subfn rnti_type harq_id pmch_id dl_tbs rlc_pdus padding header_len')
+        subpkt_mac_dl_tb_struct_v4 = namedtuple('QcDiagLteMacSubpktDlTransportBlockV4', 'subid cellid sfn_subfn rnti_type harq_id pmch_id dl_tbs rlc_pdus padding header_len')
+        subpkt_mac_dl_tb = None
+        mac_hdr = b''
+
+        subpkt_pos = 1
+        for j in range(n_samples):
+            if subpkt_hdr.version == 0x02:
+                subpkt_mac_dl_tb = subpkt_mac_dl_tb_struct._make(struct.unpack('<HBBHHBHB', subpkt_body[subpkt_pos:subpkt_pos+12]))
+                mac_hdr = subpkt_body[subpkt_pos+12:subpkt_pos+12+subpkt_mac_dl_tb.header_len]
+                subpkt_pos += (12 + subpkt_mac_dl_tb.header_len)
+            elif subpkt_hdr.version == 0x04:
+                subpkt_mac_dl_tb = subpkt_mac_dl_tb_struct_v4._make(struct.unpack('<BBHBBHHBHB', subpkt_body[subpkt_pos:subpkt_pos+14]))
+                mac_hdr = subpkt_body[subpkt_pos+14:subpkt_pos+14+subpkt_mac_dl_tb.header_len]
+                subpkt_pos += (14 + subpkt_mac_dl_tb.header_len)
+            else:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unexpected MAC DL Subpacket version {}'.format(subpkt_hdr.version))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
+                    return ret
+
+            sfn = subpkt_mac_dl_tb.sfn_subfn >> 4
+            subfn = subpkt_mac_dl_tb.sfn_subfn & 0xf
+
+            pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+            ret.append(self.create_lte_mac_gsmtap_packet(pkt_ts, True,
+                {'sfn': sfn, 'subfn': subfn,
+                'rnti_type': subpkt_mac_dl_tb.rnti_type, 'harq_id': subpkt_mac_dl_tb.harq_id,
+                'pmch_id': subpkt_mac_dl_tb.pmch_id, 'dl_tbs': subpkt_mac_dl_tb.dl_tbs,
+                'rlc_pdus': subpkt_mac_dl_tb.rlc_pdus, 'padding': subpkt_mac_dl_tb.padding},
+                mac_hdr))
+
+        return ret
+
+    def parse_lte_mac_subpkt_v1_ul_transport_block(self, pkt_header, subpkt_hdr, subpkt_body: bytes) -> list[bytes]:
+        ret = []
+        n_samples = subpkt_body[0]
+        subpkt_mac_ul_tb_struct = namedtuple('QcDiagLteMacSubpktUlTransportBlock', 'harq_id rnti_type sfn_subfn grant rlc_pdus padding bsr_event bsr_trig header_len')
+        subpkt_mac_ul_tb_struct_v2 = namedtuple('QcDiagLteMacSubpktUlTransportBlockV2', 'subid cellid harq_id rnti_type sfn_subfn grant rlc_pdus padding bsr_event bsr_trig header_len')
+        subpkt_mac_ul_tb = None
+        mac_hdr = b''
+
+        subpkt_pos = 1
+        for j in range(n_samples):
+            if subpkt_hdr.version == 0x01:
+                subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct._make(struct.unpack('<BBHHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+12]))
+                mac_hdr = subpkt_body[subpkt_pos+12:subpkt_pos+12+subpkt_mac_ul_tb.header_len]
+                subpkt_pos += (12 + subpkt_mac_ul_tb.header_len)
+            elif subpkt_hdr.version == 0x02:
+                subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct_v2._make(struct.unpack('<BBBBHHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+14]))
+                mac_hdr = subpkt_body[subpkt_pos+14:subpkt_pos+14+subpkt_mac_ul_tb.header_len]
+                subpkt_pos += (14 + subpkt_mac_ul_tb.header_len)
+            else:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unexpected MAC UL Subpacket version {}'.format(subpkt_hdr.version))
+                    self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
+                    return ret
+
+            sfn = subpkt_mac_ul_tb.sfn_subfn >> 4
+            subfn = subpkt_mac_ul_tb.sfn_subfn & 0xf
+
+            # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
+            # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
+            pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+            ret.append(self.create_lte_mac_gsmtap_packet(pkt_ts, False,
+                {'sfn': sfn, 'subfn': subfn,
+                'rnti_type': subpkt_mac_ul_tb.rnti_type, 'harq_id': subpkt_mac_ul_tb.harq_id,
+                'grant': subpkt_mac_ul_tb.grant, 'rlc_pdus': subpkt_mac_ul_tb.rlc_pdus,
+                'padding': subpkt_mac_ul_tb.padding},
+                mac_hdr))
+
+        return ret
 
     def parse_lte_mac_subpkt_v1(self, pkt_header, pkt_body: bytes, args: dict):
         num_subpacket = pkt_body[1]
         mac_pkts = []
+        subpkt_mac_struct = namedtuple('QcDiagLteMacSubpkt', 'id version size')
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
 
         pos = 4
         for i in range(num_subpacket):
-            subpkt_mac_struct = namedtuple('QcDiagLteMacSubpkt', 'id version size')
             subpkt_mac = subpkt_mac_struct._make(struct.unpack('<BBH', pkt_body[pos:pos+4]))
             subpkt_body = pkt_body[pos+4:pos+4+subpkt_mac.size]
             pos += (4 + subpkt_mac.size)
 
             if subpkt_mac.id == 0x06: # RACH Attempt
-                subpkt_mac_rach_attempt_struct = namedtuple('QcDiagLteMacSubpktRachAttempt', 'num_attempt rach_result contention msg_bitmask')
-                subpkt_mac_rach_attempt_struct_v3 = namedtuple('QcDiagLteMacSubpktRachAttemptV3', 'subid cellid num_attempt rach_result contention msg_bitmask')
-                subpkt_mac_rach_attempt = None
-
-                subpkt_mac_rach_attempt_msg1_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg1', 'preamble_index preamble_index_mask preamble_power_offset')
-                subpkt_mac_rach_attempt_msg2_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg2', 'backoff result tc_rnti ta')
-                subpkt_mac_rach_attempt_msg3_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg3', 'grant_raw grant harq_id mac_pdu')
-                rach_msg1 = None
-                rach_msg2 = None
-                rach_msg3 = None
-
-                if subpkt_mac.version == 0x02: # Version 2
-                    subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct._make(struct.unpack('<BBBB', subpkt_body[0:4]))
-                    if subpkt_mac_rach_attempt.msg_bitmask & 0x01: # Msg1
-                        rach_msg1 = subpkt_mac_rach_attempt_msg1_struct._make(struct.unpack('<BBh', subpkt_body[4:8]))
-                    if subpkt_mac_rach_attempt.msg_bitmask & 0x02: # Msg2
-                        rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[8:15]))
-                    if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
-                        rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[15:32]))
-                elif subpkt_mac.version == 0x03: # Version 3
-                    subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct_v3._make(struct.unpack('<BBBBBB', subpkt_body[0:6]))
-                    if subpkt_mac_rach_attempt.msg_bitmask & 0x01: # Msg1
-                        rach_msg1 = subpkt_mac_rach_attempt_msg1_struct._make(struct.unpack('<BBh', subpkt_body[6:10]))
-                    if subpkt_mac_rach_attempt.msg_bitmask & 0x02: # Msg2
-                        rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[10:17]))
-                    if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
-                        rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[17:34]))
-                else:
-                    if self.parent:
-                        self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version {}'.format(subpkt_mac.version))
-                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
-                    continue
-
-                if subpkt_mac_rach_attempt.rach_result != 0x00: # RACH Failure, 0x00 == Success
-                    if self.parent:
-                        self.parent.logger.log(logging.WARNING, 'RACH result is not success: {}'.format(subpkt_mac_rach_attempt.rach_result))
-                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
-                    continue
-
-                if subpkt_mac_rach_attempt.msg_bitmask & 0x07 != 0x07:
-                    if self.parent:
-                        self.parent.logger.log(logging.WARNING, 'Not all msgs are present: not generating RAR and MAC PDU')
-                        self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
-                    continue
-
-                pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-                ts_sec = calendar.timegm(pkt_ts.timetuple())
-                ts_usec = pkt_ts.microsecond
-
-                # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
-                # Additional headers required for each message types
-
-                # RAR generated from Msg1/Msg2/Msg3
-                # RAR payload: E = 0, T = 1, RAPID (7b) | TA (12b), UL Grant (20b), TC-RNTI (16b)
-
-                mac_header_rar = struct.pack('!BBBBBBB',
-                    util.mac_lte_radio_types.FDD_RADIO,
-                    util.mac_lte_direction_types.DIRECTION_DOWNLINK,
-                    util.mac_lte_rnti_types.RA_RNTI,
-                    util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
-                    rach_msg1.preamble_index,
-                    subpkt_mac_rach_attempt.num_attempt,
-                    util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
-
-                gsmtap_hdr = util.create_gsmtap_header(
-                    version = 2,
-                    payload_type = util.gsmtap_type.LTE_MAC,
-                    arfcn = 0,
-                    device_sec = ts_sec,
-                    device_usec = ts_usec)
-
-                grant = struct.unpack('>L', struct.pack('<L', rach_msg3.grant_raw))[0] & 0xfffff
-                rar_body = struct.pack('!BBBHH',
-                    (1 << 6) | (rach_msg1.preamble_index & 0x3f),
-                    (rach_msg2.ta & 0x0ff0) >> 4,
-                    ((rach_msg2.ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
-                    grant & 0x00ffff,
-                    rach_msg2.tc_rnti)
-
-                packet_mac_rar = gsmtap_hdr + mac_header_rar + rar_body
-                mac_pkts.append(packet_mac_rar)
-
-                # MAC PDU in Msg3
-                mac_header_msg = struct.pack('!BBBBHBBBB',
-                    util.mac_lte_radio_types.FDD_RADIO,
-                    util.mac_lte_direction_types.DIRECTION_UPLINK,
-                    util.mac_lte_rnti_types.C_RNTI,
-                    util.mac_lte_tags.MAC_LTE_RNTI_TAG,
-                    rach_msg2.tc_rnti,
-                    util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
-                    rach_msg1.preamble_index,
-                    subpkt_mac_rach_attempt.num_attempt,
-                    util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
-
-                packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
-                mac_pkts.append(packet_mac_pdu)
-
+                mac_pkts += self.parse_lte_mac_subpkt_v1_rach_attempt(pkt_header, subpkt_mac, subpkt_body)
             elif subpkt_mac.id == 0x07: # DL Transport Block
-                n_samples = subpkt_body[0]
-                subpkt_mac_dl_tb_struct = namedtuple('QcDiagLteMacSubpktDlTransportBlock', 'sfn_subfn rnti_type harq_id pmch_id dl_tbs rlc_pdus padding header_len')
-                subpkt_mac_dl_tb_struct_v4 = namedtuple('QcDiagLteMacSubpktDlTransportBlockV4', 'subid cellid sfn_subfn rnti_type harq_id pmch_id dl_tbs rlc_pdus padding header_len')
-                subpkt_mac_dl_tb = None
-                mac_hdr = b''
-
-                subpkt_pos = 1
-                for j in range(n_samples):
-                    if subpkt_mac.version == 0x02:
-                        subpkt_mac_dl_tb = subpkt_mac_dl_tb_struct._make(struct.unpack('<HBBHHBHB', subpkt_body[subpkt_pos:subpkt_pos+12]))
-                        mac_hdr = subpkt_body[subpkt_pos+12:subpkt_pos+12+subpkt_mac_dl_tb.header_len]
-                        subpkt_pos += (12 + subpkt_mac_dl_tb.header_len)
-                    elif subpkt_mac.version == 0x04:
-                        subpkt_mac_dl_tb = subpkt_mac_dl_tb_struct_v4._make(struct.unpack('<BBHBBHHBHB', subpkt_body[subpkt_pos:subpkt_pos+14]))
-                        mac_hdr = subpkt_body[subpkt_pos+14:subpkt_pos+14+subpkt_mac_dl_tb.header_len]
-                        subpkt_pos += (14 + subpkt_mac_dl_tb.header_len)
-                    else:
-                        if self.parent:
-                            self.parent.logger.log(logging.WARNING, 'Unexpected MAC DL Subpacket version {}'.format(subpkt_mac.version))
-                            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
-                            return None
-
-                    sfn = subpkt_mac_dl_tb.sfn_subfn >> 4
-                    subfn = subpkt_mac_dl_tb.sfn_subfn & 0xf
-
-                    pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-                    mac_pkts.append(self.create_lte_mac_gsmtap_packet(pkt_ts, True,
-                        {'sfn': sfn, 'subfn': subfn,
-                        'rnti_type': subpkt_mac_dl_tb.rnti_type, 'harq_id': subpkt_mac_dl_tb.harq_id,
-                        'pmch_id': subpkt_mac_dl_tb.pmch_id, 'dl_tbs': subpkt_mac_dl_tb.dl_tbs,
-                        'rlc_pdus': subpkt_mac_dl_tb.rlc_pdus, 'padding': subpkt_mac_dl_tb.padding},
-                        mac_hdr))
+                mac_pkts += self.parse_lte_mac_subpkt_v1_dl_transport_block(pkt_header, subpkt_mac, subpkt_body)
             elif subpkt_mac.id == 0x08: # UL Transport Block
-                n_samples = subpkt_body[0]
-                subpkt_mac_ul_tb_struct = namedtuple('QcDiagLteMacSubpktUlTransportBlock', 'sfn_subfn rnti_type harq_id grant rlc_pdus padding bsr_event bsr_trig header_len')
-                subpkt_mac_ul_tb_struct_v2 = namedtuple('QcDiagLteMacSubpktUlTransportBlockV4', 'subid cellid harq_id rnti_type sfn_subfn grant rlc_pdus padding bsr_event bsr_trig header_len')
-                subpkt_mac_ul_tb = None
-                mac_hdr = b''
-
-                subpkt_pos = 1
-                for j in range(n_samples):
-                    if subpkt_mac.version == 0x01:
-                        subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct._make(struct.unpack('<HBBHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+12]))
-                        mac_hdr = subpkt_body[subpkt_pos+12:subpkt_pos+12+subpkt_mac_ul_tb.header_len]
-                        subpkt_pos += (12 + subpkt_mac_ul_tb.header_len)
-                    elif subpkt_mac.version == 0x02:
-                        subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct_v2._make(struct.unpack('<BBBBHHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+14]))
-                        mac_hdr = subpkt_body[subpkt_pos+14:subpkt_pos+14+subpkt_mac_ul_tb.header_len]
-                        subpkt_pos += (14 + subpkt_mac_ul_tb.header_len)
-                    else:
-                        if self.parent:
-                            self.parent.logger.log(logging.WARNING, 'Unexpected MAC UL Subpacket version {}'.format(subpkt_mac.version))
-                            self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
-                            return None
-
-                    sfn = subpkt_mac_ul_tb.sfn_subfn >> 4
-                    subfn = subpkt_mac_ul_tb.sfn_subfn & 0xf
-
-                    # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
-                    # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
-                    pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-                    mac_pkts.append(self.create_lte_mac_gsmtap_packet(pkt_ts, False,
-                        {'sfn': sfn, 'subfn': subfn,
-                        'rnti_type': subpkt_mac_ul_tb.rnti_type, 'harq_id': subpkt_mac_ul_tb.harq_id,
-                        'grant': subpkt_mac_ul_tb.grant, 'rlc_pdus': subpkt_mac_ul_tb.rlc_pdus,
-                        'padding': subpkt_mac_ul_tb.padding},
-                        mac_hdr))
+                mac_pkts += self.parse_lte_mac_subpkt_v1_ul_transport_block(pkt_header, subpkt_mac, subpkt_body)
             else:
                 if self.parent:
                     self.parent.logger.log(logging.WARNING, 'Unhandled LTE MAC Subpacket ID 0x{:02x}'.format(subpkt_mac.id))
@@ -676,6 +693,8 @@ class DiagLteLogParser:
 
         if len(mac_pkts) > 0:
             return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
+        else:
+            return None
 
     def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
