@@ -353,7 +353,17 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
                                    :set_text(string.format("Type: 0x%04x (%s)", type, itemtext))
 
         pinfo.cols.protocol = "GSMTAPv3"
-        if type == 0x0403 then
+        if type == 0x0400 then
+            pinfo.cols.info = ""
+            itemtext = "Unknown"
+            if lte_mac_subtypes[subtype] then
+                itemtext = lte_mac_subtypes[subtype][2]
+            end
+            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            lte_mac_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
+        elseif type == 0x0403 then
             pinfo.cols.info = ""
             itemtext = "Unknown"
             if gsmtapv3_lte_rrc_subtypes[subtype] then
