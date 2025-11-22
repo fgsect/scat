@@ -211,7 +211,7 @@ class SamsungParser(AbstractParser):
     def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
         return self.parse_diag_log(pkt)
 
-    def run_diag(self, writer_sdmraw: AbstractWriter | None =None) -> None:
+    def run_diag(self, writer: AbstractWriter | None =None) -> None:
         self.logger.log(logging.INFO, 'Starting diag')
 
         oldbuf = b''
@@ -261,8 +261,8 @@ class SamsungParser(AbstractParser):
 
                     parse_result = self.parse_diag(buf[pos:pos + sdm_pkt_hdr.length1 + 2])
 
-                    if writer_sdmraw:
-                        writer_sdmraw.write_cp(buf[pos:pos + sdm_pkt_hdr.length1 + 2])
+                    if writer:
+                        writer.write_cp(buf[pos:pos + sdm_pkt_hdr.length1 + 2])
 
                     if parse_result is not None:
                         self.postprocess_parse_result(parse_result)

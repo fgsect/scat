@@ -498,7 +498,7 @@ class QualcommParser(AbstractParser):
             self.logger.log(logging.DEBUG, util.xxd(pkt))
             return None
 
-    def run_diag(self, writer_qmdl: AbstractWriter | None = None) -> None:
+    def run_diag(self, writer: AbstractWriter | None = None) -> None:
         oldbuf = b''
         loop = True
         try:
@@ -522,8 +522,8 @@ class QualcommParser(AbstractParser):
                         continue
                     parse_result = self.parse_diag(pkt)
 
-                    if writer_qmdl:
-                        writer_qmdl.write_cp(pkt + b'\x7e')
+                    if writer:
+                        writer.write_cp(pkt + b'\x7e')
 
                     if parse_result is not None:
                         self.postprocess_parse_result(parse_result)
