@@ -558,7 +558,7 @@ class DiagLteLogParser:
 
         gsmtap_hdr = util.create_gsmtap_header(
             version = 3,
-            payload_type = util.gsmtap_type.LTE_MAC,
+            payload_type = util.gsmtapv3_types.LTE_MAC,
             arfcn = 0,
             device_sec = ts_sec,
             device_usec = ts_usec)
