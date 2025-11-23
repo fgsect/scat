@@ -550,47 +550,47 @@ class DiagLteLogParser:
         # RAR generated from Msg1/Msg2/Msg3
         # RAR payload: E = 0, T = 1, RAPID (7b) | TA (12b), UL Grant (20b), TC-RNTI (16b)
 
-        mac_header_rar = struct.pack('!BBBBBBB',
-            util.mac_lte_radio_types.FDD_RADIO,
-            util.mac_lte_direction_types.DIRECTION_DOWNLINK,
-            util.mac_lte_rnti_types.RA_RNTI,
-            util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
-            rach_msg1.preamble_index,
-            subpkt_mac_rach_attempt.num_attempt,
-            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+        if isinstance(rach_msg1, subpkt_mac_rach_attempt_msg1_struct) and isinstance(rach_msg2, subpkt_mac_rach_attempt_struct) and isinstance(rach_msg3, subpkt_mac_rach_attempt_msg3_struct):
+            mac_header_rar = struct.pack('!BBBBBBB',
+                util.mac_lte_radio_types.FDD_RADIO,
+                util.mac_lte_direction_types.DIRECTION_DOWNLINK,
+                util.mac_lte_rnti_types.RA_RNTI,
+                util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
+                rach_msg1.preamble_index,
+                subpkt_mac_rach_attempt.num_attempt,
+                util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 3,
-            payload_type = util.gsmtapv3_types.LTE_MAC,
-            arfcn = 0,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.LTE_MAC,
+                arfcn = 0,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
 
-        grant = struct.unpack('>L', struct.pack('<L', rach_msg3.grant_raw))[0] & 0xfffff
-        rar_body = struct.pack('!BBBHH',
-            (1 << 6) | (rach_msg1.preamble_index & 0x3f),
-            (rach_msg2.ta & 0x0ff0) >> 4,
-            ((rach_msg2.ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
-            grant & 0x00ffff,
-            rach_msg2.tc_rnti)
+            grant = struct.unpack('>L', struct.pack('<L', rach_msg3.grant_raw))[0] & 0xfffff
+            rar_body = struct.pack('!BBBHH',
+                (1 << 6) | (rach_msg1.preamble_index & 0x3f),
+                (rach_msg2.ta & 0x0ff0) >> 4,
+                ((rach_msg2.ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
+                grant & 0x00ffff,
+                rach_msg2.tc_rnti)
 
-        packet_mac_rar = gsmtap_hdr + mac_header_rar + rar_body
-        ret.append(packet_mac_rar)
+            packet_mac_rar = gsmtap_hdr + mac_header_rar + rar_body
+            ret.append(packet_mac_rar)
 
-        # MAC PDU in Msg3
-        mac_header_msg = struct.pack('!BBBBHBBBB',
-            util.mac_lte_radio_types.FDD_RADIO,
-            util.mac_lte_direction_types.DIRECTION_UPLINK,
-            util.mac_lte_rnti_types.C_RNTI,
-            util.mac_lte_tags.MAC_LTE_RNTI_TAG,
-            rach_msg2.tc_rnti,
-            util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
-            rach_msg1.preamble_index,
-            subpkt_mac_rach_attempt.num_attempt,
-            util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+            mac_header_msg = struct.pack('!BBBBHBBBB',
+                util.mac_lte_radio_types.FDD_RADIO,
+                util.mac_lte_direction_types.DIRECTION_UPLINK,
+                util.mac_lte_rnti_types.C_RNTI,
+                util.mac_lte_tags.MAC_LTE_RNTI_TAG,
+                rach_msg2.tc_rnti,
+                util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
+                rach_msg1.preamble_index,
+                subpkt_mac_rach_attempt.num_attempt,
+                util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
-        packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
-        ret.append(packet_mac_pdu)
+            packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
+            ret.append(packet_mac_pdu)
 
         return ret
 
@@ -618,16 +618,17 @@ class DiagLteLogParser:
                     self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
                     return ret
 
-            sfn = subpkt_mac_dl_tb.sfn_subfn >> 4
-            subfn = subpkt_mac_dl_tb.sfn_subfn & 0xf
+            if isinstance(subpkt_mac_dl_tb, subpkt_mac_dl_tb_struct) or isinstance(subpkt_mac_dl_tb, subpkt_mac_dl_tb_struct_v4):
+                sfn = subpkt_mac_dl_tb.sfn_subfn >> 4
+                subfn = subpkt_mac_dl_tb.sfn_subfn & 0xf
 
-            pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-            ret.append(self.create_lte_mac_gsmtap_packet(pkt_ts, True,
-                {'sfn': sfn, 'subfn': subfn,
-                'rnti_type': subpkt_mac_dl_tb.rnti_type, 'harq_id': subpkt_mac_dl_tb.harq_id,
-                'pmch_id': subpkt_mac_dl_tb.pmch_id, 'dl_tbs': subpkt_mac_dl_tb.dl_tbs,
-                'rlc_pdus': subpkt_mac_dl_tb.rlc_pdus, 'padding': subpkt_mac_dl_tb.padding},
-                mac_hdr))
+                pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+                ret.append(self.create_lte_mac_gsmtap_packet(pkt_ts, True,
+                    {'sfn': sfn, 'subfn': subfn,
+                    'rnti_type': subpkt_mac_dl_tb.rnti_type, 'harq_id': subpkt_mac_dl_tb.harq_id,
+                    'pmch_id': subpkt_mac_dl_tb.pmch_id, 'dl_tbs': subpkt_mac_dl_tb.dl_tbs,
+                    'rlc_pdus': subpkt_mac_dl_tb.rlc_pdus, 'padding': subpkt_mac_dl_tb.padding},
+                    mac_hdr))
 
         return ret
 
@@ -655,18 +656,19 @@ class DiagLteLogParser:
                     self.parent.logger.log(logging.DEBUG, util.xxd(subpkt_body))
                     return ret
 
-            sfn = subpkt_mac_ul_tb.sfn_subfn >> 4
-            subfn = subpkt_mac_ul_tb.sfn_subfn & 0xf
+            if isinstance(subpkt_mac_ul_tb, subpkt_mac_ul_tb_struct) or isinstance(subpkt_mac_ul_tb, subpkt_mac_ul_tb_struct_v2):
+                sfn = subpkt_mac_ul_tb.sfn_subfn >> 4
+                subfn = subpkt_mac_ul_tb.sfn_subfn & 0xf
 
-            # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
-            # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
-            pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-            ret.append(self.create_lte_mac_gsmtap_packet(pkt_ts, False,
-                {'sfn': sfn, 'subfn': subfn,
-                'rnti_type': subpkt_mac_ul_tb.rnti_type, 'harq_id': subpkt_mac_ul_tb.harq_id,
-                'grant': subpkt_mac_ul_tb.grant, 'rlc_pdus': subpkt_mac_ul_tb.rlc_pdus,
-                'padding': subpkt_mac_ul_tb.padding},
-                mac_hdr))
+                # BSR Event: {0: None, 1: Periodic, 2: High Data Arrival}
+                # BSR Trig: {0: No BSR, 3: S-BSR, 4: Pad L-BSR}
+                pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+                ret.append(self.create_lte_mac_gsmtap_packet(pkt_ts, False,
+                    {'sfn': sfn, 'subfn': subfn,
+                    'rnti_type': subpkt_mac_ul_tb.rnti_type, 'harq_id': subpkt_mac_ul_tb.harq_id,
+                    'grant': subpkt_mac_ul_tb.grant, 'rlc_pdus': subpkt_mac_ul_tb.rlc_pdus,
+                    'padding': subpkt_mac_ul_tb.padding},
+                    mac_hdr))
 
         return ret
 
@@ -1145,13 +1147,12 @@ class DiagLteLogParser:
             return None
 
         stdout = ''
-        if pkt_version == 1 or pkt_version == 2:
+        if isinstance(item, item_struct):
             if item.bandwidth in prb_to_mhz:
                 stdout = 'LTE MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} MHz, TX antennas: {}'.format(item.earfcn, item.sfn, prb_to_mhz[item.bandwidth], item.tx_antenna)
             else:
                 stdout = 'LTE MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} PRBs, TX antennas: {}'.format(item.earfcn, item.sfn, item.bandwidth, item.tx_antenna)
-
-        elif pkt_version == 17:
+        else:
             # MIB for NB-IoT (only 1 PRB)
             stdout = 'LTE MIB-NB Info: EARFCN: {}, SFN: {:4}, TX antennas: {}'.format(item.earfcn, item.sfn, item.tx_antenna)
 
@@ -1248,7 +1249,7 @@ class DiagLteLogParser:
                 self.parent.logger.log(logging.DEBUG, util.xxd(pkt_body))
             return None
 
-        if pkt_version >= 30:
+        if isinstance(item, item_struct_v30):
             if item.segment_id == 0:
                 # Not segmented RRC, check previously cached
                 pass

@@ -333,7 +333,7 @@ class SdmLteParser:
         else:
             tac_cid_fmt = 'xTAC/xCID: {:x}/{:x}'.format(tac_real, cell_info.cid)
 
-        if self.icd_ver >= (5, 41):
+        if isinstance(cell_info, header_v5_41):
             stdout = 'LTE RRC Serving Cell: PLMN: {}, {}, Band: {}'.format(cell_info.plmn, tac_cid_fmt, cell_info.band_indicator)
         else:
             stdout = 'LTE RRC Serving Cell: PLMN: {}, {}'.format(cell_info.plmn, tac_cid_fmt)
