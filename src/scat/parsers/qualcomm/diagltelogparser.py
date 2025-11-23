@@ -470,6 +470,9 @@ class DiagLteLogParser:
         ws_rnti_type = 0
         if header['rnti_type'] in rnti_type_map:
             ws_rnti_type = rnti_type_map[header['rnti_type']]
+        else:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Unexpected MAC RNTI Type: {}, treating as NO_RNTI'.format(header['rnti_type']))
 
         # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
         # Additional headers required for each message types
@@ -696,6 +699,98 @@ class DiagLteLogParser:
         else:
             return None
 
+    def parse_lte_mac_subpkt_v49(self, pkt_header, pkt_body: bytes, args: dict):
+        pass
+
+    def parse_lte_mac_subpkt_v50(self, pkt_header, pkt_body: bytes, args: dict, is_downlink: bool):
+        mac_pkts = []
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        num_tb, num_lcid, reason = struct.unpack('<HBB', pkt_body[4:8])
+
+        subpkt_tb_common_info = namedtuple('QcDiagLteMacV50TBCommonInfo', 'size num_pad_bytes sfn_subfn_reparse_rnti_type cc_harq num_sdu hdr_len')
+        pos = 8
+        for i in range(num_tb):
+            subpkt_tb = subpkt_tb_common_info._make(struct.unpack('<LLL B B H', pkt_body[pos:pos+16]))
+            pos += 16
+
+            var1_bits = bitstring.Bits(uint=subpkt_tb.sfn_subfn_reparse_rnti_type, length=32)
+            var2_bits = bitstring.Bits(uint=subpkt_tb.cc_harq, length=8)
+            var3_bits = bitstring.Bits(uint=subpkt_tb.hdr_len, length=16)
+
+            sfn = var1_bits[0:10].uint
+            subfn = var1_bits[10:14].uint
+            rnti_type = var1_bits[15:19].uint
+            cc_id = var2_bits[0:4].uint
+            harq_id = var2_bits[4:8].uint
+            mac_hdr_len = var3_bits[0:12].uint
+
+            for j in range(subpkt_tb.num_sdu):
+                mac_common_info_bits = bitstring.Bits(pkt_body[pos:pos+3][::-1])
+                is_mce = mac_common_info_bits[0:1].uint
+                lcid = mac_common_info_bits[1:7].uint
+                sdu_len = mac_common_info_bits[7:23].uint
+                pos += 3
+                body = pkt_body[pos:pos+9]
+                pos += 9
+
+                # Generate pseudo MAC header
+                # 7b: 0 0 1 (LCID) / 0 (L) / 0x1F
+                # 15b: 0 0 1 (LCID) / 1 (L) / L / 0x1F
+                # 16b: 0 1 1 (LCID) / L / L / 0x1F
+
+                if bitstring_ver >= version.parse('4.2.0'):
+                    bitstring.options.lsb0 = False
+                elif bitstring_ver >= version.parse('4.0.0'):
+                    bitstring.lsb0 = False
+
+                mac_header_bits = bitstring.BitStream()
+                if lcid < 0x80: # 7b
+                    mac_header_bits.insert(bitstring.Bits('0b001'))
+                    mac_header_bits.insert(bitstring.Bits(uint=(lcid & 0b11111), length=5))
+                    mac_header_bits.insert(bitstring.Bits('0b0'))
+                    mac_header_bits.insert(bitstring.Bits(uint=(sdu_len & 0x7f), length=7))
+                elif lcid < 32768: # 15b
+                    mac_header_bits.insert(bitstring.Bits('0b001'))
+                    mac_header_bits.insert(bitstring.Bits(uint=(lcid & 0b11111), length=5))
+                    mac_header_bits.insert(bitstring.Bits('0b1'))
+                    mac_header_bits.insert(bitstring.Bits(uint=(sdu_len & 0x7fff), length=15))
+                elif lcid < 65536: # 16b
+                    mac_header_bits.insert(bitstring.Bits('0b011'))
+                    mac_header_bits.insert(bitstring.Bits(uint=(lcid & 0b11111), length=5))
+                    mac_header_bits.insert(bitstring.Bits(uint=(sdu_len & 0xffff), length=16))
+
+                mac_header = mac_header_bits.bytes
+
+                if bitstring_ver >= version.parse('4.2.0'):
+                    bitstring.options.lsb0 = True
+                elif bitstring_ver >= version.parse('4.0.0'):
+                    bitstring.lsb0 = True
+
+                if is_mce:
+                    mac_pkts.append(self.create_lte_mac_gsmtap_packet(pkt_ts, is_downlink,
+                        {'sfn': sfn, 'subfn': subfn,
+                        'rnti_type': rnti_type, 'harq_id': harq_id},
+                        mac_header + body[:sdu_len]))
+                else:
+                    mac_pkts.append(self.create_lte_mac_gsmtap_packet(pkt_ts, is_downlink,
+                        {'sfn': sfn, 'subfn': subfn,
+                        'rnti_type': rnti_type, 'harq_id': harq_id},
+                        mac_header + b'\x1f'))
+                    num_pdcp_grp, num_dyn_log_info = struct.unpack('<5xBHx', body)
+
+                    pos += (num_dyn_log_info * 4)
+                    for k in range(num_pdcp_grp):
+                        has_more = 1
+                        while has_more == 1:
+                            pdcp_grp_bits = bitstring.Bits(pkt_body[pos:pos+4][::-1])
+                            has_more = pdcp_grp_bits[0:1].uint
+                            pos += 4
+
+        if len(mac_pkts) > 0:
+            return {'layer': 'mac', 'cp': mac_pkts, 'ts': pkt_ts}
+        else:
+            return None
+
     def parse_lte_mac_rach_trigger(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         pkt_version = pkt_body[0]
@@ -724,6 +819,10 @@ class DiagLteLogParser:
 
         if pkt_version == 0x01:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
+        # elif pkt_version == 0x31:
+        #     return self.parse_lte_mac_subpkt_v49(pkt_header, pkt_body, args)
+        elif pkt_version == 0x32:
+            return self.parse_lte_mac_subpkt_v50(pkt_header, pkt_body, args, True)
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))
