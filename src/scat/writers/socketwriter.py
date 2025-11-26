@@ -5,6 +5,7 @@ import socket
 import struct
 
 from scat.writers.abstractwriter import AbstractWriter
+from scat.writers.systemd_notify import systemd_notify_watchdog_alive
 
 class SocketWriter(AbstractWriter):
     def __init__(self, base_address: str, port_cp: int = 4729, port_up: int = 47290):
@@ -21,6 +22,7 @@ class SocketWriter(AbstractWriter):
         return self
 
     def write_cp(self, sock_content: bytes, radio_id: int=0, ts: None = None):
+        systemd_notify_watchdog_alive()
         if radio_id <= 0:
             dest_address = self.base_address
         else:
