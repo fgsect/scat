@@ -293,7 +293,7 @@ class DiagNrLogParser:
         elif pkt_ver in (0x13, 0x14): # Version 19, 20
             item = item_struct_v19._make(struct.unpack('<BBBH Q I3sBIHB', pkt_body[4:32]))
             msg_content = pkt_body[32:]
-        elif pkt_ver in (0x17, 0x1a): # Version 23, 26
+        elif pkt_ver in (0x17, 0x18, 0x1a): # Version 23, 24, 26
             item = item_struct_v23._make(struct.unpack('<BBBH Q I3sBIHBBBB', pkt_body[4:35]))
             msg_content = pkt_body[35:]
         else:
@@ -383,7 +383,7 @@ class DiagNrLogParser:
             rrc_type_map_stdout = {
                 29: "nr-RadioBearerConfig",
             }
-        elif pkt_ver in (0x14, 0x17):
+        elif pkt_ver in (0x14, 0x17, 0x18):
            rrc_type_map = {
                 1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
                 2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
