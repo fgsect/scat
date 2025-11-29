@@ -668,7 +668,6 @@ class wcdma_rlc_tags(IntEnum):
 
 # Calculates the equivalent UL-EARFCN of a given DL-EARFCN,
 # if the input is an SDL or unknown EARFCN the output will be equal to the input
-# Based on 3GPP TS 36.101 V16.6.0 Table 5.7.3-1
 def calculate_ul_earfcn(dl_earfcn: int) -> int:
     if 0 <= dl_earfcn < 9660:        # B1-B28
         offset = 18000
@@ -682,13 +681,40 @@ def calculate_ul_earfcn(dl_earfcn: int) -> int:
         offset = 64636
     elif 68585 < dl_earfcn < 69466:  # B71-74
         offset = 64536
-    elif 70365 < dl_earfcn < 70596:  # B85-87
+    elif 70365 < dl_earfcn < 70706:  # B85-88, 103, 106
         offset = 63636
-    elif 70595 < dl_earfcn < 70646:  # B88
-        offset = 63635
+    elif 73385 < dl_earfcn < 73486:  # B111
+        offset = 60956
+    elif 228300 < dl_earfcn < 229376: # B256-253
+        offset = 32768
     else:
         offset = 0
     return dl_earfcn + offset
+
+# Calculates the equivalent DL-EARFCN of a given UL-EARFCN,
+# if the input is an SUL or unknown EARFCN the output will be equal to the input
+def calculate_dl_earfcn(ul_earfcn: int) -> int:
+    if 18000 <= ul_earfcn < 27660:      # B1-B28
+        offset = 18000
+    elif 27660 <= ul_earfcn < 27810:    # B30-31
+        offset = 17890
+    elif 131072 <= ul_earfcn <= 132671: # B65-66
+        offset = 65536
+    elif 132672 <= ul_earfcn <= 132971: # B68
+        offset = 65136
+    elif 132972 <= ul_earfcn <= 133121: # B70
+        offset = 64636
+    elif 133122 <= ul_earfcn <= 134001: # B71-74
+        offset = 64536
+    elif 134002 <= ul_earfcn <= 134341: # B85-88, 103, 106
+        offset = 63636
+    elif 134342 <= ul_earfcn <= 134441:  # B111
+        offset = 60956
+    elif 261268 <= ul_earfcn <= 262143: # B256-253
+        offset = 32768
+    else:
+        offset = 0
+    return ul_earfcn - offset
 
 def convert_mcc(mcc_digit_2: int, mcc_digit_1: int, mcc_digit_0: int) -> str:
     if mcc_digit_2 > 0x09 or mcc_digit_1 > 0x09 or mcc_digit_0 > 0x09:
