@@ -395,7 +395,7 @@ class SdmLteParser:
             else:
                 arfcn = 0
 
-        if self.gsmtapv3:
+        if self.gsmtapv3 or arfcn >= 16384:
             gsmtapv3_metadata = dict()
             gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = self.parent.lte_last_pci[sdm_pkt_hdr.radio_id]
             gsmtap_hdr = util.create_gsmtap_header(

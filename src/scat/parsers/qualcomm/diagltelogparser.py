@@ -431,7 +431,7 @@ class DiagLteLogParser:
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
 
-        if self.gsmtapv3:
+        if self.gsmtapv3 or item.earfcn >= 16384:
             gsmtapv3_metadata = dict()
             gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = pci
             gsmtapv3_metadata[util.gsmtapv3_metadata_tags.SFN] = item.sfn
@@ -1425,7 +1425,7 @@ class DiagLteLogParser:
             return None
         gsmtap_subtype = rrc_subtype_map[item.pdu_num]
 
-        if self.gsmtapv3:
+        if self.gsmtapv3 or item.earfcn >= 16384:
             gsmtapv3_metadata = dict()
             gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = item.pci
             gsmtapv3_metadata[util.gsmtapv3_metadata_tags.SFN] = sfn
