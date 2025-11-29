@@ -135,8 +135,8 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         expected = {
             'layer': 'mac',
             'cp': [
-                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010102091b01015b004c01001a23'),
-                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003021a23091b010100465c80bd0648000000')
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010102015b00411c181a23'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003021a230100465c80bd0648000000')
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
@@ -150,8 +150,8 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         expected = {
             'layer': 'mac',
             'cp': [
-                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010102091801015800b2000061c6'),
-                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030261c60918010120061f423f8d95075800')
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010102015800b0a2b461c6'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030261c60120061f423f8d95075800')
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
@@ -160,14 +160,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         # V49, Msg1, Msg2
         payload = binascii.unhexlify('0101739e063134000100010000033f0098ff0000013c6b070058ac010007000000468f47e2d446000000644b0000180001000000d5040000')
         result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, dict())
-        expected = {
-            'layer': 'mac',
-            'cp': [
-                binascii.unhexlify(''),
-            ],
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
-        }
-        self.assertDictEqual(result, expected) # type: ignore # type: ignore
+        self.assertIsNone(result)
 
         # V49, Msg1, Msg2, Msg3
         payload = binascii.unhexlify('01010000063134000100010001070aff98ff0000011c48070018e2000007000000523b7dfd69b6000000f5540000ff0001000000d6040000')
@@ -175,7 +168,8 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         expected = {
             'layer': 'mac',
             'cp': [
-                binascii.unhexlify(''),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000ea5fffe010102014a0070e218481c'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d800000000000020004000054f5fffe01000302481c0100523b7dfd69b6000000'),
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
@@ -184,14 +178,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         # V50, Msg1, Msg2
         payload = binascii.unhexlify('01010000063238000100010000032900a4ffeb000000000195b603000000a0b412000420061f425dc9be41b800885e00001700010000006505000073')
         result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, dict())
-        expected = {
-            'layer': 'mac',
-            'cp': [
-                binascii.unhexlify(''),
-            ],
-            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
-        }
-        self.assertDictEqual(result, expected) # type: ignore
+        self.assertIsNone(result)
 
         # V50, Msg1, Msg2, Msg3
         payload = binascii.unhexlify('010100000632380001000100010713ffa0ffeb0000000001ad5a0500000146b412000420061f425dc9be41b400665300001800010000001a05000000')
@@ -199,7 +186,8 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         expected = {
             'layer': 'mac',
             'cp': [
-                binascii.unhexlify(''),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000d16fffe0101020153005146b45aad'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400005366fffe010003025aad0120061f425dc9be41b400'),
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
