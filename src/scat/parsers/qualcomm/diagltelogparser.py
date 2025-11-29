@@ -500,11 +500,14 @@ class DiagLteLogParser:
         subpkt_mac_rach_attempt = None
 
         subpkt_mac_rach_attempt_msg1_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg1', 'preamble_index preamble_index_mask preamble_power_offset')
+        subpkt_mac_rach_attempt_msg1_v50_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg1V50', 'preamble_index preamble_index_mask preamble_power_offset unk1 group')
         subpkt_mac_rach_attempt_msg2_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg2', 'backoff result tc_rnti ta')
         subpkt_mac_rach_attempt_msg3_struct = namedtuple('QcDiagLteMacSubpktRachAttemptMsg3', 'grant_raw grant harq_id mac_pdu')
+        subpkt_mac_rach_attempt_addinfo_struct = namedtuple('QcDiagLteMacSubpktRachAttemptAddInfo', 'ul_earfcn p_max scell_id unk1 unk2')
         rach_msg1 = None
         rach_msg2 = None
         rach_msg3 = None
+        add_info = None
 
         if subpkt_hdr.version == 0x02: # Version 2
             subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct._make(struct.unpack('<BBBB', subpkt_body[0:4]))
@@ -514,7 +517,7 @@ class DiagLteLogParser:
                 rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[8:15]))
             if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
                 rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[15:32]))
-        elif subpkt_hdr.version == 0x03: # Version 3
+        elif subpkt_hdr.version == 0x03 or subpkt_hdr.version == 0x31: # Version 3, Version 49
             subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct_v3._make(struct.unpack('<BBBBBB', subpkt_body[0:6]))
             if subpkt_mac_rach_attempt.msg_bitmask & 0x01: # Msg1
                 rach_msg1 = subpkt_mac_rach_attempt_msg1_struct._make(struct.unpack('<BBh', subpkt_body[6:10]))
@@ -522,6 +525,18 @@ class DiagLteLogParser:
                 rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[10:17]))
             if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
                 rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[17:34]))
+
+            if subpkt_hdr.version == 0x31:
+                add_info = subpkt_mac_rach_attempt_addinfo_struct._make(struct.unpack('<LBBLL', subpkt_body[34:48]))
+        elif subpkt_hdr.version == 0x32: # Version 50
+            subpkt_mac_rach_attempt = subpkt_mac_rach_attempt_struct_v3._make(struct.unpack('<BBBBBB', subpkt_body[0:6]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x01: # Msg1
+                rach_msg1 = subpkt_mac_rach_attempt_msg1_v50_struct._make(struct.unpack('<BBhHb', subpkt_body[6:13]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x02: # Msg2
+                rach_msg2 = subpkt_mac_rach_attempt_msg2_struct._make(struct.unpack('<HBHH', subpkt_body[13:20]))
+            if subpkt_mac_rach_attempt.msg_bitmask & 0x04: # Msg3
+                rach_msg3 = subpkt_mac_rach_attempt_msg3_struct._make(struct.unpack('<LHB10s', subpkt_body[20:37]))
+            add_info = subpkt_mac_rach_attempt_addinfo_struct._make(struct.unpack('<LBBLL', subpkt_body[37:51]))
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unexpected MAC RACH Response Subpacket version {}'.format(subpkt_hdr.version))
@@ -550,47 +565,79 @@ class DiagLteLogParser:
         # RAR generated from Msg1/Msg2/Msg3
         # RAR payload: E = 0, T = 1, RAPID (7b) | TA (12b), UL Grant (20b), TC-RNTI (16b)
 
-        if isinstance(rach_msg1, subpkt_mac_rach_attempt_msg1_struct) and isinstance(rach_msg2, subpkt_mac_rach_attempt_struct) and isinstance(rach_msg3, subpkt_mac_rach_attempt_msg3_struct):
-            mac_header_rar = struct.pack('!BBBBBBB',
+        if (isinstance(rach_msg1, subpkt_mac_rach_attempt_msg1_struct) or isinstance(rach_msg1, subpkt_mac_rach_attempt_msg1_v50_struct)) and  \
+            isinstance(rach_msg2, subpkt_mac_rach_attempt_msg2_struct) and \
+            isinstance(rach_msg3, subpkt_mac_rach_attempt_msg3_struct):
+            # For <=V49 the raw grant value is little endian
+            if subpkt_hdr.version >= 0x32:
+                grant = struct.unpack('>L', struct.pack('<L', rach_msg3.grant_raw))[0] & 0xfffff
+            else:
+                grant = rach_msg3.grant_raw & 0xfffff
+
+            mac_header_msg2 = struct.pack('!BBBB',
                 util.mac_lte_radio_types.FDD_RADIO,
                 util.mac_lte_direction_types.DIRECTION_DOWNLINK,
                 util.mac_lte_rnti_types.RA_RNTI,
-                util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
-                rach_msg1.preamble_index,
-                subpkt_mac_rach_attempt.num_attempt,
+                # util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
+                # rach_msg1.preamble_index,
+                # subpkt_mac_rach_attempt.num_attempt,
                 util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+
+            if bitstring_ver >= version.parse('4.2.0'):
+                bitstring.options.lsb0 = False
+            elif bitstring_ver >= version.parse('4.0.0'):
+                bitstring.lsb0 = False
+
+            rar_bits = bitstring.BitStream()
+            rar_bits.insert(bitstring.Bits('0b01'))
+            rar_bits.insert(bitstring.Bits(uint=rach_msg1.preamble_index & 0b111111, length=6))
+            rar_bits.insert(bitstring.Bits('0b0'))
+            rar_bits.insert(bitstring.Bits(uint=rach_msg2.ta & 0b11111111111, length=11))
+            rar_bits.insert(bitstring.Bits(uint=grant, length=20))
+            rar_bits.insert(bitstring.Bits(uint=rach_msg2.tc_rnti, length=16))
+            rar = rar_bits.bytes
+
+            if bitstring_ver >= version.parse('4.2.0'):
+                bitstring.options.lsb0 = True
+            elif bitstring_ver >= version.parse('4.0.0'):
+                bitstring.lsb0 = True
+
+            arfcn = 0
+            if isinstance(add_info, subpkt_mac_rach_attempt_addinfo_struct):
+                arfcn = util.calculate_dl_earfcn(add_info.ul_earfcn)
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 3,
                 payload_type = util.gsmtapv3_types.LTE_MAC,
-                arfcn = 0,
+                arfcn = arfcn,
                 device_sec = ts_sec,
                 device_usec = ts_usec)
 
-            grant = struct.unpack('>L', struct.pack('<L', rach_msg3.grant_raw))[0] & 0xfffff
-            rar_body = struct.pack('!BBBHH',
-                (1 << 6) | (rach_msg1.preamble_index & 0x3f),
-                (rach_msg2.ta & 0x0ff0) >> 4,
-                ((rach_msg2.ta & 0x000f) << 4) | ((grant & 0x0f0000) >> 16),
-                grant & 0x00ffff,
-                rach_msg2.tc_rnti)
+            gsmtap_msg2 = gsmtap_hdr + mac_header_msg2 + rar
+            ret.append(gsmtap_msg2)
 
-            packet_mac_rar = gsmtap_hdr + mac_header_rar + rar_body
-            ret.append(packet_mac_rar)
-
-            mac_header_msg = struct.pack('!BBBBHBBBB',
+            mac_header_msg = struct.pack('!BBBBHB',
                 util.mac_lte_radio_types.FDD_RADIO,
                 util.mac_lte_direction_types.DIRECTION_UPLINK,
                 util.mac_lte_rnti_types.C_RNTI,
                 util.mac_lte_tags.MAC_LTE_RNTI_TAG,
                 rach_msg2.tc_rnti,
-                util.mac_lte_tags.MAC_LTE_SEND_PREAMBLE_TAG,
-                rach_msg1.preamble_index,
-                subpkt_mac_rach_attempt.num_attempt,
                 util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
 
-            packet_mac_pdu = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
-            ret.append(packet_mac_pdu)
+            if isinstance(add_info, subpkt_mac_rach_attempt_addinfo_struct):
+                arfcn = add_info.ul_earfcn
+            else:
+                arfcn = 0
+
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.LTE_MAC,
+                arfcn = arfcn,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+
+            gsmtap_msg3 = gsmtap_hdr + mac_header_msg + rach_msg3.mac_pdu
+            ret.append(gsmtap_msg3)
 
         return ret
 
