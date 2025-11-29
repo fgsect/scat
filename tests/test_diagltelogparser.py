@@ -19,26 +19,26 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 6300, PCI: 214, Measured RSRP: -101.25, Measured RSSI: -66.62, Measured RSRQ: -14.06')
+        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 6300, PCI: 214, Measured RSRP: -101.25, Measured RSSI: -66.62, Measured RSRQ: -14.06') # type: ignore
 
         # V5
         payload = binascii.unhexlify('05010000160d0000d40e00004bb444005444450039e514133149070048adfe019f310100a23f0000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 3350, PCI: 212, Measured RSRP: -111.31, Measured RSSI: -80.88, Measured RSRQ: -10.44')
+        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 3350, PCI: 212, Measured RSRP: -111.31, Measured RSSI: -80.88, Measured RSRQ: -10.44') # type: ignore
 
         payload = binascii.unhexlify('05010000f424000a4d43434d4e434d41524b45527c307c3236327c317c34323330333233347c7c4d43434d4e434d41524b45520a0a434f504d41524b45527c434f504552524f5232363230317c434f504d41524b45520a006306000057755500577555001d75d4111d290b0048ad7e02dd370100a27f4100')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 167781620, PCI: 333, Measured RSRP: -127.12, Measured RSSI: 2.75, Measured RSRQ: -22.25')
+        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 167781620, PCI: 333, Measured RSRP: -127.12, Measured RSSI: 2.75, Measured RSRQ: -22.25') # type: ignore
 
         payload = binascii.unhexlify('0501000000190000a90d0000d9944d00d9944d006081d5d55d2568bc48ad3e027f314fe0891900e0')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 6400, PCI: 425, Measured RSRP: -102.44, Measured RSSI: -77.44, Measured RSRQ: -8.00')
+        self.assertEqual(result['stdout'], 'LTE SCell: EARFCN: 6400, PCI: 425, Measured RSRP: -102.44, Measured RSSI: -77.44, Measured RSRQ: -8.00') # type: ignore
 
     def test_parse_lte_ml1_ncell_meas(self):
         # V4
@@ -46,14 +46,14 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS), timestamp=0)
         result = self.parser.parse_lte_ml1_ncell_meas(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE NCell: EARFCN: 6300, number of cells: 1\n└── Neighbor cell 0: PCI: 131, RSRP: -102.12, RSSI: -75.75, RSRQ: -17.31')
+        self.assertEqual(result['stdout'], 'LTE NCell: EARFCN: 6300, number of cells: 1\n└── Neighbor cell 0: PCI: 131, RSRP: -102.12, RSSI: -75.75, RSRQ: -17.31') # type: ignore
 
         # V5
         payload = binascii.unhexlify('05010000160d0000480000006cea413bb4433b00b4f3cc33cf3c130200000000ffefc00fffefc00f45081600')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_NEIGHBOR_MEASUREMENTS), timestamp=0)
         result = self.parser.parse_lte_ml1_ncell_meas(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE NCell: EARFCN: 3350, number of cells: 1\n└── Neighbor cell 0: PCI: 108, RSRP: -120.75, RSSI: -94.69, RSRQ: -17.06')
+        self.assertEqual(result['stdout'], 'LTE NCell: EARFCN: 3350, number of cells: 1\n└── Neighbor cell 0: PCI: 108, RSRP: -120.75, RSSI: -94.69, RSRQ: -17.06') # type: ignore
 
     def test_parse_lte_ml1_scell_meas_response(self):
         # V36
@@ -61,6 +61,7 @@ class TestDiagLteLogParser(unittest.TestCase):
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas_response(pkt_header, payload, dict())
+        assert result is not None
         self.assertEqual(result['stdout'], '''LTE ML1 SCell Meas Response: EARFCN: 1600, Number of cells: 1, Valid RX: 3
 LTE ML1 SCell Meas Response (Cell 0): PCI: 416, SFN/SubFN: 655/8, Serving cell index: 0, is_serving_cell: 1''')
 
@@ -69,6 +70,7 @@ LTE ML1 SCell Meas Response (Cell 0): PCI: 416, SFN/SubFN: 655/8, Serving cell i
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas_response(pkt_header, payload, dict())
+        assert result is not None
         self.assertEqual(result['stdout'], '''LTE ML1 SCell Meas Response: EARFCN: 1444, Number of cells: 2, Valid RX: 3
 LTE ML1 SCell Meas Response (Cell 0): PCI: 94, SFN/SubFN: 1005/1, Serving cell index: 1, is_serving_cell: 1
 LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell index: 1, is_serving_cell: 0''')
@@ -78,13 +80,13 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas_response(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], '')
+        self.assertEqual(result['stdout'], '') # type: ignore
 
         payload = binascii.unhexlify('01015040193c3401060e000002000000030000000001fffff481000059220000420e03002187d1125a96160095755800640500006009960000503200a5555900618595122901000061854515d472170000000000ee020000f7fff9ff00000000260025000000000000000000e7c30200f47c050000000000000000000daa080000000000cd050000af02000000000000000000004db55200000000004d00000061010000030000000001ffffb800000059260000480e03002487d1125a5e150095055700640500006009960000002f0070255600051564100601000006198411e2ca170000000000f9020000f7fff9ff000000002600250000000000000000004ed802007f0c020000000000000000000e020800000000006c010000a6010000000000000000000010655100000000004d00000006010000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_RESPONSE), timestamp=0)
         result = self.parser.parse_lte_ml1_scell_meas_response(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], '')
+        self.assertEqual(result['stdout'], '') # type: ignore
 
     def test_parse_lte_ml1_cell_info(self):
         # V1
@@ -98,7 +100,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
             'stdout': 'LTE ML1 Cell Info: EARFCN: 1300, PCI: 36, Bandwidth: 20 MHz, Num antennas: 1'
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # V2
         payload = binascii.unhexlify('024BF8002107000003230000000000000F0500002ABD0B17000000000000F88400000100')
@@ -111,7 +113,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
             'stdout': 'LTE ML1 Cell Info: EARFCN: 1825, PCI: 259, Bandwidth: 15 MHz, Num antennas: 1'
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
     def test_parse_lte_ml1_intra_freq_cell_resel(self):
         # 01 02 F8 14 0A 02 0C 00 16 0D 00 00 61 03 00 00 0B 20 84 00 00 00 00 00 02 00 00 00 40 06 00 00 79 25 12 12 A0 4B F8 02 7F F9 CB 38 E3 DE CB 0F 30 48 F8 02 62 11 CB 31 C7 9E CB 0F 5A 45 08 03 4E 71 CA 2E BB 1E CB 0F 15 43 EF 02 39 C9 C9 29 A7 DE CA 0F 16 0D 00 00 79 0F 00 0A 61 4D 5B 03 85 31 8B 4C 34 DF CE 0F 38 18 00 00 79 1C 12 0E 67 62 8E 03 36 B2 11 41 04 DF 0E 00 66 56 8D 03 D2 91 0E 33 CC 5E CD 0F EB 4F 88 03 9E F1 0C 20 80 5E CC 0F
@@ -138,7 +140,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # V3, Msg1, Msg2, Msg3
         payload = binascii.unhexlify('0101a0690603280001000100010718ffa4ff000001c6610b00b4a2000012000120061f423f8d95075800')
@@ -153,19 +155,55 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # V49, Msg1, Msg2
         payload = binascii.unhexlify('0101739e063134000100010000033f0098ff0000013c6b070058ac010007000000468f47e2d446000000644b0000180001000000d5040000')
+        result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify(''),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore # type: ignore
 
         # V49, Msg1, Msg2, Msg3
         payload = binascii.unhexlify('01010000063134000100010001070aff98ff0000011c48070018e2000007000000523b7dfd69b6000000f5540000ff0001000000d6040000')
+        result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify(''),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore # type: ignore
 
         # V50, Msg1, Msg2
         payload = binascii.unhexlify('01010000063238000100010000032900a4ffeb000000000195b603000000a0b412000420061f425dc9be41b800885e00001700010000006505000073')
+        result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify(''),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore
 
         # V50, Msg1, Msg2, Msg3
         payload = binascii.unhexlify('010100000632380001000100010713ffa0ffeb0000000001ad5a0500000146b412000420061f425dc9be41b400665300001800010000001a05000000')
+        result = self.parser.parse_lte_mac_rach_response(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify(''),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore
 
     def test_parse_lte_mac_dl_block(self):
         # Packet V1, Subpkt V2
@@ -181,7 +219,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V1, Subpkt V4
         payload = binascii.unhexlify('01011c36070458000402001527030100000900000000095800611418120e7f00020028270407000029000102000a3c201d1f408c61ca51e602004527000700000700000400033d1f1f020049270006000007000102000321021f0000')
@@ -198,7 +236,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         payload = binascii.unhexlify('01011c3607046800060100d91c0003000007000102000324021f0100001d00060000c70301000001040100011d00070000970501000001040100021d00000000a9000106000424809f1f0100061d000400005d000102000324581f0100081d00050000540601000001040000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -216,7 +254,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V49
         payload = binascii.unhexlify('3100000002000400c1420000020000000000000002000000000000000200000002000000c2440000010000000000000001000000000000000100000001000000c3080200030000000300000001000000000000000100000001000000c40a02000100000001000000010000000000000001000000010000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000001d01000013000000e81d00000001040086830000000b000001010000035801000500000014000000710000000b000000eb210000100103000832000000030000010100000188010004000000')
@@ -229,7 +267,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        # self.assertDictEqual(result, expected)
+        # self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V50
         payload = binascii.unhexlify('32000000010000002f00000000000000995d0200700204003903005be5d32d3c06000000801200000001000000000000')
@@ -244,7 +282,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
     def test_parse_lte_mac_ul_block(self):
         # Packet V1, Subpkt V1
@@ -262,7 +300,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V1, Subpkt V2
         payload = binascii.unhexlify('01010000080244000302000100372771000147000304093e3a21211f0000001702000200462757000052000204053e1f00000002000700512779000074000004053e1f0000005700')
@@ -278,7 +316,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         payload = binascii.unhexlify('0101fc91080248011401000700d32735000100000000010401000000d42741000100000000010401000100d52735000100000000010401000200d62735000100000000010401000300d72735000100000000033a040701000400d82735000100000000010401000500d92735000100000000010401000600e02735000100000000010401000700e12741000100000103033d041b01000000e22741000100000000010401000100e32747000100000000010401000200e42741000100000000010401000300e52741000100000000010401000400e62741000100000000010401000500e72741000100000005033d041401000600e82741000100000000010401000700e92741000100000000010401000000f02751000106000004073e24441f00000001000100f12747000140000203053d24021f0001000700532820000117000203073d3a24021f000c00')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -310,7 +348,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V1, Subpkt V5
         payload = binascii.unhexlify('01010000080514010e01000100b3195d000100000203053d3a010f1c01000100c11961000107000004073e21531f00000001000100c91975000070000004053e1f00000001000100d71979000074000004053e1f00000001000700e3196d000068000004053e1f00000001000500e91979000074000004053e1f00000001000500f71975000251000203073d2102211b1f0001000300031a75000070000004053e1f00000001000100091a7d000078000004053e1f00000001000700151a7d000078000004053e1f00000001000500211a7d000078000004053e1f00000001000300271a7d000078000004053e1f00000001000100331a7d000078000004053e1f00000001000700391a7d000078000004053e1f00000000')
@@ -332,7 +370,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V1, Subpkt V40
         payload = binascii.unhexlify('010118b9c3283800000000000000000000000000000000000000000000000000000000000000000007070100228413000300d4280400000000044801')
@@ -351,7 +389,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
     def test_parse_lte_pdcp_ul_srb_int(self):
         # Packet V1, Subpkt V1
@@ -366,7 +404,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
     # LTE RRC
     def test_parse_lte_rrc(self):
@@ -380,7 +418,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d001419000000000ad1010000004c10')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # V27
         # payload = binascii.unhexlify('1b10100f9000b10186a00000d50700000000070005') # ...
@@ -397,7 +435,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d000713000000000000030000001015')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V25
         # payload = binascii.unhexlify('190f3000000009019c180000455102000000003300') #...
         # pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0xb0c0, timestamp=0)
@@ -414,7 +452,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d000ce4000000000dc00600000040858ec4e5bfe050dc29151600')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V20
         payload = binascii.unhexlify('140e300109019c1800000000090000000018000810a7145359a6054368c03bda3004a688028da2009a6840')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -425,7 +463,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d00189c000000000000030000000810a7145359a6054368c03bda3004a688028da2009a6840')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V19
         payload = binascii.unhexlify('130e22000b00fa090000000032000000000900281840160808800000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -436,7 +474,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d0009fa00000000000010000000281840160808800000')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V15
         payload = binascii.unhexlify('0f0d21009e0014050000498c05000000000700400c8ec94289e0') #...
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -447,7 +485,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d0005140000000008c406000000400c8ec94289e0')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V15
         payload = binascii.unhexlify('0f0d21019e0014050000000009000000001c000810a5346141a31c316804401a0049167c23159f001067c106d9e000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -458,7 +496,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d000514000000000000030000000810a5346141a31c316804401a0049167c23159f001067c106d9e000')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V13
         payload = binascii.unhexlify('0d0c74013200381800000000080000000002002c00')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -469,7 +507,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d001838000000000000030000002c00')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V9
         payload = binascii.unhexlify('090b700000011405000009910b000000000700400b8ec1dd13b0') #...
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -480,7 +518,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d00051400000000091006000000400b8ec1dd13b0')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
         # V8
         payload = binascii.unhexlify('080a72010e009c180000a933060000000002002e02')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
@@ -491,7 +529,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d00189c00000000033a010000002e02')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         # V6
         payload = binascii.unhexlify('0609B10007012C0725340202000000120040498805C09702D3B0981C20A0818C4326D0')
@@ -503,7 +541,7 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
             'cp': [binascii.unhexlify('02040d00072c0000000003420500000040498805c09702d3b0981c20a0818c4326d0')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
     def test_parse_lte_mib(self):
         # V1
@@ -511,21 +549,21 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_mib(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE MIB Info: EARFCN: 1300, SFN:   84, Bandwidth: 20 MHz, TX antennas: 2')
+        self.assertEqual(result['stdout'], 'LTE MIB Info: EARFCN: 1300, SFN:   84, Bandwidth: 20 MHz, TX antennas: 2') # type: ignore
 
         # V2
         payload = binascii.unhexlify('02030121070000F800024B')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_mib(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE MIB Info: EARFCN: 1825, SFN:  248, Bandwidth: 15 MHz, TX antennas: 2')
+        self.assertEqual(result['stdout'], 'LTE MIB Info: EARFCN: 1825, SFN:  248, Bandwidth: 15 MHz, TX antennas: 2') # type: ignore
 
         # V17
         payload = binascii.unhexlify('110b00fa090000b9030e000202000202d002')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_mib(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE MIB-NB Info: EARFCN: 2554, SFN:  953, TX antennas: 2')
+        self.assertEqual(result['stdout'], 'LTE MIB-NB Info: EARFCN: 2554, SFN:  953, TX antennas: 2') # type: ignore
 
     def test_parse_lte_rrc_cell_info(self):
         # V2
@@ -533,26 +571,26 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_lte_rrc_cell_info(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 1300/19300, Band: 3, Bandwidth: 20/20 MHz, PCI: 143, MCC: 262, MNC: 01, xTAC/xCID: 5d6/1bc7400')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 1300/19300, Band: 3, Bandwidth: 20/20 MHz, PCI: 143, MCC: 262, MNC: 01, xTAC/xCID: 5d6/1bc7400') # type: ignore
 
         # V3
         payload = binascii.unhexlify('034D0021070000714D00004B4B33C8B009159B03000000CC01020B0000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_lte_rrc_cell_info(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 1825/19825, Band: 3, Bandwidth: 15/15 MHz, PCI: 77, MCC: 460, MNC: 11, xTAC/xCID: 9b15/9b0c833')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 1825/19825, Band: 3, Bandwidth: 15/15 MHz, PCI: 77, MCC: 460, MNC: 11, xTAC/xCID: 9b15/9b0c833') # type: ignore
 
         payload = binascii.unhexlify('030b00fa0900004A50000000000b0692000b9005000000c20102060000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_lte_rrc_cell_info(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 2554/20554, Band: 5, Bandwidth: 0/0 PRBs, PCI: 11, MCC: 450, MNC: 06, xTAC/xCID: 900b/92060b')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 2554/20554, Band: 5, Bandwidth: 0/0 PRBs, PCI: 11, MCC: 450, MNC: 06, xTAC/xCID: 900b/92060b') # type: ignore
 
         payload = binascii.unhexlify('03eb0138180000885e0000323203c06600045614000000060102030000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO), timestamp=0)
         result = self.parser.parse_lte_rrc_cell_info(pkt_header, payload, dict())
-        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 6200/24200, Band: 20, Bandwidth: 10/10 MHz, PCI: 491, MCC: 262, MNC: 03, xTAC/xCID: 5604/66c003')
+        self.assertEqual(result['stdout'], 'LTE RRC SCell Info: EARFCN: 6200/24200, Band: 20, Bandwidth: 10/10 MHz, PCI: 491, MCC: 262, MNC: 03, xTAC/xCID: 5604/66c003') # type: ignore
 
     def test_parse_lte_nas(self):
         pass

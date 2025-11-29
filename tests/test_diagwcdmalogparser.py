@@ -17,11 +17,11 @@ class TestDiagWcdmaLogParser(unittest.TestCase):
         payload = binascii.unhexlify('82000000000000f1293200b6a5fff1f5ff000000000000f1293100b39effdedeff040000008000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_SEARCH_CELL_RESELECTION_RANK_C), timestamp=0)
-        result = self.parser.parse_wcdma_search_cell_reselection(pkt_header, payload, None)
+        result = self.parser.parse_wcdma_search_cell_reselection(pkt_header, payload, dict())
         expected = '''WCDMA Search Cell: 2 3G cells, 0 2G cells
 WCDMA Search Cell: 3G Cell 0: UARFCN: 10737, PSC:  50, RSCP: -95, Ec/Io: -7.50
 WCDMA Search Cell: 3G Cell 1: UARFCN: 10737, PSC:  49, RSCP: -98, Ec/Io: -17.00'''
-        self.assertEqual(result['stdout'], expected)
+        self.assertEqual(result['stdout'], expected) # type: ignore
 
     def test_parse_wcdma_pn_search_edition_2(self):
         payload = binascii.unhexlify('05000194FE00020002000200FE00FE00A729FFFFFFFFFFFF0000010401230000CB69D018C000000000000000000000000000005C510300AC4F0300F8520300245103001854030004540300080200007800000078000000740000007100000070000000')
@@ -44,51 +44,51 @@ WCDMA Search Cell: 3G Cell 1: UARFCN: 10737, PSC:  49, RSCP: -98, Ec/Io: -17.00'
         payload = binascii.unhexlify('0100100100000001f9fa5d800b400000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_RLC_DL_PDU_CIPHER_PACKET_C), timestamp=0)
-        result = self.parser.parse_wcdma_rlc_dl_pdu_cipher_packet(pkt_header, payload, None)
-        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher DL PDU: LCID: 16, CK: 0x1, Algorithm: UEA1, Message: 0x805dfaf9, Count C: 0x400b')
+        result = self.parser.parse_wcdma_rlc_dl_pdu_cipher_packet(pkt_header, payload, dict())
+        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher DL PDU: LCID: 16, CK: 0x1, Algorithm: UEA1, Message: 0x805dfaf9, Count C: 0x400b') # type: ignore
 
     def test_parse_wcdma_rlc_ul_pdu_cipher_packet(self):
         payload = binascii.unhexlify('01001000000000ff00000000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_RLC_UL_PDU_CIPHER_PACKET_C), timestamp=0)
-        result = self.parser.parse_wcdma_rlc_ul_pdu_cipher_packet(pkt_header, payload, None)
-        self.assertEqual(result['stdout'], '')
+        result = self.parser.parse_wcdma_rlc_ul_pdu_cipher_packet(pkt_header, payload, dict())
+        self.assertEqual(result['stdout'], '') # type: ignore
 
         payload = binascii.unhexlify('01001001000000010c400000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_RLC_UL_PDU_CIPHER_PACKET_C), timestamp=0)
-        result = self.parser.parse_wcdma_rlc_ul_pdu_cipher_packet(pkt_header, payload, None)
-        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher UL PDU: LCID: 16, CK: 0x1, Algorithm: UEA1, Count C: 0x400c')
+        result = self.parser.parse_wcdma_rlc_ul_pdu_cipher_packet(pkt_header, payload, dict())
+        self.assertEqual(result['stdout'], 'WCDMA RLC Cipher UL PDU: LCID: 16, CK: 0x1, Algorithm: UEA1, Count C: 0x400c') # type: ignore
 
     # RRC
     def test_parse_wcdma_cell_id(self):
         payload = binascii.unhexlify('f1250000a729000041852d0800000700d01802060200030f9d9c000001000000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
                                      log_id=diagcmd.diag_log_get_wcdma_item_id(diagcmd.diag_log_code_wcdma.LOG_WCDMA_CELL_ID_C), timestamp=0)
-        result = self.parser.parse_wcdma_cell_id(pkt_header, payload, None)
+        result = self.parser.parse_wcdma_cell_id(pkt_header, payload, dict())
         expected = 'WCDMA Cell ID: UARFCN: 10663/9713, PSC: 397, MCC/MNC: 262/03, xLAC/xRAC/xCID: 9c9d/1/82d8541'
-        self.assertEqual(result['stdout'], expected)
+        self.assertEqual(result['stdout'], expected) # type: ignore
 
     def test_parse_wcdma_rrc(self):
         payload = binascii.unhexlify('84281f00a7298d01a143f686e52a22282f36928cc1852026d2519830afacda4a330614909b4944')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x412f, timestamp=0)
-        result = self.parser.parse_wcdma_rrc(pkt_header, payload, None)
+        result = self.parser.parse_wcdma_rrc(pkt_header, payload, dict())
         expected = {
             'layer': 'rrc',
             'cp': [binascii.unhexlify('02040c0029a700000000000008000000a143f686e52a22282f36928cc1852026d2519830afacda4a330614909b4944')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
         payload = binascii.unhexlify('89282a00a7298d014365010240c80ea200618385110030071ba8801819c954400c1a2d7220049e22178885e22178885e2210')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12, log_id=0x412f, timestamp=0)
-        result = self.parser.parse_wcdma_rrc(pkt_header, payload, None)
+        result = self.parser.parse_wcdma_rrc(pkt_header, payload, dict())
         expected = {
             'layer': 'rrc',
             'cp': [binascii.unhexlify('02040c0029a70000000000003600000065010240c80ea200618385110030071ba8801819c954400c1a2d7220049e22178885e22178885e2210')],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        self.assertDictEqual(result, expected)
+        self.assertDictEqual(result, expected) # type: ignore
 
 if __name__ == '__main__':
     unittest.main()
