@@ -15,7 +15,6 @@ try:
 except ModuleNotFoundError:
     has_libscrc = False
 
-
 bitstring_ver = version.parse(bitstring.__version__)
 if bitstring_ver >= version.parse('4.2.0'):
     bitstring.options.lsb0 = True
