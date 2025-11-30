@@ -693,7 +693,7 @@ class DiagLteLogParser:
                 subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct._make(struct.unpack('<BBHHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+12]))
                 mac_hdr = subpkt_body[subpkt_pos+12:subpkt_pos+12+subpkt_mac_ul_tb.header_len]
                 subpkt_pos += (12 + subpkt_mac_ul_tb.header_len)
-            elif subpkt_hdr.version == 0x02:
+            elif subpkt_hdr.version == 0x02 or subpkt_hdr.version == 0x03:
                 subpkt_mac_ul_tb = subpkt_mac_ul_tb_struct_v2._make(struct.unpack('<BBBBHHBHBBB', subpkt_body[subpkt_pos:subpkt_pos+14]))
                 mac_hdr = subpkt_body[subpkt_pos+14:subpkt_pos+14+subpkt_mac_ul_tb.header_len]
                 subpkt_pos += (14 + subpkt_mac_ul_tb.header_len)
