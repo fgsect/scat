@@ -2,6 +2,7 @@
 # coding: utf8
 
 from scat.writers.abstractwriter import AbstractWriter
+from scat.writers.systemd_notify import systemd_notify_watchdog_alive
 
 class RawWriter(AbstractWriter):
     def __init__(self, fname: str, header: bytes=b'', trailer: bytes=b''):
@@ -13,6 +14,7 @@ class RawWriter(AbstractWriter):
         return self
 
     def write_cp(self, sock_content: bytes, radio_id: int=0, ts: None = None):
+        systemd_notify_watchdog_alive()
         self.raw_file.write(sock_content)
 
     def write_up(self, sock_content: bytes, radio_id: int=0, ts: None = None):
