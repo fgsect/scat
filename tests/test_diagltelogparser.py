@@ -338,10 +338,75 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         }
         self.assertDictEqual(result, expected) # type: ignore
 
-        # Packet V1, Subpkt V5
-        payload = binascii.unhexlify('01010000080514010e01000100b3195d000100000203053d3a010f1c01000100c11961000107000004073e21531f00000001000100c91975000070000004053e1f00000001000100d71979000074000004053e1f00000001000700e3196d000068000004053e1f00000001000500e91979000074000004053e1f00000001000500f71975000251000203073d2102211b1f0001000300031a75000070000004053e1f00000001000100091a7d000078000004053e1f00000001000700151a7d000078000004053e1f00000001000500211a7d000078000004053e1f00000001000300271a7d000078000004053e1f00000001000100331a7d000078000004053e1f00000001000700391a7d000078000004053e1f00000000')
+        # Packet V1, Subpkt V3
+        payload = binascii.unhexlify('0101ee2408031c000101000300a73129000101000203073d3a21211f001c0103')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK), timestamp=0)
+        result = self.parser.parse_lte_mac_ul_block(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030431a7013d3a21211f001c'),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore
 
+        payload = binascii.unhexlify('0101000c08035c000401000000560c29000112000203073d3a21101f001e01000200a60ce90002d5000203093d3a210221091f001d01000400b60ce90001d9000203073d3a21091f001d01000000d60cb100019f000203073d3a210b1f001e01')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK), timestamp=0)
+        result = self.parser.parse_lte_mac_ul_block(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003040c56013d3a21101f001e'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003040ca6013d3a210221091f001d'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003040cb6013d3a21091f001d'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003040cd6013d3a210b1f001e'),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore
+
+        # Packet V1, Subpkt V5
         payload = binascii.unhexlify('01010100080518000101000300112757000052000104053e1f000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK), timestamp=0)
+        result = self.parser.parse_lte_mac_ul_block(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003042711013e1f000000'),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore
+
+        payload = binascii.unhexlify('01010000080514010e01000100b3195d000100000203053d3a010f1c01000100c11961000107000004073e21531f00000001000100c91975000070000004053e1f00000001000100d71979000074000004053e1f00000001000700e3196d000068000004053e1f00000001000500e91979000074000004053e1f00000001000500f71975000251000203073d2102211b1f0001000300031a75000070000004053e1f00000001000100091a7d000078000004053e1f00000001000700151a7d000078000004053e1f00000001000500211a7d000078000004053e1f00000001000300271a7d000078000004053e1f00000001000100331a7d000078000004053e1f00000001000700391a7d000078000004053e1f00000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_MAC_UL_TRANSPORT_BLOCK), timestamp=0)
+        result = self.parser.parse_lte_mac_ul_block(pkt_header, payload, dict())
+        expected = {
+            'layer': 'mac',
+            'cp': [
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419b3013d3a010f1c'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419c1013e21531f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419c9013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419d7013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419e3013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419e9013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe0100030419f7013d2102211b1f00'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a03013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a09013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a15013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a21013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a27013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a33013e1f000000'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010003041a39013e1f000000'),
+            ],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
+        }
+        self.assertDictEqual(result, expected) # type: ignore
 
     # LTE PDCP
     def test_parse_lte_pdcp_dl_cip(self):
