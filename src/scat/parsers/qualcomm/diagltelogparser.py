@@ -748,16 +748,16 @@ class DiagLteLogParser:
         else:
             return None
 
-    def parse_lte_mac_subpkt_v49(self, pkt_header, pkt_body: bytes, args: dict):
-        pass
-
-    def parse_lte_mac_subpkt_v50(self, pkt_header, pkt_body: bytes, args: dict, is_downlink: bool):
+    def parse_lte_mac_subpkt_v49(self, pkt_header, pkt_body: bytes, args: dict, is_downlink: bool):
+        pkt_version = pkt_body[0]
         mac_pkts = []
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         num_tb, num_lcid, reason = struct.unpack('<HBB', pkt_body[4:8])
 
-        subpkt_tb_common_info = namedtuple('QcDiagLteMacV50TBCommonInfo', 'size num_pad_bytes sfn_subfn_reparse_rnti_type cc_harq num_sdu hdr_len')
+        subpkt_tb_common_info = namedtuple('QcDiagLteMacV49TBCommonInfo', 'size num_pad_bytes sfn_subfn_reparse_rnti_type cc_harq num_sdu hdr_len')
         pos = 8
+        if pkt_version == 0x31:
+            pos += (19 * 28)
         for i in range(num_tb):
             subpkt_tb = subpkt_tb_common_info._make(struct.unpack('<LLL B B H', pkt_body[pos:pos+16]))
             pos += 16
@@ -793,17 +793,17 @@ class DiagLteLogParser:
                     bitstring.lsb0 = False
 
                 mac_header_bits = bitstring.BitStream()
-                if lcid < 0x80: # 7b
+                if sdu_len < 0x80: # 7b
                     mac_header_bits.insert(bitstring.Bits('0b001'))
                     mac_header_bits.insert(bitstring.Bits(uint=(lcid & 0b11111), length=5))
                     mac_header_bits.insert(bitstring.Bits('0b0'))
                     mac_header_bits.insert(bitstring.Bits(uint=(sdu_len & 0x7f), length=7))
-                elif lcid < 32768: # 15b
+                elif sdu_len < 32768: # 15b
                     mac_header_bits.insert(bitstring.Bits('0b001'))
                     mac_header_bits.insert(bitstring.Bits(uint=(lcid & 0b11111), length=5))
                     mac_header_bits.insert(bitstring.Bits('0b1'))
                     mac_header_bits.insert(bitstring.Bits(uint=(sdu_len & 0x7fff), length=15))
-                elif lcid < 65536: # 16b
+                elif sdu_len < 65536: # 16b
                     mac_header_bits.insert(bitstring.Bits('0b011'))
                     mac_header_bits.insert(bitstring.Bits(uint=(lcid & 0b11111), length=5))
                     mac_header_bits.insert(bitstring.Bits(uint=(sdu_len & 0xffff), length=16))
@@ -868,10 +868,8 @@ class DiagLteLogParser:
 
         if pkt_version == 0x01:
             return self.parse_lte_mac_subpkt_v1(pkt_header, pkt_body, args)
-        # elif pkt_version == 0x31:
-        #     return self.parse_lte_mac_subpkt_v49(pkt_header, pkt_body, args)
-        elif pkt_version == 0x32:
-            return self.parse_lte_mac_subpkt_v50(pkt_header, pkt_body, args, True)
+        elif pkt_version == 0x31 or pkt_version == 0x32:
+            return self.parse_lte_mac_subpkt_v49(pkt_header, pkt_body, args, True)
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown LTE MAC DL transport block packet version 0x{:02x}'.format(pkt_version))

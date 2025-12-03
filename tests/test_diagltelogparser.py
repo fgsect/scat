@@ -252,10 +252,12 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         expected = {
             'layer': 'mac',
             'cp': [
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010103041e87012381071f'),
+                binascii.unhexlify('03000009040000000000000c0000000012d53d80000000000002000400000000fffe010103041eb80124641f'),
             ],
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
-        # self.assertDictEqual(result, expected) # type: ignore
+        self.assertDictEqual(result, expected) # type: ignore
 
         # Packet V50
         payload = binascii.unhexlify('32000000010000002f00000000000000995d0200700204003903005be5d32d3c06000000801200000001000000000000')
