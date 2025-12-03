@@ -1,6 +1,6 @@
 [project]
 name = "signalcat"
-version = "1.4.0"
+version = "2.0.0"
 authors = [
     { name="Shinjo Park", email="peremen@gmail.com" },
 ]
