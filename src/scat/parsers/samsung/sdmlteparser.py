@@ -42,7 +42,7 @@ class SdmLteParser:
             g | c.LTE_RRC_TIMER: lambda x: self.sdm_lte_rrc_timer(x),
             g | c.LTE_RRC_ASN_VERSION: lambda x: self.sdm_lte_rrc_asn_version(x),
             g | c.LTE_RRC_RACH_MSG: lambda x: self.sdm_lte_rrc_rach_msg(x),
-            g | c.LTE_RRC_EVENT: lambda x: self.sdm_lte_dummy(x, 0x57),
+            g | c.LTE_RRC_EVENT: lambda x: self.sdm_lte_rrc_event(x),
             g | c.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
             g | c.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
             g | c.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
@@ -487,15 +487,13 @@ class SdmLteParser:
             rach_message.preamble_id, rach_message.ta, rach_message.tc_rnti)
         return {'stdout': stdout}
 
-    def sdm_lte_0x57(self, pkt: bytes):
-        '''
-        0x57: '?' len:13
-            "earfcn", '<L', 4 bytes, pos:7
-            "pci",    '<H', 2 bytes, pos:11
-        if pkt[0] == 0x57:
-        '''
+    def sdm_lte_rrc_event(self, pkt: bytes):
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE 0x57: {}'.format(binascii.hexlify(pkt).decode())}
+
+        event_id = pkt[0]
+        stdout = 'LTE RRC Event ({:#x}): {}'.format(event_id, binascii.hexlify(pkt[1:]).decode())
+
+        return {'stdout': stdout}
 
     def sdm_lte_nas_sim_data(self, pkt: bytes):
         '''
