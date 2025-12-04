@@ -24,6 +24,7 @@ gsmtapv2_v3_payload_type_map = {
     0x12: 0x0404, #define GSMTAP_TYPE_LTE_NAS		0x12	/* LTE Non-Access Stratum */
     0x20: 0x0504, # NR NAS - for internal testing
     0x21: 0x0503, # NR RRC - for internal testing
+    0x22: 0x0500, # NR MAC - for internal testing
 }
 
 @unique
