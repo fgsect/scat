@@ -361,7 +361,8 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
-            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
             lte_mac_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
         elseif type == 0x0403 then
             pinfo.cols.info = ""
@@ -371,7 +372,8 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
-            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
             gsmtapv3_lte_rrc_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
         elseif type == 0x0404 then
             pinfo.cols.info = ""
@@ -381,7 +383,8 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
-            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
             gsmtapv3_nas_eps_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
         elseif type == 0x0503 then
             pinfo.cols.info = ""
@@ -391,7 +394,8 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
-            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
             gsmtapv3_nr_rrc_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
         elseif type == 0x0504 then
             pinfo.cols.info = ""
@@ -401,7 +405,8 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
             end
             local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
                                     :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
-            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, 4 * hdr_len - 8), 4 * hdr_len - 8)
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
             gsmtapv3_nas_5gs_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
         else
             pinfo.cols.info = "GSMTAPv3"
