@@ -57,7 +57,7 @@ class PcapngWriter(AbstractWriter):
     def __enter__(self):
         return self
 
-    def write_epb(self, sock_content: bytes, port: int, radio_id: int=0, ts: datetime.datetime = datetime.datetime.now(), options: list[bytes] = None) -> None:
+    def write_epb(self, sock_content: bytes, port: int, radio_id: int=0, ts: datetime.datetime = datetime.datetime.now(), epb_options: list[bytes] = None) -> None:
 
         if radio_id <= 0:
             dest_address = self.base_address
@@ -101,11 +101,11 @@ class PcapngWriter(AbstractWriter):
                    )
 
         options_data = b''
-        if options is not None and len(options) > 0:
+        if epb_options is not None and len(epb_options) > 0:
             padding_len = (4 - (len(packet_data) % 4)) % 4  # outer %4 for case where len(packet_data) % 4 == 0
             packet_data = packet_data + b'\x00' * padding_len
 
-            options_data = b''.join(options)
+            options_data = b''.join(epb_options)
             options_data += struct.pack('<HH',
                                         0,  # 00 00 = opt_endofopt
                                         0       # 00 00 = opt_endofopt length (must be 0)
@@ -125,11 +125,11 @@ class PcapngWriter(AbstractWriter):
     def write_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
         self.write_epb(sock_content, self.port_up, radio_id, ts)
 
-    def write_ng_cp(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), options: list[bytes] = None):
-        self.write_epb(sock_content, self.port_cp, radio_id, ts, options)
+    def write_ng_cp(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), epb_options: list[bytes] = None):
+        self.write_epb(sock_content, self.port_cp, radio_id, ts, epb_options)
 
-    def write_ng_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), options: list[bytes] = None):
-        self.write_epb(sock_content, self.port_up, radio_id, ts, options)
+    def write_ng_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), epb_options: list[bytes] = None):
+        self.write_epb(sock_content, self.port_up, radio_id, ts, epb_options)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.pcapng_file.close()
