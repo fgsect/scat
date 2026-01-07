@@ -7,7 +7,8 @@ import datetime
 from scat.writers.abstractwriter import AbstractWriter
 
 class PcapngWriter(AbstractWriter):
-    def __init__(self, filename: str, port_cp: int = 4729, port_up: int = 47290):
+    def __init__(self, filename: str, port_cp: int = 4729, port_up: int = 47290,
+                 shb_options: list[bytes] = None, idb_options: list[bytes] = None):
         self.port_cp = port_cp
         self.port_up = port_up
         self.ip_id = 0
@@ -16,28 +17,47 @@ class PcapngWriter(AbstractWriter):
         self.eth_hdr = b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x08\x00'
 
         # Section Header Block (SHB)
-        section_header_block_content = struct.pack('<LHHQ',
+        shb_content = struct.pack('<LHHQ',
                 0x1a2b3c4d,           # Byte-order magic
                 0x0001,                   # Major version
                 0x0000,                   # Minor version
                 0xffffffffffffffff,       # Section length (size unknown)
         )
-        section_header_block = self._create_pcapng_block(0x0a0d0d0a, section_header_block_content)
+
+        shb_options_data = b''
+        if shb_options is not None and len(shb_options) > 0:
+
+            shb_options_data = b''.join(shb_options)
+            shb_options_data += struct.pack('<HH',
+                                        0,  # 00 00 = opt_endofopt
+                                        0  # 00 00 = opt_endofopt length (must be 0)
+                                        )
+
+        section_header_block = self._create_pcapng_block(0x0a0d0d0a, shb_content + shb_options_data)
 
         # Interface Description Block (IDB)
-        interface_description_block_content = struct.pack('<HxxL',
+        idb_content = struct.pack('<HxxL',
                 0x0001,         # Link type (Ethernet)
                 0x00000000,         # Snap length (no limit)
                 )
-        interface_description_block_block = self._create_pcapng_block(0x00000001, interface_description_block_content)
+
+        idb_options_data = b''
+        if idb_options is not None and len(idb_options) > 0:
+            idb_options_data = b''.join(idb_options)
+            idb_options_data += struct.pack('<HH',
+                                            0,  # 00 00 = opt_endofopt
+                                            0  # 00 00 = opt_endofopt length (must be 0)
+                                            )
+
+        interface_description_block = self._create_pcapng_block(0x00000001, idb_content + idb_options_data)
 
         self.pcapng_file.write(section_header_block)
-        self.pcapng_file.write(interface_description_block_block)
+        self.pcapng_file.write(interface_description_block)
 
     def __enter__(self):
         return self
 
-    def write_pkt(self, sock_content: bytes, port: int, radio_id: int=0, ts: datetime.datetime = datetime.datetime.now(), options: list[bytes] = None) -> None:
+    def write_epb(self, sock_content: bytes, port: int, radio_id: int=0, ts: datetime.datetime = datetime.datetime.now(), options: list[bytes] = None) -> None:
 
         if radio_id <= 0:
             dest_address = self.base_address
@@ -66,17 +86,19 @@ class PcapngWriter(AbstractWriter):
 
         packet_data = self.eth_hdr + ip_hdr + udp_hdr + sock_content
 
+        # Enhanced Packet Block (EPB)
+
         timestamp_us = int(ts.timestamp() * 1000000)
         timestamp_upper = (timestamp_us >> 32) & 0xFFFFFFFF
         timestamp_lower = timestamp_us & 0xFFFFFFFF
 
-        enhanced_packet_block_header = struct.pack('<LLLLL',
-                                                   0,             # Interface ID
-                                                   timestamp_upper,   # Timestamp (high)
-                                                   timestamp_lower,   # Timestamp (low)
-                                                   len(packet_data),  # Captured packet length
-                                                   len(packet_data),  # Original packet length
-                                                   )
+        epb_header = struct.pack('<LLLLL',
+                   0,             # Interface ID
+                   timestamp_upper,   # Timestamp (high)
+                   timestamp_lower,   # Timestamp (low)
+                   len(packet_data),  # Captured packet length
+                   len(packet_data),  # Original packet length
+                   )
 
         options_data = b''
         if options is not None and len(options) > 0:
@@ -89,8 +111,8 @@ class PcapngWriter(AbstractWriter):
                                         0       # 00 00 = opt_endofopt length (must be 0)
                                         )
 
-        enhanced_packet_block_content = enhanced_packet_block_header + packet_data + options_data
-        enhanced_packet_block = self._create_pcapng_block(0x00000006, enhanced_packet_block_content)
+        epb_content = epb_header + packet_data + options_data
+        enhanced_packet_block = self._create_pcapng_block(0x00000006, epb_content)
         self.pcapng_file.write(enhanced_packet_block)
 
         self.ip_id += 1
@@ -98,16 +120,16 @@ class PcapngWriter(AbstractWriter):
             self.ip_id = 0
 
     def write_cp(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
-        self.write_pkt(sock_content, self.port_cp, radio_id, ts)
+        self.write_epb(sock_content, self.port_cp, radio_id, ts)
 
     def write_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
-        self.write_pkt(sock_content, self.port_up, radio_id, ts)
+        self.write_epb(sock_content, self.port_up, radio_id, ts)
 
-    def write_cp_with_options(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), options: list[bytes] = None):
-        self.write_pkt(sock_content, self.port_cp, radio_id, ts, options)
+    def write_ng_cp(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), options: list[bytes] = None):
+        self.write_epb(sock_content, self.port_cp, radio_id, ts, options)
 
-    def write_up_with_options(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), options: list[bytes] = None):
-        self.write_pkt(sock_content, self.port_up, radio_id, ts, options)
+    def write_ng_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now(), options: list[bytes] = None):
+        self.write_epb(sock_content, self.port_up, radio_id, ts, options)
 
     def __exit__(self, exc_type, exc_value, traceback):
         self.pcapng_file.close()
