@@ -121,6 +121,18 @@ Layer 0: NR-ARFCN: 156510, SCell PCI:  866/SSB: 0, RSRP: 0.00/0.00, RX beam: NA/
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected) # type: ignore
 
+        # Version 2.10
+        payload = binascii.unhexlify('0a0002000080706d01140000b5200000e7ffffff7b811f0000016e000002000000000000000000004600460196000000010000006e00ae010100000069e4ffffd2faffff020001004600460100000000989e9ce2d1ea86070ee0ffff28deffffd3faffffd4faffff000000000000000000000000000000000000000000000000000000000000000083e1ffffd2faffff0000000000000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload, dict())
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 2064763, SCell PCI:  110/SSB: 0, RSRP: 0.00/0.00, RX beam: 70/326, Num Cells: 0 (S: 1)
+└── Cell 0: PCI:  110, PBCH SFN: 430, RSRP: -55.18, RSRQ: -10.36, Num Beams: 1
+    └── Beam 0: SSB[2] Beam ID: 70/326, RSRP: -63.89/-67.69, Filtered RSRP/RSRQ (Nr2Nr): -10.35/-10.34, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected) # type: ignore
+
         # Version 3.0
         payload = binascii.unhexlify('00000300000081b601000000ec010000f49bb8f1de930600ff02ffffffff000000000000000000000000000000000000ffffffffffff0000ffffffffa901da01010000001ec7ffff2dfaffff000001000000000000000000c37fa8613b8e260d1ec7ffffd1c6ffff2dfaffffa9f8ffff000000000000000000000000000000000000000000000000000000000000000000000000000000001ec7ffff2dfaffffe701da010100000061c5ffffb6f8ffff0000010000000000000000009bfea7612b8e260d00b2ffffe1c6ffff80eaffffb6f8ffff0000000000000000000000000000000000000000000000000000000000000000000000000000000061c5ffffb6f8ffff')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
