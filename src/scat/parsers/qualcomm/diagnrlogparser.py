@@ -85,7 +85,7 @@ class DiagNrLogParser:
                 num_layers = ml1_2_7.num_layers
                 stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_7.num_layers, ml1_2_7.ssb_periocity)
                 current_offset = 16
-            elif pkt_ver.rel_min == 0x09:
+            elif pkt_ver.rel_min in (0x09, 0x0a):
                 ml1_2_9 = ml1_shared_struct_v2_9._make(struct.unpack('<IBBHII', pkt_body[4:20]))
                 num_layers = ml1_2_9.num_layers
                 stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_9.num_layers, ml1_2_9.ssb_periocity)
@@ -117,7 +117,7 @@ class DiagNrLogParser:
 
         for layer in range(num_layers):
             if pkt_ver.rel_maj == 0x02:
-                if pkt_ver.rel_min in (0x07, 0x09):
+                if pkt_ver.rel_min in (0x07, 0x09, 0x0a):
                     meas_carrier_list = meas_carrier_list_struct._make(struct.unpack('<IBBHB3sIIHHH2sHH', pkt_body[current_offset:current_offset+32]))
                     current_offset += 32
             elif pkt_ver.rel_maj == 0x03:
