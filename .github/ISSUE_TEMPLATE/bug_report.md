@@ -31,11 +31,14 @@ A clear and concise description of what you expected to happen.
 
 **ENVIRONMENT**
  - OS: [e.g. Linux]
- - SCAT version: [e.g. 1.3.0, git master]
- - Python version: [e.g. 3.9]
+ - SCAT version: [e.g. 2.0.0, git master]
+ - Python version: [e.g. 3.11]
  - Cellular device: [e.g. Pixel 6, Quectel RM500Q, Galaxy S22 (SM-S901B)]
  - Baseband type: [Qualcomm, Samsung, UniSOC, HiSilicon]
  - DIAG method: [USB, serial, or baseband dump]
 
 **ADDITIONAL INFORMATION**
+<!--
+"Unknown version" error while parsing Qualcomm baseband diagnostics? Please attach the QMDL file (--qmdl bug_report.qmdl) to the report.
+-->
 Add any other context about the problem here, such as type of cellular network (2G/3G/4G/5G).
