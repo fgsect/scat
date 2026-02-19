@@ -8,7 +8,6 @@ import scat.parsers.abstractparser
 
 import argparse
 import faulthandler
-import importlib.metadata
 import logging
 import os, sys
 import signal
@@ -16,7 +15,11 @@ import inspect
 
 current_parser: scat.parsers.abstractparser.AbstractParser
 logger = logging.getLogger('scat')
-__version__ = importlib.metadata.version('signalcat')
+try:
+    import importlib.metadata
+    __version__ = importlib.metadata.version('signalcat')
+except:
+    __version__ = 'unknown'
 
 if os.name != 'nt':
     faulthandler.register(signal.SIGUSR1)
