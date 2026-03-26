@@ -293,7 +293,7 @@ class DiagNrLogParser:
         elif pkt_ver in (0x13, 0x14, 0x19): # Version 19, 20, 25
             item = item_struct_v19._make(struct.unpack('<BBBH Q I3sBIHB', pkt_body[4:32]))
             msg_content = pkt_body[32:]
-        elif pkt_ver in (0x17, 0x18, 0x1a): # Version 23, 24, 26
+        elif pkt_ver in (0x17, 0x18, 0x1a, 0x1c): # Version 23, 24, 26, 28
             item = item_struct_v23._make(struct.unpack('<BBBH Q I3sBIHBBBB', pkt_body[4:35]))
             msg_content = pkt_body[35:]
         else:
@@ -411,6 +411,24 @@ class DiagNrLogParser:
                 7: util.gsmtapv3_nr_rrc_types.UL_CCCH,
                 8: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
                 9: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                11: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
+                12: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
+           }
+           rrc_type_map_stdout = {
+                36: "nr-RadioBearerConfig",
+            }
+        elif pkt_ver in (0x1c, ):
+           rrc_type_map = {
+                1: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
+                2: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
+                3: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+                4: util.gsmtapv3_nr_rrc_types.DL_DCCH,
+                5: util.gsmtapv3_nr_rrc_types.MCCH,
+                6: util.gsmtapv3_nr_rrc_types.PCCH,
+                7: util.gsmtapv3_nr_rrc_types.UL_CCCH,
+                8: util.gsmtapv3_nr_rrc_types.UL_CCCH1,
+                9: util.gsmtapv3_nr_rrc_types.UL_DCCH,
+                10: util.gsmtapv3_nr_rrc_types.UL_DCCH,
                 11: util.gsmtapv3_nr_rrc_types.RRC_RECONF,
                 12: util.gsmtapv3_nr_rrc_types.RRC_RECONF_COMPLETE,
            }
