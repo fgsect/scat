@@ -46,8 +46,8 @@ class SdmLteParser:
             g | c.LTE_NAS_SIM_DATA: lambda x: self.sdm_lte_nas_sim_data(x),
             g | c.LTE_NAS_STATUS_VARIABLE: lambda x: self.sdm_lte_nas_status_variable(x),
             g | c.LTE_NAS_EMM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
-            g | c.LTE_NAS_PLMN_SELECTION: lambda x: self.sdm_lte_nas_plmn_selection(x),
-            g | c.LTE_NAS_SECURITY: lambda x: self.sdm_lte_nas_security(x),
+            g | c.LTE_NAS_EPS_BEARER_CONTEXT: lambda x: self.sdm_lte_nas_eps_bearer_context(x),
+            g | c.LTE_NAS_EPS_BEARER_QOS: lambda x: self.sdm_lte_nas_eps_bearer_qos(x),
             g | c.LTE_NAS_PDP: lambda x: self.sdm_lte_nas_pdp(x),
             g | c.LTE_NAS_IP: lambda x: self.sdm_lte_nas_ip(x),
             g | c.LTE_NAS_ESM_MESSAGE: lambda x: self.sdm_lte_nas_msg(x),
@@ -545,7 +545,7 @@ class SdmLteParser:
                 arfcn = 0)
         return {'layer': 'nas', 'cp': [gsmtap_hdr + nas_msg]}
 
-    def sdm_lte_nas_plmn_selection(self, pkt: bytes):
+    def sdm_lte_nas_eps_bearer_context(self, pkt: bytes):
         # All zeroes?
         # 00050001
         # 01060002
@@ -553,12 +553,12 @@ class SdmLteParser:
         # 02070002
         # 02070001
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS PLMN Selection: {}'.format(binascii.hexlify(pkt).decode())}
+        return {'stdout': 'LTE NAS EPS Bearer Context: {}'.format(binascii.hexlify(pkt).decode())}
 
-    def sdm_lte_nas_security(self, pkt: bytes):
+    def sdm_lte_nas_eps_bearer_qos(self, pkt: bytes):
         # All zeroes?
         pkt = pkt[15:-1]
-        return {'stdout': 'LTE NAS Security: {}'.format(binascii.hexlify(pkt).decode())}
+        return {'stdout': 'LTE NAS EPS Bearer QoS: {}'.format(binascii.hexlify(pkt).decode())}
 
     def sdm_lte_nas_pdp(self, pkt: bytes):
         # 0000ff0000ff0000ff

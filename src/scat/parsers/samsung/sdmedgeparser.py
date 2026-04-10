@@ -22,12 +22,12 @@ class SdmEdgeParser:
         g = (sdmcmd.sdm_command_group.CMD_EDGE_DATA << 8)
         c = sdmcmd.sdm_edge_data
         self.process = {
-            g | c.EDGE_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
-            g | c.EDGE_NCELL_INFO: lambda x: self.sdm_edge_ncell_info(x),
-            g | c.EDGE_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
-            g | c.EDGE_HANDOVER_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
-            g | c.EDGE_HANDOVER_HISTORY_INFO: lambda x: self.sdm_edge_handover_history_info(x),
-            g | c.EDGE_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
+            g | c.EDGE_PHY_SCELL_INFO: lambda x: self.sdm_edge_scell_info(x),
+            g | c.EDGE_PHY_NCELL_INFO: lambda x: self.sdm_edge_ncell_info(x),
+            g | c.EDGE_PHY_3G_NCELL_INFO: lambda x: self.sdm_edge_3g_ncell_info(x),
+            g | c.EDGE_PHY_HO_INFO: lambda x: self.sdm_edge_dummy(x, 0x08),
+            g | c.EDGE_PHY_HO_HISTORY_INFO: lambda x: self.sdm_edge_handover_history_info(x),
+            g | c.EDGE_PHY_MEAS_INFO: lambda x: self.sdm_edge_meas_info(x),
         }
 
     def set_icd_ver(self, version: tuple):
