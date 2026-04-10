@@ -350,6 +350,7 @@ class SdmCommonParser:
         }
         chan_map_dl = {
             0x00: util.gsmtapv3_nr_rrc_types.DL_CCCH,
+            0x01: util.gsmtapv3_nr_rrc_types.PCCH,
             0x02: util.gsmtapv3_nr_rrc_types.BCCH_BCH,
             0x03: util.gsmtapv3_nr_rrc_types.BCCH_DL_SCH,
             0x04: util.gsmtapv3_nr_rrc_types.DL_DCCH,
