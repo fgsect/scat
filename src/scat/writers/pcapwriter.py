@@ -5,6 +5,7 @@ import datetime
 import struct
 
 from scat.writers.abstractwriter import AbstractWriter
+from scat.writers.systemd_notify import systemd_notify_watchdog_alive
 
 class PcapWriter(AbstractWriter):
     def __init__(self, filename: str, port_cp: int = 4729, port_up: int = 47290):
@@ -66,6 +67,7 @@ class PcapWriter(AbstractWriter):
             self.ip_id = 0
 
     def write_cp(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
+        systemd_notify_watchdog_alive()
         self.write_pkt(sock_content, self.port_cp, radio_id, ts)
 
     def write_up(self, sock_content: bytes, radio_id: int=0, ts: datetime.datetime=datetime.datetime.now()):
