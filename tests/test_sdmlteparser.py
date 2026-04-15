@@ -226,6 +226,63 @@ LTE L1 RF Info: SCell 0: RX RSSI: [-77.0 -80.0 -204.0 -204.0], TX Power: -48 dBm
 LTE L1 RF Info: SCell 0: RX RSSI: [-61.0 -82.0 -204.0 -204.0], TX Power: -48 dBm'''
         self.assertEqual(result['stdout'], expected) # type: ignore
 
+    def test_sdm_lte_l1_sync_info(self):
+        self.parser.icd_ver = (4, 36)
+        payload = binascii.unhexlify('7b01e10200000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 379, SFN: 737'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (4, 40)
+        payload = binascii.unhexlify('7b01c60200000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 379, SFN: 710'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (4, 60)
+        payload = binascii.unhexlify('0b00aa01000000000000000000000000ac069a4053c3000094441841dcf899407e7f1e00001b000968a00501b38ab50b0164955041000002ace56c40cc1618417e7f1e00001b000a68a00501b38ab50b01f8925241000002ace56c40')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 11, SFN: 426'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (5, 17)
+        payload = binascii.unhexlify('2400cb03050000000200010000000000c45f03430a000000142b25438c5f0343201e7943f0bb6741d966fc40f0bb6741f766fc40f0bb6741d966fc400000000000000000c44aa441237030430000000039f3e840cb03030055780000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 36, SFN: 971, Bandwidth: 20 MHz, phich-Duration: normal, phich-Resource: one, # Antennas: 2'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (6, 22)
+        payload = binascii.unhexlify('7b01000003000000000001020000007b010000030000000000027b0100000500000000000200000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 379, Bandwidth: 10 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2
+LTE L1 Sync Info: SCell 0: PCI: 379, Bandwidth: 10 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2
+LTE L1 Sync Info: SCell 1: PCI: 379, Bandwidth: 20 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (7, 1)
+        payload = binascii.unhexlify('0500000005000000020002030000005e00000003000000020004230000000300000002000259000000050000000200020000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 5, Bandwidth: 20 MHz, phich-Duration: normal, phich-Resource: one, # Antennas: 4
+LTE L1 Sync Info: SCell 0: PCI: 94, Bandwidth: 10 MHz, phich-Duration: normal, phich-Resource: one, # Antennas: 4
+LTE L1 Sync Info: SCell 1: PCI: 35, Bandwidth: 10 MHz, phich-Duration: normal, phich-Resource: one, # Antennas: 4
+LTE L1 Sync Info: SCell 2: PCI: 89, Bandwidth: 20 MHz, phich-Duration: normal, phich-Resource: one, # Antennas: 4'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (9, 0)
+        payload = binascii.unhexlify('2501000003000000000001030000002501000005000000000002250100000300000000000225010000050000000000040000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_SYNC, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_sync_info(packet)
+        expected = '''LTE L1 Sync Info: PCell: PCI: 293, Bandwidth: 10 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2
+LTE L1 Sync Info: SCell 0: PCI: 293, Bandwidth: 20 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2
+LTE L1 Sync Info: SCell 1: PCI: 293, Bandwidth: 10 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2
+LTE L1 Sync Info: SCell 2: PCI: 293, Bandwidth: 20 MHz, phich-Duration: normal, phich-Resource: oneSixth, # Antennas: 2'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
 
     # L2
 
