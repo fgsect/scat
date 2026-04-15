@@ -9,6 +9,8 @@ from scat.parsers.samsung import sdmcmd
 class TestSdmLteParser(unittest.TestCase):
     parser = SdmLteParser(parent=None, icd_ver=(6, 22))
 
+    # PHY
+
     def test_sdm_lte_phy_cell_info(self):
         self.parser.icd_ver = (4, 80)
         payload = binascii.unhexlify('7f3c0000390087ffa002020b418b35d0af0000000000000e067b010000ecc850fb14370000d007000001000e0615010000bc1bcc290000a406000000007e')
@@ -134,12 +136,107 @@ LTE PHY Cell Search Measure: NCell 1: PCI: 35, RSRP/RSRQ/RSSI: (-101.0, -9.0, -7
 LTE PHY Cell Search Measure: NCell 2: PCI: 89, RSRP/RSRQ/RSSI: (-117.0, -12.0, -85.0), (-112.0, -6.0, -86.0), (-204.0, -40.0, -204.0), (-204.0, -40.0, -204.0)'''
         self.assertEqual(result['stdout'], expected) # type: ignore
 
+    # L1
+    def test_sdm_lte_l1_rf_info(self):
+        self.parser.icd_ver = (4, 36)
+        payload = binascii.unhexlify('f41af41a1100')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-69.0 -69.0], TX Power: 17 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        payload = binascii.unhexlify('0820201c0e00')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-82.0 -72.0], TX Power: 14 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (4, 40)
+        payload = binascii.unhexlify('14371437d0ff')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-141.0 -141.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (4, 60)
+        payload = binascii.unhexlify('781e3421d0ff00000000c89c58410000061200000090010000aeb70200ad0c00000d0c0000020000007e7f2e00002b0088a3a005')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-78.0 -85.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        payload = binascii.unhexlify('a41f3421d0ff0000000000000200000002000000b8342c417e7f1a00001700ba2da00501dc9f6b1f01ecfe574100000100000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-81.0 -85.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (5, 17)
+        payload = binascii.unhexlify('b01df41ab04fb04fd0ff00000000040000000000030000000000000000000000c7276f4003000000a200000018342d4293d26c40d4032b42b2a42f43b6a42f430a000000080000004114040098bacdfe0a000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-76.0 -69.0 -204.0 -204.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        payload = binascii.unhexlify('781e201cb04fb04f1700000000003243f6c0304300000000f7d32841985f03430100000098bacdfe98bacdfe010000001484a84101190000f2c03043f6c030430a0000000800000000000000201e79430a000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-78.0 -72.0 -204.0 -204.0], TX Power: 23 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (6, 22)
+        payload = binascii.unhexlify('1437143714371437d0ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-141.0 -141.0 -141.0 -141.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (7, 1)
+        payload = binascii.unhexlify('2823b824b04fb04f1800020000000000000000000000d0ff0000000000000000d0ff0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-90.0 -94.0 -204.0 -204.0], TX Power: 24 dBm
+LTE L1 RF Info: SCell 0: RX RSSI: [0.0 0.0 0.0 0.0], TX Power: -48 dBm
+LTE L1 RF Info: SCell 1: RX RSSI: [0.0 0.0 0.0 0.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (8, 0)
+        payload = binascii.unhexlify('1437143714371437d0ff03000000d020a41fb04fb04fd0ff4c1d4c1db04fb04fd0ff3421d020b04fb04fd0ff00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-141.0 -141.0 -141.0 -141.0], TX Power: -48 dBm
+LTE L1 RF Info: SCell 0: RX RSSI: [-84.0 -81.0 -204.0 -204.0], TX Power: -48 dBm
+LTE L1 RF Info: SCell 1: RX RSSI: [-75.0 -75.0 -204.0 -204.0], TX Power: -48 dBm
+LTE L1 RF Info: SCell 2: RX RSSI: [-85.0 -84.0 -204.0 -204.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (9, 0)
+        payload = binascii.unhexlify('e81cf41ab04fb04f0c0001000000141e401fb04fb04fd0ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-74.0 -69.0 -204.0 -204.0], TX Power: 12 dBm
+LTE L1 RF Info: SCell 0: RX RSSI: [-77.0 -80.0 -204.0 -204.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+        self.parser.icd_ver = (9, 10)
+        payload = binascii.unhexlify('f41a9c18b04fb04f140001000000d4170820b04fb04fd0ff000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000')
+        packet = sdmcmd.generate_sdm_packet(0xa0, sdmcmd.sdm_command_group.CMD_LTE_DATA, sdmcmd.sdm_lte_data.LTE_L1_RF, payload, timestamp=0x0)
+        result = self.parser.sdm_lte_l1_rf_info(packet)
+        expected = '''LTE L1 RF Info: RX RSSI: [-69.0 -63.0 -204.0 -204.0], TX Power: 20 dBm
+LTE L1 RF Info: SCell 0: RX RSSI: [-61.0 -82.0 -204.0 -204.0], TX Power: -48 dBm'''
+        self.assertEqual(result['stdout'], expected) # type: ignore
+
+
+    # L2
+
     def test_sdm_lte_l2_rnti_info(self):
         self.parser.icd_ver = (4, 60)
         payload = binascii.unhexlify('7f1a00001700f308a1223a4dd70803fffffefff4ff95ea0200f4ff7e')
         result = self.parser.sdm_lte_l2_rnti_info(payload)
         expected = {'stdout': 'LTE L2 RNTI Info: SI: 0xffff P: 0xfffe TC: 0xfff4 C: 0xea95 RA: 0x2 0xfff4'}
         self.assertDictEqual(result, expected) # type: ignore
+
+    # RRC
 
     def test_sdm_lte_rrc_serving_cell(self):
         self.parser.icd_ver = (4, 60)
@@ -231,6 +328,8 @@ LTE PHY Cell Search Measure: NCell 2: PCI: 89, RSRP/RSRQ/RSSI: (-117.0, -12.0, -
         result = self.parser.sdm_lte_rrc_rach_msg(packet)
         expected = {'stdout': 'LTE RRC RACH Message: Direction: 1, Cause: 1, Preamble Group: 0x0, Preamble ID: 0xd, TA: 5, TC-RNTI: 0x368f'}
         self.assertDictEqual(result, expected) # type: ignore
+
+    # VoLTE
 
     def test_sdm_lte_volte_rtp_packet(self):
         payload = binascii.unhexlify('4a00621b80fe01004001000011cbe2f5')
