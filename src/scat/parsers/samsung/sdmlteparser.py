@@ -5,6 +5,8 @@ import binascii
 import ipaddress
 import logging
 import struct
+import calendar
+import datetime
 
 import scat.parsers.samsung.sdmcmd as sdmcmd
 import scat.util as util
@@ -70,6 +72,8 @@ class SdmLteParser:
     def sdm_lte_dummy(self, pkt: bytes, cmdid: int):
         pkt = pkt[15:-1]
         return {'stdout': 'LTE {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode())}
+
+    # PHY
 
     def sdm_lte_phy_status(self, pkt: bytes):
         pkt = pkt[15:-1]
@@ -202,6 +206,8 @@ class SdmLteParser:
                     self.parent.logger.log(logging.WARNING, 'Extra data length ({}) does not match with expected ({})'.format(len(extra), ncell_len * cell_info.num_ncell))
         return {'stdout': stdout.rstrip()}
 
+    # L1
+
     def sdm_lte_l1_rf_info(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<hhhhh'
@@ -248,6 +254,38 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
+    # L2
+
+    def create_lte_mac_gsmtap_packet(self, pkt_ts, is_downlink: bool, header: dict, body: bytes):
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
+        ts_usec = pkt_ts.microsecond
+
+        # MAC header required by Wireshark MAC-LTE: radioType, direction, rntiType
+        # Additional headers required for each message types
+        if 'rnti' in header:
+            mac_hdr = struct.pack('!BBBBHB',
+                util.mac_lte_radio_types.FDD_RADIO,
+                util.mac_lte_direction_types.DIRECTION_DOWNLINK if is_downlink else util.mac_lte_direction_types.DIRECTION_UPLINK,
+                header['rnti_type'],
+                util.mac_lte_tags.MAC_LTE_RNTI_TAG,
+                header['rnti'],
+                util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+        else:
+            mac_hdr = struct.pack('!BBBB',
+                util.mac_lte_radio_types.FDD_RADIO,
+                util.mac_lte_direction_types.DIRECTION_DOWNLINK if is_downlink else util.mac_lte_direction_types.DIRECTION_UPLINK,
+                header['rnti_type'],
+                util.mac_lte_tags.MAC_LTE_PAYLOAD_TAG)
+
+        gsmtap_hdr = util.create_gsmtap_header(
+            version = 3,
+            payload_type = util.gsmtapv3_types.LTE_MAC,
+            arfcn = 0,
+            device_sec = ts_sec,
+            device_usec = ts_usec)
+
+        return gsmtap_hdr + mac_hdr + body
+
     def sdm_lte_l2_rach_info(self, pkt: bytes):
         pkt = pkt[15:-1]
         struct_format = '<HHB'
@@ -283,6 +321,7 @@ class SdmLteParser:
 
     def sdm_lte_l2_mac_ce(self, pkt: bytes):
         pkt = pkt[15:-1]
+        ret = []
         struct_format = '<BLBHB'
         expected_len = struct.calcsize(struct_format)
         if len(pkt) < expected_len:
@@ -290,13 +329,39 @@ class SdmLteParser:
                 self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
             return None
 
-        header = namedtuple('SdmLteL2MacCe', 'unk1 unk2 ta c_rnti trailer_len')
+        header = namedtuple('SdmLteL2MacCe', 'phr unk2 ta c_rnti trailer_len')
         ce_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
 
-        stdout = 'LTE L2 MAC-CE: PHR: {:#x}, {:#10x}, TA: {}, RNTI: {:#x}, Trailer: {}'.format(
-            ce_info.unk1, ce_info.unk2, ce_info.ta, ce_info.c_rnti,
-            'None' if ce_info.trailer_len == 0 else '{} {}'.format(pkt[expected_len], binascii.hexlify(pkt[expected_len+1:expected_len+1+ce_info.trailer_len]).decode()))
-        return {'stdout': stdout}
+        stdout = 'LTE L2 MAC-CE: TA: {}, RNTI: {:#x}, {:#10x}'.format(
+            ce_info.ta, ce_info.c_rnti, ce_info.unk2)
+
+        ret.append(self.create_lte_mac_gsmtap_packet(datetime.datetime.now(), False,
+            { 'rnti_type': util.mac_lte_rnti_types.C_RNTI,
+                'rnti': ce_info.c_rnti, },
+            struct.pack('!BB', 0x1a, ce_info.phr)))
+
+        if ce_info.trailer_len > 0:
+            trailer = pkt[expected_len:]
+            payload_type = trailer[0]
+            payload = trailer[1:1+ce_info.trailer_len]
+
+            if payload_type == 0x01:
+                # Extended PHR, LCID=0x19
+                ret.append(self.create_lte_mac_gsmtap_packet(datetime.datetime.now(), False,
+                    { 'rnti_type': util.mac_lte_rnti_types.C_RNTI,
+                      'rnti': ce_info.c_rnti, },
+                    b'\x19' + payload))
+            elif payload_type == 0x09:
+                # Dual Connectivity PHR, LCID=0x18
+                ret.append(self.create_lte_mac_gsmtap_packet(datetime.datetime.now(), False,
+                    { 'rnti_type': util.mac_lte_rnti_types.C_RNTI,
+                      'rnti': ce_info.c_rnti, },
+                    b'\x18' + payload))
+            else:
+                stdout += ', Payload Type: {:#02x}, Body: {}'.format(payload_type, binascii.hexlify(payload).decode())
+        return {'stdout': stdout, 'cp': ret, 'layer': 'mac'}
+
+    # RRC
 
     def sdm_lte_rrc_serving_cell(self, pkt: bytes):
         '''
@@ -495,6 +560,8 @@ class SdmLteParser:
 
         return {'stdout': stdout}
 
+    # NAS
+
     def sdm_lte_nas_sim_data(self, pkt: bytes):
         '''
         0x58: 'Sim(?)', len:13
@@ -577,6 +644,8 @@ class SdmLteParser:
 
         pkt = pkt[15:-1]
         return {'stdout': 'LTE NAS IP: {}'.format(binascii.hexlify(pkt).decode())}
+
+    # VoLTE
 
     def sdm_lte_volte_rtp_packet(self, pkt: bytes, cmdid: int):
         # 0x70: TX
