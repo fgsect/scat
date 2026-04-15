@@ -32,6 +32,7 @@ class SdmLteParser:
             g | c.LTE_PHY_NCELL_INFO: lambda x: self.sdm_lte_phy_cell_info(x),
 
             g | c.LTE_L1_RF: lambda x: self.sdm_lte_l1_rf_info(x),
+            g | c.LTE_L1_SYNC: lambda x: self.sdm_lte_l1_sync_info(x),
             g | c.LTE_L1_RACH_ATTEMPT: lambda x: self.sdm_lte_l1_rach_attempt(x),
 
             g | c.LTE_L2_RACH_INFO: lambda x: self.sdm_lte_l2_rach_info(x),
@@ -60,6 +61,15 @@ class SdmLteParser:
             g | c.LTE_VOLTE_RX_OVERALL_STAT_INFO: lambda x: self.sdm_lte_volte_rx_stats(x),
             g | c.LTE_VOLTE_TX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_tx_rtp_stats(x),
             g | c.LTE_VOLTE_RX_RTP_STAT_INFO: lambda x: self.sdm_lte_volte_rx_rtp_stats(x),
+        }
+
+        self.bandwidth_map = {
+            0: "1.4 MHz",
+            1: "3 MHz",
+            2: "5 MHz",
+            3: "10 MHz",
+            4: "15 MHz",
+            5: "20 MHz",
         }
 
     def set_icd_ver(self, version: tuple):
@@ -261,8 +271,78 @@ class SdmLteParser:
                             -rf_info.rx0 / 100, -rf_info.rx1 / 100, rf_info.tx)
                         pos += expected_len
 
-
         return {'stdout': stdout}
+
+    def sdm_lte_l1_sync_info(self, pkt: bytes):
+        pkt = pkt[15:-1]
+        struct_format = '<HHLBBB'
+        expected_len = struct.calcsize(struct_format)
+        if len(pkt) < expected_len:
+            if self.parent:
+                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+            return None
+
+        header = namedtuple('SdmLteL1SyncCell', 'pci sfn bandwidth phich_resource phich_duration num_ant')
+        pcell_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+
+        phich_resource_map = {
+            0: "oneSixth",
+            1: "half",
+            2: "one",
+            3: "two",
+        }
+
+        phich_duration_map = {
+            0: "normal",
+            1: "extended",
+        }
+
+        if self.icd_ver >= (6, 22):
+            stdout = 'LTE L1 Sync Info: PCell: PCI: {}, Bandwidth: {}, phich-Duration: {}, phich-Resource: {}, # Antennas: {}\n'.format(
+                pcell_info.pci,
+                util.map_lookup_value(self.bandwidth_map, pcell_info.bandwidth),
+                util.map_lookup_value(phich_duration_map, pcell_info.phich_duration),
+                util.map_lookup_value(phich_resource_map, pcell_info.phich_resource),
+                2 ** pcell_info.num_ant)
+        elif self.icd_ver >= (5, 17):
+            stdout = 'LTE L1 Sync Info: PCell: PCI: {}, SFN: {}, Bandwidth: {}, phich-Duration: {}, phich-Resource: {}, # Antennas: {}\n'.format(
+                pcell_info.pci, pcell_info.sfn,
+                util.map_lookup_value(self.bandwidth_map, pcell_info.bandwidth),
+                util.map_lookup_value(phich_duration_map, pcell_info.phich_duration),
+                util.map_lookup_value(phich_resource_map, pcell_info.phich_resource),
+                2 ** pcell_info.num_ant)
+        else:
+            stdout = 'LTE L1 Sync Info: PCell: PCI: {}, SFN: {}\n'.format(
+                pcell_info.pci, pcell_info.sfn)
+
+        if self.icd_ver >= (4, 60) or len(pkt) > expected_len:
+            pos = expected_len
+            num_extra_cells = struct.unpack('<L', pkt[expected_len:expected_len+4])[0]
+            pos += 4
+
+            if num_extra_cells > 0:
+                for i in range(num_extra_cells):
+                    scell_info = header._make(struct.unpack(struct_format, pkt[pos:pos+expected_len]))
+                    if self.icd_ver >= (6, 22):
+                        stdout += 'LTE L1 Sync Info: SCell {}: PCI: {}, Bandwidth: {}, phich-Duration: {}, phich-Resource: {}, # Antennas: {}\n'.format(
+                            i, scell_info.pci,
+                            util.map_lookup_value(self.bandwidth_map, scell_info.bandwidth),
+                            util.map_lookup_value(phich_duration_map, scell_info.phich_duration),
+                            util.map_lookup_value(phich_resource_map, scell_info.phich_resource),
+                            2 ** pcell_info.num_ant)
+                    elif self.icd_ver >= (5, 17):
+                        stdout += 'LTE L1 Sync Info: SCell {}: PCI: {}, SFN: {}, Bandwidth: {}, phich-Duration: {}, phich-Resource: {}, # Antennas: {}\n'.format(
+                            i, scell_info.pci, scell_info.sfn,
+                            util.map_lookup_value(self.bandwidth_map, scell_info.bandwidth),
+                            util.map_lookup_value(phich_duration_map, scell_info.phich_duration),
+                            util.map_lookup_value(phich_resource_map, scell_info.phich_resource),
+                            2 ** pcell_info.num_ant)
+                    else:
+                        stdout += 'LTE L1 Sync Info: SCell {}: PCI: {}, SFN: {}'.format(
+                            i, scell_info.pci, scell_info.sfn)
+                    pos += expected_len
+
+        return {'stdout': stdout.rstrip()}
 
     def sdm_lte_l1_rach_attempt(self, pkt: bytes):
         pkt = pkt[15:-1]
