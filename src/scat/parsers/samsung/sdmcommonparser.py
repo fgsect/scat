@@ -27,11 +27,10 @@ class SdmCommonParser:
         c = sdmcmd.sdm_common_data
         self.process = {
             g | c.COMMON_BASIC_INFO: lambda x: self.sdm_common_basic_info(x),
-            # g | 0x01: lambda x: self.sdm_common_dummy(x, 0x01),
-            # g | c.COMMON_DATA_INFO: lambda x: self.sdm_common_dummy(x, 0x02),
+            # g | c.COMMON_DATA_INFO: lambda x: self.sdm_common_data(x),
             g | c.COMMON_SIGNALING_INFO: lambda x: self.sdm_common_signaling(x),
-            # g | c.COMMON_SMS_INFO: lambda x: self.sdm_common_dummy(x, 0x04),
-            # g | 0x05: lambda x: self.sdm_common_dummy(x, 0x05),
+            # g | c.COMMON_SMS_INFO: lambda x: self.sdm_common_sms(x),
+            # g | c.COMMON_HPLMN_TIMER_INFO: lambda x: self.sdm_common_hplmn_timer(x),
             g | c.COMMON_MULTI_SIGNALING_INFO: lambda x: self.sdm_common_multi_signaling(x),
             g | c.COMMON_NR_RRC_SIGNALING_INFO: lambda x: self.sdm_common_nr_rrc_signaling(x),
             g | c.COMMON_NR_NAS_SIGNALING_INFO: lambda x: self.sdm_common_nr_nas_signaling(x),
@@ -43,31 +42,6 @@ class SdmCommonParser:
     def update_parameters(self, display_format: str, gsmtapv3: bool):
         self.display_format = display_format
         self.gsmtapv3 = gsmtapv3
-
-    def sdm_common_dummy(self, pkt: bytes, cmdid: int):
-        pkt = pkt[15:-1]
-        return {'stdout': 'COMMON {:#x}: {}'.format(cmdid, binascii.hexlify(pkt).decode('utf-8'))}
-        # 0x02
-        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff bf 4e 05 00
-        # 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 ff ff ff ff ff ff ff ff aa 9b 13 00
-
-        # 0x04
-        # acacac f2f2f2 9f9f9f e5e5e5
-        # acacac f2f2f2 9f9f9f e5e5e5
-        # 00 00 18 000018 000018 000018
-        # 03 00 00 000018 000018 000018
-        # 03 01 00 000018 000018 000018
-
-        # 0x05
-        # 01 08 07 00 00
-        # 03 08 07 00 00
-        # 01 08 07 00 00
-        # 02 08 07 00 00
-
-        # 03 00 00 00 00
-        # 01 00 00 00 00
-        # 02 00 00 00 00
-        # 01 00 00 00 00
 
     def sdm_common_basic_info(self, pkt: bytes):
         pkt = pkt[15:-1]
@@ -132,6 +106,15 @@ class SdmCommonParser:
 
         stdout = 'Common Basic Info: RAT: {}, Status: {}, MIMO: {}, Frequency: {}/{}{}'.format(
             rat_str, common_basic.status, common_basic.mimo, dlfreq_str, ulfreq_str, extra_str)
+
+        return {'stdout': stdout}
+
+    def sdm_common_data(self, pkt: bytes):
+        pkt = pkt[15:-1]
+        stdout = ''
+
+        # 00000000 00000000 00000000 00000000 ffffffff ffffffff bf4e0500
+        # 00000000 00000000 00000000 00000000 ffffffff ffffffff aa9b1300
 
         return {'stdout': stdout}
 
@@ -280,6 +263,41 @@ class SdmCommonParser:
         msg_content = pkt[5:]
 
         return self._parse_sdm_common_signaling(sdm_pkt_hdr, pkt_header.type, pkt_header.subtype, pkt_header.direction, pkt_header.length, msg_content)
+
+    def sdm_common_sms(self, pkt: bytes):
+        pkt = pkt[15:-1]
+        stdout = ''
+
+        # acacac f2f2f2 9f9f9f e5e5e5
+        # acacac f2f2f2 9f9f9f e5e5e5
+        # 000018 000018 000018 000018
+        # 030000 000018 000018 000018
+        # 030100 000018 000018 000018
+
+        return {'stdout': stdout}
+
+    def sdm_common_hplmn_timer(self, pkt: bytes):
+        pkt = pkt[15:-1]
+        stdout = ''
+
+        timer_values = namedtuple('SdmCommonHPLMNTimer', 'unk1 unk2')
+        msg_content = timer_values._make(struct.unpack('<BL', pkt[0:5]))
+
+        stdout = 'HPLMN Timer: {} {}'.format(msg_content.unk1, msg_content.unk2)
+
+        # 01 08070000
+        # 02 08070000
+        # 03 08070000
+
+        # 01 100e0000
+        # 02 100e0000
+        # 03 100e0000
+
+        # 01 00000000
+        # 02 00000000
+        # 03 00000000
+
+        return {'stdout': stdout}
 
     def sdm_common_multi_signaling(self, pkt: bytes):
         sdm_pkt_hdr = sdmcmd.parse_sdm_header(pkt[1:15])
