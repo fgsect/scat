@@ -129,7 +129,29 @@ Layer 0: NR-ARFCN: 156510, SCell PCI:  866/SSB: 0, RSRP: 0.00/0.00, RX beam: NA/
         expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
 Layer 0: NR-ARFCN: 2064763, SCell PCI:  110/SSB: 0, RSRP: 0.00/0.00, RX beam: 70/326, Num Cells: 0 (S: 1)
 └── Cell 0: PCI:  110, PBCH SFN: 430, RSRP: -55.18, RSRQ: -10.36, Num Beams: 1
-    └── Beam 0: SSB[2] Beam ID: 70/326, RSRP: -63.89/-67.69, Filtered RSRP/RSRQ (Nr2Nr): -10.35/-10.34, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
+    └── Beam 0: SSB[2] Beam ID: 70/326, RSRP: -63.89/-67.69, RSRQ: -10.35/-10.34, Filtered RSRP/RSRQ (Nr2Nr): -60.98/-10.36, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
+                    'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
+        self.assertDictEqual(result, expected) # type: ignore
+
+        payload = binascii.unhexlify('0a0002000084f124011400009f090000fcffffffe0ca09000005c002010500007ed0ffff4ed0ffffffffffffffff0000ffffffffbe0280000100000062c7ffff9ff9ffff000001000000000000000000e6e298874a33220782c9ffffdbc3fffffdf9ffff2af8ffff000000000000000000000000000000000000000000000000000000000000000098c7ffffa8f9ffff0000000000000000c0029e000400000068d0ffffb4faffff05000100000000000000000086e1919efac4220726d0ffff21d0ffffa3faffffaffaffff000000000000000000000000000000000000000000000000000000000000000068d0ffffb4faffff0000000000000000040001000000000000000000863e516747ab22078dcbffffe1c9ffff59faffff7dfaffff0000000000000000000000000000000000000000000000000000000000000000c2caffff53faffff000000000000000003000100000000000000000086d91b95fa8822079acaffff74c8fffffaf9ffff18faffff0000000000000000000000000000000000000000000000000000000000000000a5c9ffffc0f9ffff00000000000000000600010000000000000000008646c77047e722073cc6ffff83c8ffff5ef7fffff4f9ffff0000000000000000000000000000000000000000000000000000000000000000dfc7ffff8bf9ffff0000000000000000a3009000010000004dc6ffffd8f8ffff010001000000000000000000a6639058af4d2207fcc2ffff07c7ffffc1f4ffff34f9ffff00000000000000000000000000000000000000000000000000000000000000004dc6ffffd8f8ffff0000000000000000da0390000100000050c6ffff04f9ffff020001000000000000000000b6cbff5d2f702207d4c6ffffcdc4ffff4df8ffffa3f8ffff000000000000000000000000000000000000000000000000000000000000000050c6ffff04f9ffff00000000000000008b0198000100000077c5ffffb2f7ffff01000100000000000000000096777d583f4d220784c3fffff8c5ffff70f5ffff2df8ffff000000000000000000000000000000000000000000000000000000000000000077c5ffffb2f7ffff0000000000000000')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_ML1_MEAS_DATABASE_UPDATE), timestamp=0)
+        result = self.parser.parse_nr_ml1_meas_db_update(pkt_header, payload, dict())
+        expected = {'stdout': '''NR ML1 Meas Packet: Layers: 1, ssb_periocity: 20
+Layer 0: NR-ARFCN: 641760, SCell PCI:  704/SSB: 1, RSRP: -95.02/-95.39, RX beam: NA/NA, Num Cells: 0 (S: 5)
+└── Cell 0: PCI:  702, PBCH SFN: 128, RSRP: -113.23, RSRQ: -12.76, Num Beams: 1
+    └── Beam 0: SSB[0] Beam ID: 0/0, RSRP: -108.98/-120.29, RSRQ: -12.02/-15.67, Filtered RSRP/RSRQ (Nr2Nr): -112.81/-12.69, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+└── Cell 1: PCI:  704, PBCH SFN: 158, RSRP: -95.19, RSRQ: -10.59, Num Beams: 4
+    └── Beam 0: SSB[5] Beam ID: 0/0, RSRP: -95.70/-95.74, RSRQ: -10.73/-10.63, Filtered RSRP/RSRQ (Nr2Nr): -95.19/-10.59, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 1: SSB[4] Beam ID: 0/0, RSRP: -104.90/-108.24, RSRQ: -11.30/-11.02, Filtered RSRP/RSRQ (Nr2Nr): -106.48/-11.35, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 2: SSB[3] Beam ID: 0/0, RSRP: -106.80/-111.09, RSRQ: -12.05/-11.81, Filtered RSRP/RSRQ (Nr2Nr): -108.71/-12.50, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+    └── Beam 3: SSB[6] Beam ID: 0/0, RSRP: -115.53/-110.98, RSRQ: -17.27/-12.09, Filtered RSRP/RSRQ (Nr2Nr): -112.26/-12.91, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+└── Cell 2: PCI:  163, PBCH SFN: 144, RSRP: -115.40, RSRQ: -14.31, Num Beams: 1
+    └── Beam 0: SSB[1] Beam ID: 0/0, RSRP: -122.03/-113.95, RSRQ: -22.49/-13.59, Filtered RSRP/RSRQ (Nr2Nr): -115.40/-14.31, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+└── Cell 3: PCI:  986, PBCH SFN: 144, RSRP: -115.38, RSRQ: -13.97, Num Beams: 1
+    └── Beam 0: SSB[2] Beam ID: 0/0, RSRP: -114.34/-118.40, RSRQ: -15.40/-14.73, Filtered RSRP/RSRQ (Nr2Nr): -115.38/-13.97, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00
+└── Cell 4: PCI:  395, PBCH SFN: 152, RSRP: -117.07, RSRQ: -16.61, Num Beams: 1
+    └── Beam 0: SSB[1] Beam ID: 0/0, RSRP: -120.97/-116.06, RSRQ: -21.12/-15.65, Filtered RSRP/RSRQ (Nr2Nr): -117.07/-16.61, Filtered RSRP/RSRQ (L2Nr): 0.00/0.00''',
                     'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)}
         self.assertDictEqual(result, expected) # type: ignore
 
