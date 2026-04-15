@@ -210,30 +210,57 @@ class SdmLteParser:
 
     def sdm_lte_l1_rf_info(self, pkt: bytes):
         pkt = pkt[15:-1]
-        struct_format = '<hhhhh'
-        expected_len = struct.calcsize(struct_format)
-        if len(pkt) < expected_len:
-            if self.parent:
-                self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
-            return None
+        struct_format = '<hhh'
+        struct_format_v5_17 = '<hhhhh'
+        if self.icd_ver >= (5, 17):
+            expected_len = struct.calcsize(struct_format_v5_17)
+            if len(pkt) < expected_len:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+                return None
+        else:
+            expected_len = struct.calcsize(struct_format)
+            if len(pkt) < expected_len:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Packet length ({}) shorter than expected ({}))'.format(len(pkt), expected_len))
+                return None
 
-        header = namedtuple('SdmLteL1RfInfo', 'rx0 rx1 rx2 rx3 tx')
-        rf_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+        header = namedtuple('SdmLteL1RfInfo', 'rx0 rx1 tx')
+        header_v5_17 = namedtuple('SdmLteL1RfInfoV5_17', 'rx0 rx1 rx2 rx3 tx')
+        if self.icd_ver >= (5, 17):
+            rf_info = header_v5_17._make(struct.unpack(struct_format_v5_17, pkt[0:expected_len]))
+            stdout = 'LTE L1 RF Info: RX RSSI: [{} {} {} {}], TX Power: {} dBm'.format(
+                -rf_info.rx0 / 100, -rf_info.rx1 / 100, -rf_info.rx2 / 100, -rf_info.rx3 / 100, rf_info.tx)
 
-        stdout = 'LTE L1 RF Info: RX: [{} {} {} {}], TX: {}'.format(
-            -rf_info.rx0 / 100, -rf_info.rx1 / 100, -rf_info.rx2 / 100, -rf_info.rx3 / 100, rf_info.tx)
+            pos = expected_len
+            num_extra_cells = struct.unpack('<L', pkt[expected_len:expected_len+4])[0]
+            pos += 4
 
-        pos = expected_len
-        num_extra_cells = struct.unpack('<L', pkt[expected_len:expected_len+4])[0]
-        pos += 4
+            if num_extra_cells > 0:
+                for i in range(num_extra_cells):
+                    rf_info = header_v5_17._make(struct.unpack(struct_format_v5_17, pkt[pos:pos+expected_len]))
+                    stdout += '\nLTE L1 RF Info: SCell {}: RX RSSI: [{} {} {} {}], TX Power: {} dBm'.format(
+                        i,
+                        -rf_info.rx0 / 100, -rf_info.rx1 / 100, -rf_info.rx2 / 100, -rf_info.rx3 / 100, rf_info.tx)
+                    pos += expected_len
+        else:
+            rf_info = header._make(struct.unpack(struct_format, pkt[0:expected_len]))
+            stdout = 'LTE L1 RF Info: RX RSSI: [{} {}], TX Power: {} dBm'.format(
+                -rf_info.rx0 / 100, -rf_info.rx1 / 100, rf_info.tx)
 
-        if num_extra_cells > 0:
-            for i in range(num_extra_cells):
-                rf_info = header._make(struct.unpack(struct_format, pkt[pos:pos+expected_len]))
-                stdout += '\nLTE L1 RF Info: SCell {}: RX: [{} {} {} {}], TX: {}'.format(
-                    i,
-                    -rf_info.rx0 / 100, -rf_info.rx1 / 100, -rf_info.rx2 / 100, -rf_info.rx3 / 100, rf_info.tx)
-                pos += expected_len
+            if self.icd_ver >= (4, 60):
+                pos = expected_len
+                num_extra_cells = struct.unpack('<L', pkt[expected_len:expected_len+4])[0]
+                pos += 4
+
+                if num_extra_cells > 0:
+                    for i in range(num_extra_cells):
+                        rf_info = header._make(struct.unpack(struct_format, pkt[pos:pos+expected_len]))
+                        stdout += '\nLTE L1 RF Info: SCell {}: RX RSSI: [{} {}], TX Power: {} dBm'.format(
+                            i,
+                            -rf_info.rx0 / 100, -rf_info.rx1 / 100, rf_info.tx)
+                        pos += expected_len
+
 
         return {'stdout': stdout}
 
