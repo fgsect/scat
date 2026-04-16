@@ -309,11 +309,11 @@ def create_sdm_item_selection(item_count, *items):
 def scat_sdm_common_selection(layers=[]):
     log_items = [
         (sdm_common_data.COMMON_BASIC_INFO, True),
-        (0x01, True),
+        (sdm_common_data.COMMON_CELL_INFO, True),
         (sdm_common_data.COMMON_DATA_INFO, True),
         (sdm_common_data.COMMON_SIGNALING_INFO, True),
         (sdm_common_data.COMMON_SMS_INFO, True),
-        (0x05, True),
+        (sdm_common_data.COMMON_HPLMN_TIMER_INFO, True),
         (sdm_common_data.COMMON_MULTI_SIGNALING_INFO, True),
     ]
 
@@ -333,6 +333,9 @@ def scat_sdm_lte_selection(layers=[]):
         (sdm_lte_data.LTE_PHY_STATUS, True),
         (sdm_lte_data.LTE_PHY_CELL_SEARCH_MEAS, True),
         (sdm_lte_data.LTE_PHY_NCELL_INFO, True),
+        (sdm_lte_data.LTE_L1_RF, True),
+        (sdm_lte_data.LTE_L1_SYNC, True),
+        (sdm_lte_data.LTE_L1_RACH_ATTEMPT, True),
         (sdm_lte_data.LTE_L2_RACH_INFO, True),
         (sdm_lte_data.LTE_L2_RNTI_INFO, True),
         (sdm_lte_data.LTE_RRC_SERVING_CELL, True),
@@ -357,6 +360,11 @@ def scat_sdm_lte_selection(layers=[]):
         (sdm_lte_data.LTE_VOLTE_TX_RTP_INFO, True),
         (sdm_lte_data.LTE_VOLTE_RX_RTP_INFO, True),
     ]
+
+    if 'mac' in layers:
+        log_items += [
+            (sdm_lte_data.LTE_L2_MAC_CONTROL_ELEMENT, True),
+        ]
 
     if 'rrc' in layers:
         log_items += [
