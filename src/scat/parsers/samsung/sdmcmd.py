@@ -76,16 +76,32 @@ class sdm_control_message(IntEnum):
     ILM_START_RESPONSE            = 0x71
     ILM_STOP_REQUEST              = 0x72
     ILM_STOP_RESPONSE             = 0x73
-    ILM_ENTITY_TAGLE_GET_REQUEST  = 0x74
-    ILM_ENTITY_TAGLE_GET_RESPONSE = 0x75
+    ILM_ENTITY_TABLE_GET_REQUEST  = 0x74
+    ILM_ENTITY_TABLE_GET_RESPONSE = 0x75
     ILM_ITEM_SELECT_REQUEST       = 0x76
     ILM_ITEM_SELECT_RESPONSE      = 0x77
+    ILM_MSG_TABLE_GET_REQUEST     = 0x78
+    ILM_MSG_TABLE_GET_RESPONSE    = 0x79
+
+    REG_INFO_REQUEST              = 0x80
+    REG_INFO_RESPONSE             = 0x81
+    REG_READ_REQUEST              = 0x82
+    REG_READ_RESPONSE             = 0x83
+    REG_WRITE_REQUEST             = 0x84
+    REG_WRITE_RESPONSE            = 0x85
 
     TCPIP_DUMP_REQUEST            = 0x90
     TCPIP_DUMP_RESPONSE           = 0x91
 
     TRIGGER_TABLE_REQUEST         = 0xC0
     TRIGGER_TABLE_RESPONSE        = 0xC1
+
+    EXT_REG_INFO_REQUEST          = 0xC4
+    EXT_REG_INFO_RESPONSE         = 0xC5
+    EXT_REG_READ_REQUEST          = 0xC6
+    EXT_REG_READ_RESPONSE         = 0xC7
+    EXT_REG_WRITE_REQUEST         = 0xC8
+    EXT_REG_WRITE_RESPONSE        = 0xC9
 
 @unique
 class sdm_common_data(IntEnum):

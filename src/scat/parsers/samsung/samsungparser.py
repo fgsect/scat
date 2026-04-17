@@ -196,7 +196,7 @@ class SamsungParser(AbstractParser):
             self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_STOP_REQUEST, b'\x02'))
 
         if self.ilm:
-            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_ENTITY_TAGLE_GET_REQUEST, b''))
+            self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_ENTITY_TABLE_GET_REQUEST, b''))
             self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_START_REQUEST, b''))
         else:
             self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.ILM_STOP_REQUEST, b''))

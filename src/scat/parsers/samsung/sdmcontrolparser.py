@@ -28,6 +28,9 @@ class SdmControlParser:
         self.ilm_cur_count = 0
         self.trigger_group = {}
 
+        self.sdm_reg_item_struct = namedtuple('SdmControlReginfoItem', 'item_id size count name typename')
+        self.sdm_ext_reg_item_struct = namedtuple('SdmControlExtReginfoItem', 'item_id unk size count name typename')
+
         if self.parent:
             self.display_format = self.parent.display_format
             self.gsmtapv3 = self.parent.gsmtapv3
@@ -40,17 +43,26 @@ class SdmControlParser:
         self.process = {
             g | c.CONTROL_START_RESPONSE: lambda x: self.sdm_control_start_response(x),
             g | c.CHANGE_UPDATE_PERIOD_RESPONSE: lambda x: self.sdm_control_change_update_period_response(x),
+
             g | c.COMMON_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x10),
             g | c.LTE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x20),
             g | c.EDGE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x30),
             g | c.HSPA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x40),
             g | c.CDMA_ITEM_SELECT_RESPONSE: lambda x: self.sdm_control_item_select_response(x, 0x44),
+
             g | c.TRACE_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_trace_table_get_response(x),
             g | c.TRACE_ITEM_SELECT_RESPONSE: lambda x: self.sdm_dm_trace_item_select_response(x),
-            g | c.ILM_ENTITY_TAGLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
+
+            g | c.ILM_ENTITY_TABLE_GET_RESPONSE: lambda x: self.sdm_dm_ilm_table_get_response(x),
             g | c.ILM_ITEM_SELECT_RESPONSE: lambda x: self.sdm_ilm_item_select_response(x),
+
+            g | c.REG_INFO_RESPONSE: lambda x: self.sdm_reg_info_response(x),
+
             g | c.TCPIP_DUMP_RESPONSE: lambda x: self.sdm_control_tcpip_dump_response(x),
+
             g | c.TRIGGER_TABLE_RESPONSE: lambda x: self.sdm_dm_trigger_table_response(x),
+
+            g | c.EXT_REG_INFO_RESPONSE: lambda x: self.sdm_ext_reg_info_response(x),
         }
 
     def set_icd_ver(self, version: tuple):
@@ -275,6 +287,29 @@ class SdmControlParser:
 
         return {'stdout': stdout}
 
+    def sdm_reg_info_response(self, pkt: bytes):
+        pkt = pkt[15:-1]
+        resp_struct = namedtuple('SdmControlReginfoResponse', 'is_end num_items count')
+        resp_header = resp_struct._make(struct.unpack('<HHH', pkt[0:6]))
+        stdout = '{}\n'.format(resp_header)
+
+        pos = 6
+        for i in range(resp_header.count):
+            item_header = struct.unpack('<HLL', pkt[pos:pos+10])
+            pos += 10
+            item_name_len = pkt[pos]
+            pos += 1
+            item_name = pkt[pos:pos+item_name_len]
+            pos += item_name_len
+            item_type_len = pkt[pos]
+            pos += 1
+            item_type = pkt[pos:pos+item_type_len]
+            pos += item_type_len
+            item = self.sdm_reg_item_struct._make((*item_header, item_name.decode(), item_type.decode()))
+            stdout += "{}\n".format(item)
+
+        return {'stdout': stdout}
+
     def sdm_control_tcpip_dump_response(self, pkt: bytes):
         pkt = pkt[15:-1]
         item_struct = namedtuple('SdmControlTcpipDumpResponse', 'dl_size ul_size')
@@ -306,5 +341,28 @@ class SdmControlParser:
 
         if self.parent:
             self.parent.trigger_group = self.trigger_group
+
+        return {'stdout': stdout}
+
+    def sdm_ext_reg_info_response(self, pkt: bytes):
+        pkt = pkt[15:-1]
+        resp_struct = namedtuple('SdmControlExtReginfoResponse', 'is_end num_items count')
+        resp_header = resp_struct._make(struct.unpack('<BLH', pkt[0:7]))
+        stdout = '{}\n'.format(resp_header)
+
+        pos = 7
+        for i in range(resp_header.count):
+            item_header = struct.unpack('<LBLL', pkt[pos:pos+13])
+            pos += 13
+            item_name_len = pkt[pos]
+            pos += 1
+            item_name = pkt[pos:pos+item_name_len]
+            pos += item_name_len
+            item_type_len = pkt[pos]
+            pos += 1
+            item_type = pkt[pos:pos+item_type_len]
+            pos += item_type_len
+            item = self.sdm_ext_reg_item_struct._make((*item_header, item_name.decode(), item_type.decode()))
+            stdout += "{}\n".format(item)
 
         return {'stdout': stdout}
