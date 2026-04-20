@@ -185,7 +185,7 @@ class SdmControlParser:
                 self.parent.trace_group = self.trace_group
 
         if self.parent:
-            if not self.parent.trace:
+            if not self.parent.enable_trace:
                 return None
 
         return {'stdout': stdout}
@@ -215,7 +215,7 @@ class SdmControlParser:
                 stdout += 'Item {}: {:08x}\n'.format(i, items[i])
 
         if self.parent:
-            if not self.parent.trace:
+            if not self.parent.enable_trace:
                 return None
 
         return {'stdout': stdout}

@@ -69,7 +69,8 @@ class SamsungParser(AbstractParser):
         self.icd_ver_maj = 0
         self.icd_ver_min = 0
         self.icd_ver = (0, 0)
-        self.trace = False
+        self.enable_trace = False
+        self.trace_loaded = False
         self.ilm = False
         self.combine_stdout = False
         self.layers = []
@@ -92,6 +93,11 @@ class SamsungParser(AbstractParser):
         self.trace_bin_mmap = None
         self.trace_bin_addr = -1
         self.trace_bin_size = -1
+
+        self.modem_bin_name = ''
+        self.modem_bin_f = None
+        self.modem_bin_mmap = None
+        self.modem_bin_regions = {}
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -153,7 +159,7 @@ class SamsungParser(AbstractParser):
             elif p == 'start-magic':
                 self.start_magic = int(params[p], base=16)
             elif p == 'trace':
-                self.trace = params[p]
+                self.enable_trace = params[p]
             elif p == 'ilm':
                 self.ilm = params[p]
             elif p == 'combine-stdout':
@@ -170,10 +176,48 @@ class SamsungParser(AbstractParser):
                 self.const_bin_name = params[p]
             elif p == 'trace-file':
                 self.trace_bin_name = params[p]
+            elif p == 'modem-file':
+                self.modem_bin_name = params[p]
 
         self.update_parameters(self.display_format, self.gsmtapv3)
 
-    def load_trace(self) -> bool:
+    # Section header definition from https://github.com/FirmWire/ShannonLoader/blob/main/src/main/java/de/hernan/TOCSectionHeader.java
+    def load_trace_modem_bin(self) -> bool:
+        if not os.path.exists(self.modem_bin_name):
+            self.logger.log(logging.WARNING, 'Cannot find modem.bin at {}, skipping decoding trace'.format(self.const_bin_name))
+            return False
+
+        trace_parser = None
+        for x in self.sdm_parsers:
+            if isinstance(x, SdmTraceParser):
+                trace_parser = x
+                break
+
+        try:
+            self.modem_bin_f = open(self.modem_bin_name, 'rb')
+        except:
+            self.logger.log(logging.WARNING, 'Cannot open modem.bin at {}, skipping decoding trace'.format(self.const_bin_name))
+            return False
+
+        toc_struct = namedtuple('SamsungModemToc', 'name offset load_address size crc32 section_id')
+        if self.modem_bin_f:
+            self.modem_bin_mmap = mmap.mmap(self.modem_bin_f.fileno(), 0, prot=mmap.PROT_READ)
+            for i in range(16):
+                toc = toc_struct._make(struct.unpack('<12sLLLLL', self.modem_bin_mmap[i*32:(i+1)*32]))
+                if toc.name == b'\x00'*12:
+                    break
+                if toc.load_address > 0:
+                    self.modem_bin_regions[toc.name.rstrip(b'\x00').decode()] = (toc.load_address, toc.offset, toc.size)
+                    if trace_parser:
+                        trace_parser.mmap_region_debug_symbol.append(util.mmap_memory_pos._make((toc.load_address, toc.offset, toc.size, self.modem_bin_mmap)))
+
+            if trace_parser:
+                trace_parser.modem_bin_available = True
+            return True
+        else:
+            return False
+
+    def load_trace_debug_symbol(self) -> bool:
         if not os.path.exists(self.const_bin_name):
             self.logger.log(logging.WARNING, 'Cannot find const.bin at {}, skipping decoding trace'.format(self.const_bin_name))
             return False
@@ -181,8 +225,18 @@ class SamsungParser(AbstractParser):
             self.logger.log(logging.WARNING, 'Cannot find trace.bin at {}, skipping decoding trace'.format(self.trace_bin_name))
             return False
 
-        self.const_bin_size = os.path.getsize(self.const_bin_name)
-        self.const_bin_f = open(self.const_bin_name, 'rb')
+        trace_parser = None
+        for x in self.sdm_parsers:
+            if isinstance(x, SdmTraceParser):
+                trace_parser = x
+                break
+
+        try:
+            self.const_bin_size = os.path.getsize(self.const_bin_name)
+            self.const_bin_f = open(self.const_bin_name, 'rb')
+        except:
+            self.logger.log(logging.WARNING, 'Cannot open const.bin at {}, skipping decoding trace'.format(self.const_bin_name))
+            return False
         if self.const_bin_f:
             self.const_bin_mmap = mmap.mmap(self.const_bin_f.fileno(), 0, prot=mmap.PROT_READ)
             pos = self.const_bin_mmap.find(b'TIF:')
@@ -196,17 +250,43 @@ class SamsungParser(AbstractParser):
                 self.const_bin_mmap = None
                 self.const_bin_f.close()
                 self.const_bin_f = None
-                self.trace = False
                 self.logger.log(logging.WARNING, 'Cannot find magic words in const.bin, skipping decoding trace'.format(self.trace_bin_name))
                 return False
-        self.trace_bin_size = os.path.getsize(self.trace_bin_name)
-        self.trace_bin_f = open(self.trace_bin_name, 'rb')
+        try:
+            self.trace_bin_size = os.path.getsize(self.trace_bin_name)
+            self.trace_bin_f = open(self.trace_bin_name, 'rb')
+        except:
+            self.logger.log(logging.WARNING, 'Cannot open trace.bin at {}, skipping decoding trace'.format(self.trace_bin_name))
+            return False
         if self.trace_bin_f:
             self.trace_bin_mmap = mmap.mmap(self.trace_bin_f.fileno(), 0, prot=mmap.PROT_READ)
 
+        if trace_parser:
+            trace_parser.mmap_region_debug_symbol.append(util.mmap_memory_pos._make((self.trace_bin_addr, 0, self.trace_bin_size, self.trace_bin_mmap)))
+            trace_parser.mmap_region_debug_symbol.append(util.mmap_memory_pos._make((self.const_bin_addr, 0, self.const_bin_size, self.const_bin_mmap)))
+            trace_parser.modem_bin_available = False
+
         return True
 
+    def load_trace(self) -> bool:
+        is_loaded = False
+        if self.modem_bin_name is not None:
+            is_loaded = self.load_trace_modem_bin()
+            if is_loaded:
+                return True
+
+        if self.const_bin_name is not None and self.trace_bin_name is not None:
+            is_loaded = self.load_trace_debug_symbol()
+            if is_loaded:
+                return True
+
+        return False
+
     def unload_trace(self) -> None:
+        if self.modem_bin_mmap:
+            self.modem_bin_mmap.close()
+        if self.modem_bin_f:
+            self.modem_bin_f.close()
         if self.const_bin_mmap:
             self.const_bin_mmap.close()
         if self.const_bin_f:
@@ -245,7 +325,7 @@ class SamsungParser(AbstractParser):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.HSPA_ITEM_REFRESH_REQUEST, b'\xff'))
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CDMA_ITEM_REFRESH_REQUEST, b'\xff'))
 
-        if self.trace:
+        if self.enable_trace:
             self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_TABLE_GET_REQUEST, b''))
             self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_START_REQUEST, b'\x01'))
             self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TRACE_START_REQUEST, b'\x02'))
@@ -266,9 +346,8 @@ class SamsungParser(AbstractParser):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)))
 
     def prepare_diag(self) -> None:
-        if self.trace:
-            if not self.load_trace():
-                self.trace = False
+        if self.enable_trace:
+            self.trace_loaded = self.load_trace()
 
     def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
         return self.parse_diag_log(pkt)
@@ -343,7 +422,7 @@ class SamsungParser(AbstractParser):
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_STOP, b'\x00\x00\x00\x00'), 0x1000, False)
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', 0, 0)), 0x1000, False)
 
-        if self.trace:
+        if self.trace_loaded:
             self.unload_trace()
 
     def run_dump(self):
@@ -440,9 +519,8 @@ class SamsungParser(AbstractParser):
             return
 
     def read_dump(self) -> None:
-        if self.trace:
-            if not self.load_trace():
-                self.trace = False
+        if self.enable_trace:
+            self.trace_loaded = self.load_trace()
 
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
@@ -455,7 +533,7 @@ class SamsungParser(AbstractParser):
                 self.run_diag()
             self.io_device.open_next_file()
 
-        if self.trace:
+        if self.trace_loaded:
             self.unload_trace()
 
     def postprocess_parse_result(self, parse_result: dict[str, Any]):

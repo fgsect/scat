@@ -25,6 +25,10 @@ class SdmTraceParser:
             g | 0x90: lambda x: self.sdm_trace_dbt(x),
         }
 
+        self.mmap_region_debug_symbol = []
+        self.modem_bin_available = False
+        self.dbt_struct = namedtuple('SdmTraceDBTStruct', 'magic_1 group item magic_2 message_ptr line_num file_ptr')
+
     def set_icd_ver(self, version: tuple):
         self.icd_ver = version
 
@@ -38,25 +42,57 @@ class SdmTraceParser:
         else:
             return False
 
+    def _sdm_get_dbt(self, dbt_addr: int, dbt_args: list[int]) -> dict:
+        ret = {}
+        if not self.parent:
+            return ret
+
+        for region in self.mmap_region_debug_symbol:
+            if self.check_range(region.start_addr, region.length, dbt_addr):
+                pos = dbt_addr - region.start_addr + region.mmap_offset
+                dbt = self.dbt_struct._make(struct.unpack('<LLLLLLL', region.mmap_object[pos:pos+28]))
+
+                if dbt.magic_1 == 0x3a544244 and dbt.magic_2 == 0xfecdba98:
+                    msg_str = ''
+                    fname_str = ''
+                    for region1 in self.mmap_region_debug_symbol:
+                        if self.check_range(region1.start_addr, region1.length, dbt.message_ptr):
+                            file_pos = dbt.message_ptr - region1.start_addr + region1.mmap_offset
+                            msg_pos = region1.mmap_object.find(b'\x00', file_pos)
+                            if msg_pos > file_pos:
+                                msg_str = region1.mmap_object[file_pos:msg_pos].decode()
+                                break
+
+                    for region1 in self.mmap_region_debug_symbol:
+                        if self.check_range(region1.start_addr, region1.length, dbt.file_ptr):
+                            file_pos = dbt.file_ptr - region1.start_addr + region1.mmap_offset
+                            msg_pos = region1.mmap_object.find(b'\x00', file_pos)
+                            if msg_pos > file_pos:
+                                fname_str = region1.mmap_object[file_pos:msg_pos].decode()
+                                break
+
+                    ret['group'] = dbt.group
+                    ret['item'] = dbt.item
+                    ret['filename'] = fname_str
+                    ret['line'] = dbt.line_num
+                    ret['msg'] = msg_str
+                    break
+
+        formatted = util.snprintf(ret['msg'], dbt_args)
+        ret['msg'] = formatted
+        return ret
+
     def sdm_trace_dbt(self, pkt: bytes):
         pkt = pkt[15:-1]
 
         if self.parent:
-            if not self.parent.trace:
+            if not self.parent.trace_loaded:
                 return None
 
         item_struct = namedtuple('SdmTraceDBTItem', 'trace_item_id trace_item_level')
         dbt_ptr_struct = namedtuple('SdmTraceDBTPointer', 'dbt_addr zero num_args')
-        dbt_struct = namedtuple('SdmTraceDBTStruct', 'magic_1 group item magic_2 message_ptr line_num file_ptr')
         item = item_struct._make(struct.unpack('<HH', pkt[0:4]))
         content = pkt[4:]
-        if self.parent:
-            mmap_region_debug_symbol = [
-                util.mmap_memory_pos._make((self.parent.trace_bin_addr, 0, self.parent.trace_bin_size, self.parent.trace_bin_mmap)),
-                util.mmap_memory_pos._make((self.parent.const_bin_addr, 0, self.parent.const_bin_size, self.parent.const_bin_mmap)),
-            ]
-        else:
-            mmap_region_debug_symbol = []
 
         stdout = 'ID: {}, Level: {:#x}\n'.format(item.trace_item_id, item.trace_item_level)
         pos = 0
@@ -86,18 +122,13 @@ class SdmTraceParser:
                     dbt_args = struct.unpack('<' + 'L' * (dbt_ptr.num_args+1), content[pos:pos+4*(dbt_ptr.num_args+1)])
                     pos += (4 * (dbt_ptr.num_args + 1))
 
-                if self.check_range(self.parent.trace_bin_addr, self.parent.trace_bin_size, dbt_ptr.dbt_addr):
-                    mmap_pos = dbt_ptr.dbt_addr - self.parent.trace_bin_addr
-                    dbt = dbt_struct._make(struct.unpack('<LLLLLLL', self.parent.trace_bin_mmap[mmap_pos:mmap_pos+28]))
-                    if dbt.magic_1 == 0x3a544244 and dbt.magic_2 == 0xfecdba98:
-                        msg_str = util.snprintf('%s', [dbt.message_ptr], mmap_region_debug_symbol)
-                        fname_str = util.snprintf('%s', [dbt.file_ptr], mmap_region_debug_symbol)
+                dbt_obj = self._sdm_get_dbt(dbt_ptr.dbt_addr, dbt_args)
 
-                        stdout += 'Group: {}, Item: {}, {}:{} - {}, args: {}\n'.format(
-                            dbt.group, dbt.item,
-                            fname_str, dbt.line_num, msg_str,
-                            ', '.join([hex(x) for x in dbt_args])
-                        )
+                if 'filename' in dbt_obj:
+                    stdout += 'Group: {}, Item: {}, {}:{} - {}\n'.format(
+                        dbt_obj['group'], dbt_obj['item'],
+                        dbt_obj['filename'], dbt_obj['line'], dbt_obj['msg'],
+                    )
             except:
                 break
 
