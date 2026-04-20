@@ -87,8 +87,8 @@ class SdmTraceParser:
                     pos += (4 * (dbt_ptr.num_args + 1))
 
                 if self.check_range(self.parent.trace_bin_addr, self.parent.trace_bin_size, dbt_ptr.dbt_addr):
-                    pos = dbt_ptr.dbt_addr - self.parent.trace_bin_addr
-                    dbt = dbt_struct._make(struct.unpack('<LLLLLLL', self.parent.trace_bin_mmap[pos:pos+28]))
+                    mmap_pos = dbt_ptr.dbt_addr - self.parent.trace_bin_addr
+                    dbt = dbt_struct._make(struct.unpack('<LLLLLLL', self.parent.trace_bin_mmap[mmap_pos:mmap_pos+28]))
                     if dbt.magic_1 == 0x3a544244 and dbt.magic_2 == 0xfecdba98:
                         msg_str = util.snprintf('%s', [dbt.message_ptr], mmap_region_debug_symbol)
                         fname_str = util.snprintf('%s', [dbt.file_ptr], mmap_region_debug_symbol)
