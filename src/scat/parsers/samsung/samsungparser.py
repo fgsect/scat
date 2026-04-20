@@ -10,6 +10,7 @@ import os, sys
 import scat.util as util
 import struct
 from typing import Any
+import mmap
 
 from scat.iodevices.abstractio import AbstractIO
 from scat.writers.abstractwriter import AbstractWriter
@@ -79,6 +80,18 @@ class SamsungParser(AbstractParser):
         self.trace_group = None
         self.ilm_group = None
         self.trigger_group = None
+
+        self.const_bin_name = ''
+        self.const_bin_f = None
+        self.const_bin_mmap = None
+        self.const_bin_addr = -1
+        self.const_bin_size = -1
+
+        self.trace_bin_name = ''
+        self.trace_bin_f = None
+        self.trace_bin_mmap = None
+        self.trace_bin_addr = -1
+        self.trace_bin_size = -1
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -153,8 +166,55 @@ class SamsungParser(AbstractParser):
                 self.display_format = params[p]
             elif p == 'gsmtapv3':
                 self.gsmtapv3 = params[p]
+            elif p == 'const-file':
+                self.const_bin_name = params[p]
+            elif p == 'trace-file':
+                self.trace_bin_name = params[p]
 
         self.update_parameters(self.display_format, self.gsmtapv3)
+
+    def load_trace(self) -> bool:
+        if not os.path.exists(self.const_bin_name):
+            self.logger.log(logging.WARNING, 'Cannot find const.bin at {}, skipping decoding trace'.format(self.const_bin_name))
+            return False
+        if not os.path.exists(self.trace_bin_name):
+            self.logger.log(logging.WARNING, 'Cannot find trace.bin at {}, skipping decoding trace'.format(self.trace_bin_name))
+            return False
+
+        self.const_bin_size = os.path.getsize(self.const_bin_name)
+        self.const_bin_f = open(self.const_bin_name, 'rb')
+        if self.const_bin_f:
+            self.const_bin_mmap = mmap.mmap(self.const_bin_f.fileno(), 0, prot=mmap.PROT_READ)
+            pos = self.const_bin_mmap.find(b'TIF:')
+            if pos > 0:
+                load_addrs = struct.unpack('<LLLLL', self.const_bin_mmap[pos:pos+20])
+                assert load_addrs[0] == 0x3a464954
+                self.const_bin_addr = load_addrs[3]
+                self.trace_bin_addr = load_addrs[4]
+            else:
+                self.const_bin_mmap.close()
+                self.const_bin_mmap = None
+                self.const_bin_f.close()
+                self.const_bin_f = None
+                self.trace = False
+                self.logger.log(logging.WARNING, 'Cannot find magic words in const.bin, skipping decoding trace'.format(self.trace_bin_name))
+                return False
+        self.trace_bin_size = os.path.getsize(self.trace_bin_name)
+        self.trace_bin_f = open(self.trace_bin_name, 'rb')
+        if self.trace_bin_f:
+            self.trace_bin_mmap = mmap.mmap(self.trace_bin_f.fileno(), 0, prot=mmap.PROT_READ)
+
+        return True
+
+    def unload_trace(self) -> None:
+        if self.const_bin_mmap:
+            self.const_bin_mmap.close()
+        if self.const_bin_f:
+            self.const_bin_f.close()
+        if self.trace_bin_mmap:
+            self.trace_bin_mmap.close()
+        if self.trace_bin_f:
+            self.trace_bin_f.close()
 
     def init_diag(self) -> None:
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_START, struct.pack('>L', self.start_magic)))
@@ -206,7 +266,9 @@ class SamsungParser(AbstractParser):
         self.io_device.write(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', self.tcpip_mtu_rx, self.tcpip_mtu_tx)))
 
     def prepare_diag(self) -> None:
-        pass
+        if self.trace:
+            if not self.load_trace():
+                self.trace = False
 
     def parse_diag(self, pkt: bytes) -> dict[str, Any] | None:
         return self.parse_diag_log(pkt)
@@ -280,6 +342,9 @@ class SamsungParser(AbstractParser):
         # DIAG Disable
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.CONTROL_STOP, b'\x00\x00\x00\x00'), 0x1000, False)
         self.io_device.write_then_read_discard(generate_sdm_packet(0xa0, 0x00, sdm_control_message.TCPIP_DUMP_REQUEST, struct.pack('<HH', 0, 0)), 0x1000, False)
+
+        if self.trace:
+            self.unload_trace()
 
     def run_dump(self):
         self.logger.log(logging.INFO, 'Starting diag from dump')
@@ -375,6 +440,10 @@ class SamsungParser(AbstractParser):
             return
 
     def read_dump(self) -> None:
+        if self.trace:
+            if not self.load_trace():
+                self.trace = False
+
         while self.io_device.file_available:
             self.logger.log(logging.INFO, "Reading from {}".format(self.io_device.fname))
             if self.io_device.fname.find('.sdmraw') > 0:
@@ -385,6 +454,9 @@ class SamsungParser(AbstractParser):
                 self.logger.log(logging.INFO, 'Unknown baseband dump type, assuming raw SDM')
                 self.run_diag()
             self.io_device.open_next_file()
+
+        if self.trace:
+            self.unload_trace()
 
     def postprocess_parse_result(self, parse_result: dict[str, Any]):
         if 'radio_id' in parse_result:

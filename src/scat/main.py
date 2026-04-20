@@ -99,6 +99,8 @@ def scat_main():
         sec_group.add_argument('--start-magic', help='Magic value provided for starting DM session. Default: 0x41414141', type=str, default='0x41414141')
         sec_group.add_argument('--sdmraw', help='Store log as raw SDM file (Samsung only)')
         sec_group.add_argument('--trace', action='store_true', help='Decode trace')
+        sec_group.add_argument('--const-file', help='Path to const.bin file. Required for --trace option. Must match with the baseband firmware version.', type=str)
+        sec_group.add_argument('--trace-file', help='Path to trace.bin file. Required for --trace option. Must match with the baseband firmware version.', type=str)
         sec_group.add_argument('--ilm', action='store_true', help='Decode ILM')
         sec_group.add_argument('--all-items', action='store_true', help='Enable all SDM items')
 
@@ -194,10 +196,17 @@ def scat_main():
             'format': args.format,
             'gsmtapv3': args.gsmtapv3})
     elif args.type == 'sec':
+        if args.trace:
+            if args.const_file is None or args.trace_file is None:
+                print('Warning: --trace requires both --const-file and --trace-file. Skipping decoding trace')
+                args.trace = False
+
         current_parser.set_parameter({
             'model': args.model,
             'start-magic': args.start_magic,
             'trace': args.trace,
+            'const-file': args.const_file,
+            'trace-file': args.trace_file,
             'ilm': args.ilm,
             'combine-stdout': args.combine_stdout,
             'layer': layers,
