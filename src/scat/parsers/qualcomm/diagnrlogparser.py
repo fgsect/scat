@@ -366,6 +366,7 @@ class DiagNrLogParser:
                 33: util.gsmtapv3_nr_rrc_types.UE_NR_CAP
             }
             rrc_type_map_stdout = {
+                28: "nr-RadioBearerConfig",
             }
         elif pkt_ver in (0x11, 0x13, 0x19):
             rrc_type_map = {
