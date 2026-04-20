@@ -98,6 +98,7 @@ class SamsungParser(AbstractParser):
         self.modem_bin_f = None
         self.modem_bin_mmap = None
         self.modem_bin_regions = {}
+        self.modem_bin_ver = ''
 
         self.logger = logging.getLogger('scat.samsungparser')
 
@@ -215,6 +216,14 @@ class SamsungParser(AbstractParser):
                 self.logger.log(logging.WARNING, 'Modem image does not contain valid memory region. Please check whether the specified file is a valid Exynos modem image.')
                 return False
             else:
+                if 'INFO' in self.modem_bin_regions:
+                    info_region = self.modem_bin_regions['INFO']
+                    if self.modem_bin_mmap[info_region[1]:info_region[1]+4] == b'info':
+                        verstr_len = struct.unpack('<L', self.modem_bin_mmap[info_region[1]+16:info_region[1]+20])[0]
+                        verstr = self.modem_bin_mmap[info_region[1]+20:info_region[1]+20+verstr_len].decode()
+                        if verstr.find('_') > 0:
+                            verstr = verstr.split('_')[0]
+                        self.modem_bin_ver = verstr
                 if trace_parser:
                     trace_parser.modem_bin_available = True
                 return True
@@ -591,6 +600,11 @@ class SamsungParser(AbstractParser):
                 else:
                     for l in parse_result['stdout'].split('\n'):
                         print('Radio {}: {}'.format(radio_id, l))
+
+        if 'extra' in parse_result:
+            if len(self.modem_bin_ver) > 0:
+                if not parse_result['extra'].startswith(self.modem_bin_ver):
+                    self.logger.log(logging.WARNING, 'Modem firmware version reported by the device/SDM ({}) is different from the modem.bin ({}), trace decoding may be invalid'.format(parse_result['extra'], self.modem_bin_ver))
 
     def parse_diag_log(self, pkt: bytes) -> dict[str, Any] | None:
         if not (pkt[0] == 0x7f and pkt[-1] == 0x7e):

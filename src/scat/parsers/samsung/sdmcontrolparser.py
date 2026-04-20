@@ -118,7 +118,13 @@ class SdmControlParser:
             ', Extra: ' + extra_str if len(extra_str) > 0 else '',
             ', ID: ' + hex(chip_id) if len(rest_str) > 0 else ''
         )
-        return {'stdout': stdout}
+
+        ret = {'stdout': stdout}
+        if len(extra_str) > 0:
+            ret['extra'] = extra_str
+        if len(rest_str) > 0:
+            ret['id'] = chip_id
+        return ret
 
     def sdm_control_change_update_period_response(self, pkt: bytes):
         pkt = pkt[15:-1]
