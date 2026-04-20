@@ -676,52 +676,6 @@ class QualcommParser(AbstractParser):
 
     log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
 
-    def _snprintf(self, fmtstr: str, fmtargs: list):
-        # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x', '%p'}
-        cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXp])|%%)')
-        cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxXp]')
-        fmt_strs = cfmt.findall(fmtstr)
-        formatted_strs = []
-        log_content_pyfmt = cfmt.sub('{}', fmtstr)
-
-        i = 0
-        if len(fmtargs) < len(fmt_strs):
-            log_content_formatted = fmtstr
-        else:
-            for fmt_str in fmt_strs:
-                fmt_num = ''
-                x = cfmt_nums.match(fmt_str)
-                if x:
-                    fmt_num = x.group(1)
-                if fmt_str == '%%':
-                    formatted_strs.append('%')
-                else:
-                    if fmt_str[-1] in ('x', 'X', 'p'):
-                        if fmt_str[-1] == 'p':
-                            pyfmt_str = '{:' + fmt_num + 'x' + '}'
-                        else:
-                            pyfmt_str = '{:' + fmt_num + fmt_str[-1] + '}'
-                        formatted_strs.append(pyfmt_str.format(fmtargs[i]))
-                    elif fmt_str[-1] in ('d'):
-                        pyfmt_str = '{:' + fmt_num + '}'
-                        if fmtargs[i] > 2147483648:
-                            formatted_strs.append(pyfmt_str.format(-(4294967296 - fmtargs[i])))
-                        else:
-                            formatted_strs.append(pyfmt_str.format(fmtargs[i]))
-                    else:
-                        pyfmt_str = '{:' + fmt_num + '}'
-                        formatted_strs.append(pyfmt_str.format(fmtargs[i]))
-                i += 1
-            try:
-                log_content_formatted = log_content_pyfmt.format(*formatted_strs)
-            except:
-                log_content_formatted = fmtstr
-                if len(fmtargs) > 0:
-                    log_content_formatted += ", args="
-                    log_content_formatted += ', '.join(['0x{:x}'.format(x) for x in fmtargs])
-
-        return log_content_formatted
-
     def parse_diag_version(self, pkt: bytes):
         header = namedtuple('QcDiagVersion', 'compile_date compile_time release_date release_time chipset')
         if len(pkt) < 47:
@@ -895,7 +849,7 @@ class QualcommParser(AbstractParser):
             src_fname = b''
             log_content = pkt_body[0].decode(errors='backslashreplace')
 
-        log_content_formatted = self._snprintf(log_content, pkt_args)
+        log_content_formatted = util.snprintf(log_content, pkt_args)
 
         osmocore_log_hdr = util.create_osmocore_logging_header(
             timestamp = pkt_ts,
@@ -973,7 +927,7 @@ class QualcommParser(AbstractParser):
         if msg_hash in self.qsr_content:
             q = self.qsr_content[msg_hash]
             fname = q.file
-            log_content_formatted = self._snprintf(q.string, pkt_args)
+            log_content_formatted = util.snprintf(q.string, pkt_args)
         else:
             log_content_formatted = f'QSR Ext Msg Terse: {msg_hash}, {pkt_args}'
 
@@ -1051,7 +1005,7 @@ class QualcommParser(AbstractParser):
                 line_number = q.line
             )
 
-            log_content_formatted = self._snprintf(q.string, args)
+            log_content_formatted = util.snprintf(q.string, args)
 
             gsmtap_hdr = util.create_gsmtap_header(
                 version = 2,
@@ -1082,7 +1036,7 @@ class QualcommParser(AbstractParser):
             else:
                 line_num = int(q.line)
                 level = int(q.level)
-                log_content_formatted = self._snprintf(q.string, args)
+                log_content_formatted = util.snprintf(q.string, args)
 
             osmocore_log_hdr = util.create_osmocore_logging_header(
                 level = level,

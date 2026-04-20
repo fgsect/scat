@@ -8,6 +8,7 @@ import datetime
 import math
 import string
 import struct
+import re
 
 try:
     import libscrc
@@ -772,3 +773,49 @@ def map_lookup_value(_map, _val, include_val_in_true=False):
             return _map[_val]
     else:
         return 'UNKNOWN ({:#x})'.format(_val)
+
+def snprintf(fmtstr: str, fmtargs: list, mem_regions: list = []) -> str:
+    # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x', '%p', '%s'}
+    cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXp])|%%)')
+    cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxXp]')
+    fmt_strs = cfmt.findall(fmtstr)
+    formatted_strs = []
+    log_content_pyfmt = cfmt.sub('{}', fmtstr)
+
+    i = 0
+    if len(fmtargs) < len(fmt_strs):
+        log_content_formatted = fmtstr
+    else:
+        for fmt_str in fmt_strs:
+            fmt_num = ''
+            x = cfmt_nums.match(fmt_str)
+            if x:
+                fmt_num = x.group(1)
+            if fmt_str == '%%':
+                formatted_strs.append('%')
+            else:
+                if fmt_str[-1] in ('x', 'X', 'p'):
+                    if fmt_str[-1] == 'p':
+                        pyfmt_str = '{:' + fmt_num + 'x' + '}'
+                    else:
+                        pyfmt_str = '{:' + fmt_num + fmt_str[-1] + '}'
+                    formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+                elif fmt_str[-1] in ('d'):
+                    pyfmt_str = '{:' + fmt_num + '}'
+                    if fmtargs[i] > 2147483648:
+                        formatted_strs.append(pyfmt_str.format(-(4294967296 - fmtargs[i])))
+                    else:
+                        formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+                else:
+                    pyfmt_str = '{:' + fmt_num + '}'
+                    formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+            i += 1
+        try:
+            log_content_formatted = log_content_pyfmt.format(*formatted_strs)
+        except:
+            log_content_formatted = fmtstr
+            if len(fmtargs) > 0:
+                log_content_formatted += ", args="
+                log_content_formatted += ', '.join(['0x{:x}'.format(x) for x in fmtargs])
+
+    return log_content_formatted
