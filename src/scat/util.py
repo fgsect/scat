@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # coding: utf8
 
+from collections import namedtuple
 from enum import IntEnum, unique
 from packaging import version
 import bitstring
@@ -774,16 +775,18 @@ def map_lookup_value(_map, _val, include_val_in_true=False):
     else:
         return 'UNKNOWN ({:#x})'.format(_val)
 
-def snprintf(fmtstr: str, fmtargs: list, mem_regions: list = []) -> str:
+mmap_memory_pos = namedtuple('MmappedMemoryPosition', 'start_addr mmap_offset length mmap_object')
+
+def snprintf(fmtstr: str, fmtargs: list, mem_regions: list[mmap_memory_pos] = []) -> str:
     # Observed fmt string: {'%02x', '%03d', '%04d', '%04x', '%08x', '%X', '%d', '%ld', '%llx', '%lu', '%u', '%x', '%p', '%s'}
-    cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXp])|%%)')
-    cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxXp]')
+    cfmt = re.compile(r'(%(?:(?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?(?:h|l|ll|w|I|I32|I64)?[duxXps])|%%)')
+    cfmt_nums = re.compile(r'%((?:[-+0 #]{0,5})(?:\d+|\*)?(?:\.(?:\d+|\*))?)(?:h|l|ll|w|I|I32|I64)?[duxXps]')
     fmt_strs = cfmt.findall(fmtstr)
     formatted_strs = []
     log_content_pyfmt = cfmt.sub('{}', fmtstr)
 
     i = 0
-    if len(fmtargs) < len(fmt_strs):
+    if len(fmtargs) < (len(fmt_strs) - fmt_strs.count('%%')):
         log_content_formatted = fmtstr
     else:
         for fmt_str in fmt_strs:
@@ -805,6 +808,21 @@ def snprintf(fmtstr: str, fmtargs: list, mem_regions: list = []) -> str:
                     if fmtargs[i] > 2147483648:
                         formatted_strs.append(pyfmt_str.format(-(4294967296 - fmtargs[i])))
                     else:
+                        formatted_strs.append(pyfmt_str.format(fmtargs[i]))
+                elif fmt_str[-1] in ('s'):
+                    msgstr = ''
+                    for x in mem_regions:
+                        if fmtargs[i] >= x.start_addr and fmtargs[i] < (x.start_addr + x.length):
+                            mmap_pos = fmtargs[i] - x.start_addr + x.mmap_offset
+                            msg_pos = x.mmap_object.find(b'\x00', mmap_pos)
+                            if msg_pos > mmap_pos:
+                                msgstr = x.mmap_object[mmap_pos:msg_pos].decode()
+                                if len(msgstr) > 0:
+                                    break
+                    if len(msgstr) > 0:
+                        formatted_strs.append(msgstr)
+                    else:
+                        pyfmt_str = '{:#10x}'
                         formatted_strs.append(pyfmt_str.format(fmtargs[i]))
                 else:
                     pyfmt_str = '{:' + fmt_num + '}'

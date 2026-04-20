@@ -50,6 +50,13 @@ class SdmTraceParser:
         dbt_struct = namedtuple('SdmTraceDBTStruct', 'magic_1 group item magic_2 message_ptr line_num file_ptr')
         item = item_struct._make(struct.unpack('<HH', pkt[0:4]))
         content = pkt[4:]
+        if self.parent:
+            mmap_region_debug_symbol = [
+                util.mmap_memory_pos._make((self.parent.trace_bin_addr, 0, self.parent.trace_bin_size, self.parent.trace_bin_mmap)),
+                util.mmap_memory_pos._make((self.parent.const_bin_addr, 0, self.parent.const_bin_size, self.parent.const_bin_mmap)),
+            ]
+        else:
+            mmap_region_debug_symbol = []
 
         stdout = 'ID: {}, Level: {:#x}\n'.format(item.trace_item_id, item.trace_item_level)
         pos = 0
@@ -83,31 +90,10 @@ class SdmTraceParser:
                     pos = dbt_ptr.dbt_addr - self.parent.trace_bin_addr
                     dbt = dbt_struct._make(struct.unpack('<LLLLLLL', self.parent.trace_bin_mmap[pos:pos+28]))
                     if dbt.magic_1 == 0x3a544244 and dbt.magic_2 == 0xfecdba98:
-                        msg_str = ''
-                        fname_str = ''
-                        if self.check_range(self.parent.trace_bin_addr, self.parent.trace_bin_size, dbt.message_ptr):
-                            file_pos = dbt.message_ptr - self.parent.trace_bin_addr
-                            msg_pos = self.parent.trace_bin_mmap.find(b'\x00', file_pos)
-                            if msg_pos > file_pos:
-                                msg_str = self.parent.trace_bin_mmap[file_pos:msg_pos].decode()
-                        if self.check_range(self.parent.const_bin_addr, self.parent.const_bin_size, dbt.message_ptr):
-                            file_pos = dbt.message_ptr - self.parent.const_bin_addr
-                            msg_pos = self.parent.const_bin_mmap.find(b'\x00', file_pos)
-                            if msg_pos > file_pos:
-                                msg_str = self.parent.const_bin_mmap[file_pos:msg_pos].decode()
+                        msg_str = util.snprintf('%s', [dbt.message_ptr], mmap_region_debug_symbol)
+                        fname_str = util.snprintf('%s', [dbt.file_ptr], mmap_region_debug_symbol)
 
-                        if self.check_range(self.parent.trace_bin_addr, self.parent.trace_bin_size, dbt.file_ptr):
-                            file_pos = dbt.file_ptr - self.parent.trace_bin_addr
-                            msg_pos = self.parent.trace_bin_mmap.find(b'\x00', file_pos)
-                            if msg_pos > file_pos:
-                                fname_str = self.parent.trace_bin_mmap[file_pos:msg_pos].decode()
-                        if self.check_range(self.parent.const_bin_addr, self.parent.const_bin_size, dbt.file_ptr):
-                            file_pos = dbt.file_ptr - self.parent.const_bin_addr
-                            msg_pos = self.parent.const_bin_mmap.find(b'\x00', file_pos)
-                            if msg_pos > file_pos:
-                                fname_str = self.parent.const_bin_mmap[file_pos:msg_pos].decode()
-
-                        stdout += 'Group: {}, Item: {}, {}:{} - {}, args: {}'.format(
+                        stdout += 'Group: {}, Item: {}, {}:{} - {}, args: {}\n'.format(
                             dbt.group, dbt.item,
                             fname_str, dbt.line_num, msg_str,
                             ', '.join([hex(x) for x in dbt_args])
