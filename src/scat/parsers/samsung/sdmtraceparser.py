@@ -4,6 +4,7 @@ from collections import namedtuple
 import binascii
 import logging
 import struct
+import os
 
 import scat.parsers.samsung.sdmcmd as sdmcmd
 import scat.util as util
@@ -84,6 +85,7 @@ class SdmTraceParser:
 
     def sdm_trace_dbt(self, pkt: bytes):
         pkt = pkt[15:-1]
+        ret = []
 
         if self.parent:
             if not self.parent.trace_loaded:
@@ -125,11 +127,24 @@ class SdmTraceParser:
                 dbt_obj = self._sdm_get_dbt(dbt_ptr.dbt_addr, dbt_args)
 
                 if 'filename' in dbt_obj:
-                    stdout += 'Group: {}, Item: {}, {}:{} - {}\n'.format(
-                        dbt_obj['group'], dbt_obj['item'],
-                        dbt_obj['filename'], dbt_obj['line'], dbt_obj['msg'],
+                    try:
+                        fname_str = os.path.basename(dbt_obj['filename'])[-32:]
+                    except:
+                        fname_str = dbt_obj['filename'][-32:]
+
+                    osmocore_log_hdr = util.create_osmocore_logging_header(
+                        filename = fname_str,
+                        subsys_name = '{}/{}'.format(dbt_obj['group'], dbt_obj['item']),
+                        line_number = dbt_obj['line']
                     )
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 2,
+                        payload_type = util.gsmtap_type.OSMOCORE_LOG)
+
+                    final_msg = '{}:{} {}'.format(dbt_obj['filename'], dbt_obj['line'], dbt_obj['msg']).encode('utf-8')
+                    payload = (gsmtap_hdr + osmocore_log_hdr + final_msg)
+                    ret.append(payload)
             except:
                 break
 
-        return {'stdout': stdout.rstrip()}
+        return {'cp': ret, 'stdout': stdout.rstrip()}
