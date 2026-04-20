@@ -79,8 +79,9 @@ class SdmTraceParser:
                     ret['msg'] = msg_str
                     break
 
-        formatted = util.snprintf(ret['msg'], dbt_args)
-        ret['msg'] = formatted
+        if 'msg' in ret:
+            formatted = util.snprintf(ret['msg'], dbt_args)
+            ret['msg'] = formatted
         return ret
 
     def sdm_trace_dbt(self, pkt: bytes):
@@ -144,6 +145,9 @@ class SdmTraceParser:
                     final_msg = '{}:{} {}'.format(dbt_obj['filename'], dbt_obj['line'], dbt_obj['msg']).encode('utf-8')
                     payload = (gsmtap_hdr + osmocore_log_hdr + final_msg)
                     ret.append(payload)
+                else:
+                    if self.parent:
+                        self.parent.logger.log(logging.WARNING, "DBT item address {:#x} does not exist in the modem image or debug symbol. Check whether modem firmware version of the image matches with the device/SDM file.".format(dbt_ptr.dbt_addr))
             except:
                 break
 

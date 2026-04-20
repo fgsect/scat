@@ -211,9 +211,13 @@ class SamsungParser(AbstractParser):
                     if trace_parser:
                         trace_parser.mmap_region_debug_symbol.append(util.mmap_memory_pos._make((toc.load_address, toc.offset, toc.size, self.modem_bin_mmap)))
 
-            if trace_parser:
-                trace_parser.modem_bin_available = True
-            return True
+            if len(self.modem_bin_regions) == 0:
+                self.logger.log(logging.WARNING, 'Modem image does not contain valid memory region. Please check whether the specified file is a valid Exynos modem image.')
+                return False
+            else:
+                if trace_parser:
+                    trace_parser.modem_bin_available = True
+                return True
         else:
             return False
 
