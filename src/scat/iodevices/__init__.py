@@ -5,3 +5,4 @@ from scat.iodevices.abstractio import AbstractIO
 from scat.iodevices.usbio import USBIO
 from scat.iodevices.serialio import SerialIO
 from scat.iodevices.fileio import FileIO
+from scat.iodevices.tcpio import TCPIO
