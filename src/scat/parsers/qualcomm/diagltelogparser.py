@@ -186,8 +186,16 @@ class DiagLteLogParser:
         real_rssi = self.parse_rssi(meas_rssi)
         real_rsrq = self.parse_rsrq(meas_rsrq)
 
-        return {'stdout': 'LTE SCell: EARFCN: {}, PCI: {:3d}, Measured RSRP: {:.2f}, Measured RSSI: {:.2f}, Measured RSRQ: {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi, real_rsrq),
-                'ts': pkt_ts}
+        if getattr(self.parent, 'cell_kv', False):
+            radio_id = args['radio_id'] if (args and 'radio_id' in args) else 0
+            cache = self.parent.lte_serving_cell[radio_id] if (self.parent and radio_id in (0, 1)) else {}
+            ident = util.serving_identity_fields(cache, item.earfcn, pci)
+            stdout = util.format_cell_kv('lte', 'scell', pci, item.earfcn,
+                util.calculate_ul_earfcn(item.earfcn), util.dl_earfcn_to_frequency_hz(item.earfcn),
+                rssi=real_rssi, rsrp=real_rsrp, rsrq=real_rsrq, **ident)
+        else:
+            stdout = 'LTE SCell: EARFCN: {}, PCI: {:3d}, Measured RSRP: {:.2f}, Measured RSSI: {:.2f}, Measured RSRQ: {:.2f}'.format(item.earfcn, pci, real_rsrp, real_rssi, real_rsrq)
+        return {'stdout': stdout, 'ts': pkt_ts}
 
     def parse_lte_ml1_ncell_meas(self, pkt_header, pkt_body: bytes, args: dict):
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
@@ -218,7 +226,12 @@ class DiagLteLogParser:
 
         q_rxlevmin = item.q_rxlevmin_n_cells & 0x3f
         n_cells = item.q_rxlevmin_n_cells >> 6
-        stdout += 'LTE NCell: EARFCN: {}, number of cells: {}\n'.format(item.earfcn, n_cells)
+        cell_kv = getattr(self.parent, 'cell_kv', False)
+        n_earfcn_ul = util.calculate_ul_earfcn(item.earfcn)
+        n_frequency = util.dl_earfcn_to_frequency_hz(item.earfcn)
+        kv_lines = []
+        if not cell_kv:
+            stdout += 'LTE NCell: EARFCN: {}, number of cells: {}\n'.format(item.earfcn, n_cells)
 
         for i in range(n_cells):
             n_cell_pkt = pkt_body[pos + 32 * i:pos + 32 * (i + 1)]
@@ -251,7 +264,13 @@ class DiagLteLogParser:
             n_real_rssi = self.parse_rssi(n_meas_rssi)
             n_real_rsrq = self.parse_rsrq(n_meas_rsrq)
 
-            stdout += '└── Neighbor cell {}: PCI: {:3d}, RSRP: {:.2f}, RSSI: {:.2f}, RSRQ: {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi, n_real_rsrq)
+            if cell_kv:
+                kv_lines.append(util.format_cell_kv('lte', 'ncell', n_pci, item.earfcn,
+                    n_earfcn_ul, n_frequency, rssi=n_real_rssi, rsrp=n_real_rsrp, rsrq=n_real_rsrq))
+            else:
+                stdout += '└── Neighbor cell {}: PCI: {:3d}, RSRP: {:.2f}, RSSI: {:.2f}, RSRQ: {:.2f}\n'.format(i, n_pci, n_real_rsrp, n_real_rssi, n_real_rsrq)
+        if cell_kv:
+            return {'stdout': '\n'.join(kv_lines), 'ts': pkt_ts}
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
     def parse_lte_ml1_scell_meas_response_cell_v36(self, cell_id: int, cell_bytes: bytes, rsrp_offset: int=16, snr_offset: int=80, sir_cinr_offset: int=104):
@@ -1242,6 +1261,15 @@ class DiagLteLogParser:
             self.parent.lte_last_earfcn_ul[radio_id] = item.ul_earfcn
             self.parent.lte_last_bw_dl[radio_id] = item.dl_bw
             self.parent.lte_last_bw_ul[radio_id] = item.ul_bw
+            if radio_id in (0, 1):
+                self.parent.lte_serving_cell[radio_id] = {
+                    'pci': item.pci, 'earfcn': item.dl_earfcn,
+                    'plmn': util.format_plmn(item.mcc, item.mnc, item.mnc_digit),
+                    'mcc': item.mcc, 'mnc': item.mnc, 'tac': item.tac,
+                    'cid': item.cell_id, 'band': item.band,
+                    'bwmhzdl': prb_to_mhz.get(item.dl_bw, 0),
+                    'bwmhzul': prb_to_mhz.get(item.ul_bw, 0),
+                }
 
         bw_str = ''
         if item.dl_bw in prb_to_mhz and item.ul_bw in prb_to_mhz:

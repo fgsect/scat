@@ -717,6 +717,84 @@ def calculate_dl_earfcn(ul_earfcn: int) -> int:
         offset = 0
     return ul_earfcn - offset
 
+# E-UTRA DL band table: (ndl_low, ndl_high, fdl_low_mhz).
+# NOffs-DL equals ndl_low for every band, and the DL raster is always 0.1 MHz,
+# so FDL = fdl_low + 0.1 * (earfcn - ndl_low). Source: 3GPP TS 36.101 Table 5.7.3-1.
+_LTE_DL_EARFCN_BANDS = (
+    (0, 599, 2110.0),      (600, 1199, 1930.0),   (1200, 1949, 1805.0),
+    (1950, 2399, 2110.0),  (2400, 2649, 869.0),   (2650, 2749, 875.0),
+    (2750, 3449, 2620.0),  (3450, 3799, 925.0),   (3800, 4149, 1844.9),
+    (4150, 4749, 2110.0),  (4750, 4949, 1475.9),  (5010, 5179, 729.0),
+    (5180, 5279, 746.0),   (5280, 5379, 758.0),   (5730, 5849, 734.0),
+    (5850, 5999, 860.0),   (6000, 6149, 875.0),   (6150, 6449, 791.0),
+    (6450, 6599, 1495.9),  (6600, 7399, 3510.0),  (7500, 7699, 2180.0),
+    (7700, 8039, 1525.0),  (8040, 8689, 1930.0),  (8690, 9039, 859.0),
+    (9040, 9209, 852.0),   (9210, 9659, 758.0),   (9660, 9769, 717.0),
+    (9770, 9869, 2350.0),  (9870, 9919, 462.5),   (9920, 10359, 1452.0),
+    (36000, 36199, 1900.0), (36200, 36349, 2010.0), (36350, 36949, 1850.0),
+    (36950, 37549, 1930.0), (37550, 37749, 1910.0), (37750, 38249, 2570.0),
+    (38250, 38649, 1880.0), (38650, 39649, 2300.0), (39650, 41589, 2496.0),
+    (41590, 43589, 3400.0), (43590, 45589, 3600.0), (45590, 46589, 703.0),
+    (46590, 46789, 1447.0), (46790, 54539, 5150.0), (54540, 55239, 5855.0),
+    (55240, 56739, 3550.0), (56740, 58239, 3550.0), (58240, 59089, 1432.0),
+    (59090, 59139, 1427.0), (59140, 60139, 3300.0), (60140, 60254, 2483.5),
+    (65536, 66435, 2110.0), (66436, 67335, 2110.0), (67336, 67535, 738.0),
+    (67536, 67835, 753.0),  (67836, 68335, 2570.0), (68336, 68585, 1995.0),
+    (68586, 68935, 617.0),  (68936, 68985, 461.0),  (68986, 69035, 460.0),
+    (69036, 69465, 1475.0), (69466, 70315, 1432.0), (70316, 70365, 1427.0),
+    (70366, 70545, 728.0),  (70546, 70595, 420.0),  (70596, 70645, 422.0),
+)
+
+# Returns the DL center frequency in Hz for a DL-EARFCN, or 0 if out of range.
+def dl_earfcn_to_frequency_hz(dl_earfcn: int) -> int:
+    for ndl_low, ndl_high, fdl_low in _LTE_DL_EARFCN_BANDS:
+        if ndl_low <= dl_earfcn <= ndl_high:
+            freq_mhz = round(fdl_low + 0.1 * (dl_earfcn - ndl_low), 1)
+            return int(round(freq_mhz * 1_000_000))
+    return 0
+
+# Returns the center frequency in Hz for an NR-ARFCN (3GPP TS 38.104 Table 5.4.2.1-1
+# global frequency raster), or 0 if out of range.
+def nrarfcn_to_frequency_hz(nrarfcn: int) -> int:
+    if 0 <= nrarfcn < 600000:          # 0 - 3000 MHz, dF_global = 5 kHz
+        return 5000 * nrarfcn
+    elif 600000 <= nrarfcn < 2016667:  # 3000 - 24250 MHz, dF_global = 15 kHz
+        return 3_000_000_000 + 15000 * (nrarfcn - 600000)
+    elif 2016667 <= nrarfcn <= 3279165: # 24250 - 100000 MHz, dF_global = 60 kHz
+        return 24_250_080_000 + 60000 * (nrarfcn - 2016667)
+    return 0
+
+# Formats a single serving/neighbor cell measurement as a key=value line for
+# machine parsing (enabled by SCAT's --cell-kv flag). Identity fields not present
+# in ML1 measurement packets (plmn/mcc/mnc/tac/cid/band/bandwidth) default to 0.
+def format_cell_kv(protocol: str, cell: str, pci, earfcn, earfcn_ul, frequency,
+                   rssi=0, rsrp=0, rsrq=0, plmn=0, mcc=0, mnc=0, tac=0, cid=0,
+                   band=0, bwmhzdl=0, bwmhzul=0) -> str:
+    return ('pci={},earfcn={},earfcn_ul={},frequency={},protocol={},cell={},'
+            'plmn={},mcc={},mnc={},tac={},cid={},band={},bwmhzdl={},bwmhzul={} '
+            'rssi={},rsrp={},rsrq={}').format(pci, earfcn, earfcn_ul, frequency,
+            protocol, cell, plmn, mcc, mnc, tac, cid, band, bwmhzdl, bwmhzul,
+            rssi, rsrp, rsrq)
+
+# Combined PLMN identifier (3-digit MCC + 2/3-digit MNC), e.g. mcc=310,mnc=260 -> '310260'.
+# Returns '0' if the MCC/MNC are missing or not numeric.
+def format_plmn(mcc, mnc, mnc_digit=0) -> str:
+    try:
+        mcc_i, mnc_i = int(mcc), int(mnc)
+    except (ValueError, TypeError):
+        return '0'
+    width = mnc_digit if mnc_digit in (2, 3) else (3 if mnc_i > 99 else 2)
+    return '{:03d}{:0{}d}'.format(mcc_i, mnc_i, width)
+
+# Returns the identity kwargs (plmn/mcc/mnc/tac/cid/band/bwmhzdl/bwmhzul) from a
+# cached serving-cell entry, but only if it matches the given (earfcn, pci) — so
+# stale identity is never joined onto a different cell. Empty dict otherwise.
+def serving_identity_fields(cache_entry: dict, earfcn: int, pci: int) -> dict:
+    if not cache_entry or cache_entry.get('earfcn') != earfcn or cache_entry.get('pci') != pci:
+        return {}
+    return {k: cache_entry[k] for k in ('plmn', 'mcc', 'mnc', 'tac', 'cid',
+            'band', 'bwmhzdl', 'bwmhzul') if k in cache_entry}
+
 def convert_mcc(mcc_digit_2: int, mcc_digit_1: int, mcc_digit_0: int) -> str:
     if mcc_digit_2 > 0x09 or mcc_digit_1 > 0x09 or mcc_digit_0 > 0x09:
         raise ValueError('Invalid digit in MCC')
