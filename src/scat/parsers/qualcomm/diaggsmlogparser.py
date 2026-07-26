@@ -180,7 +180,7 @@ class DiagGsmLogParser:
             if item.bsic_valid == 1:
                 stdout += 'GSM Surround Cell BA: Cell {}: ARFCN: {}/BC: {}/BSIC: {}, RxPwr: {:.2f}\n'.format(i, s_arfcn, s_band, item.bsic, s_rxpwr_real)
             else:
-                stdout += 'GSM Surround Cell BA: Cell {}: ARFCN: {}/BC: {}/BSIC: N/A, RxPwr: {:.2f}\n'.format(i, s_arfcn, s_band, item.bsic, s_rxpwr_real)
+                stdout += 'GSM Surround Cell BA: Cell {}: ARFCN: {}/BC: {}/BSIC: N/A, RxPwr: {:.2f}\n'.format(i, s_arfcn, s_band, s_rxpwr_real)
 
         return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
 
