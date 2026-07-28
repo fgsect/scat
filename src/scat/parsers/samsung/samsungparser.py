@@ -207,7 +207,7 @@ class SamsungParser(AbstractParser):
                 toc = toc_struct._make(struct.unpack('<12sLLLLL', self.modem_bin_mmap[i*32:(i+1)*32]))
                 if toc.name == b'\x00'*12:
                     break
-                if toc.load_address > 0:
+                if toc.load_address > 0 or toc.name.rstrip(b'\x00') == b'GVERSION':
                     self.modem_bin_regions[toc.name.rstrip(b'\x00').decode()] = (toc.load_address, toc.offset, toc.size)
                     if trace_parser:
                         trace_parser.mmap_region_debug_symbol.append(util.mmap_memory_pos._make((toc.load_address, toc.offset, toc.size, self.modem_bin_mmap)))
@@ -224,6 +224,10 @@ class SamsungParser(AbstractParser):
                         if verstr.find('_') > 0:
                             verstr = verstr.split('_')[0]
                         self.modem_bin_ver = verstr
+                if 'GVERSION' in self.modem_bin_regions:
+                    info_region = self.modem_bin_regions['GVERSION']
+                    verstr = self.modem_bin_mmap[info_region[1]:info_region[1]+info_region[2]].rstrip(b'\x00').decode()
+                    self.modem_bin_ver = verstr
                 if trace_parser:
                     trace_parser.modem_bin_available = True
                 return True

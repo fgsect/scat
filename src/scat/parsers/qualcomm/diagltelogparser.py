@@ -222,6 +222,8 @@ class DiagLteLogParser:
 
         for i in range(n_cells):
             n_cell_pkt = pkt_body[pos + 32 * i:pos + 32 * (i + 1)]
+            if len(n_cell_pkt) < 28:
+                break
             n_cell = n_cell_struct._make(struct.unpack('<LLLLHHLL', n_cell_pkt[0:28]))
 
             val0_bits = bitstring.Bits(uint=n_cell.val0, length=32)
