@@ -8,7 +8,7 @@ import struct
 import math
 import binascii
 from enum import IntEnum, unique
-from scapy.all import rdpcap, wrpcap, UDP, Raw, Ether
+from scapy.all import rdpcap, wrpcap, IP, UDP, Raw, Ether
 from pcapng import FileScanner
 from pcapng.blocks import EnhancedPacket, SectionHeader
 from pcapng.writer import FileWriter
@@ -35,7 +35,7 @@ class gsmtapv3_metadata_tags(IntEnum):
 
     SFN = 0x0008
     SUBFN = 0x0009
-    
+
     END_OF_METADATA = 0xfffe
 
 @unique
@@ -356,7 +356,7 @@ def modify_gsmtapv3_header(payload: bytes):
     if gsmtapv3_prerelease_header[10] > 0:
         gsmtap_v3_metadata += struct.pack('!HHH', t.SUBFN, 2, gsmtapv3_prerelease_header[10])
         header_len += 6
-    
+
     gsmtap_v3_metadata += struct.pack('!H', t.END_OF_METADATA)
     header_len += 2
 
@@ -385,8 +385,14 @@ def process_pcap(input_file: str, output_file: str, is_140: bool):
                 new_payload = modify_gsmtapv3_header(payload)
             if new_payload != payload:
                 pkt[Raw].load = new_payload
-                del pkt[UDP].len
-                del pkt[UDP].chksum
+                if IP in pkt:
+                    del pkt[IP].len
+                    del pkt[IP].chksum
+                if UDP in pkt:
+                    del pkt[UDP].len
+                    del pkt[UDP].chksum
+                if hasattr(pkt, "wirelen"):
+                    pkt.wirelen = len(bytes(pkt))
 
     wrpcap(output_file, packets)
     print(f"[✓] .pcap processed and written to: {output_file}")
@@ -425,10 +431,12 @@ def process_pcapng(input_file: str, output_file: str, is_140: bool):
                     new_raw = modify_gsmtapv3_header(raw)
                 if new_raw != raw:
                     pkt[Raw].load = new_raw
-                    del pkt['IP'].len
-                    del pkt['IP'].chksum
-                    del pkt[UDP].len
-                    del pkt[UDP].chksum
+                    if IP in pkt:
+                        del pkt[IP].len
+                        del pkt[IP].chksum
+                    if UDP in pkt:
+                        del pkt[UDP].len
+                        del pkt[UDP].chksum
                     pkt_bytes = bytes(pkt)
                     block = EnhancedPacket(
                         interface_id=block.interface_id,
