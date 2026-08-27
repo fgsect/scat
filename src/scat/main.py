@@ -69,6 +69,7 @@ def scat_main():
     input_group = parser.add_mutually_exclusive_group(required=True)
     input_group.add_argument('-s', '--serial', help='Use serial diagnostic port')
     input_group.add_argument('-u', '--usb', action='store_true', help='Use USB diagnostic port')
+    input_group.add_argument('-T', '--tcp', metavar='HOST:PORT', help='Use tcp socket diagnostic port (adress:port)')
     input_group.add_argument('-d', '--dump', help='Read from baseband dump (QMDL, SDM, LPD)', nargs='*')
 
     serial_group = parser.add_argument_group('Serial device settings')
@@ -142,6 +143,11 @@ def scat_main():
     io_device: scat.iodevices.AbstractIO
     if args.serial:
         io_device = scat.iodevices.SerialIO(args.serial, args.baudrate, not args.no_rts, not args.no_dsr)
+    elif args.tcp:
+        address, port = args.tcp.split(':')
+        address = str(address)
+        port = int(port, base= 10)
+        io_device =scat.iodevices.TCPIO(address, port)
     elif args.usb:
         io_device = scat.iodevices.USBIO()
         if args.address:
@@ -224,7 +230,7 @@ def scat_main():
             'gsmtapv3': args.gsmtapv3})
 
     # Run process
-    if args.serial or args.usb:
+    if args.serial or args.usb or args.tcp:
         current_parser.stop_diag()
         current_parser.init_diag()
         current_parser.prepare_diag()
