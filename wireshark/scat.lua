@@ -170,6 +170,80 @@ for k, v in pairs(gsmtapv3_metadata_tags) do
     -- end
 end
 
+local gsmtapv3_gsm_um_subtypes = {
+}
+
+local gsmtapv3_gsm_abis_subtypes = {
+    [0x0000] = { check_and_get_dissector("gsm_a_dtap"), "GSM Abis" },
+}
+
+local gsmtapv3_umts_rrc_subtypes = {
+    [0x0001] = { check_and_get_dissector("rrc.dl.dcch"), "DL DCCH" },
+    [0x0002] = { check_and_get_dissector("rrc.ul.dcch"), "UL DCCH" },
+    [0x0003] = { check_and_get_dissector("rrc.dl.ccch"), "DL CCCH" },
+    [0x0004] = { check_and_get_dissector("rrc.ul.ccch"), "UL CCCH" },
+    [0x0005] = { check_and_get_dissector("rrc.pcch"), "PCCH" },
+    [0x0006] = { check_and_get_dissector("rrc.dl.shcch"), "DL SHCCH" },
+    [0x0007] = { check_and_get_dissector("rrc.Ul.shcch"), "UL SHCCH" },
+    [0x0008] = { check_and_get_dissector("rrc.bcch.facch"), "BCCH FACH" },
+    [0x0009] = { check_and_get_dissector("rrc.bcch.bch"), "BCCH BCH" },
+    -- [0x000a] = { check_and_get_dissector("rrc.bcch.bch2"), "BCCH BCH2" },
+    [0x000b] = { check_and_get_dissector("rrc.mcch"), "MCCH" },
+    [0x000c] = { check_and_get_dissector("rrc.msch"), "MSCH" },
+
+    [0x0101] = { check_and_get_dissector("rrc.irat.ho_to_utran_cmd"), "HandoverToUTRANCommand" },
+    [0x0102] = { check_and_get_dissector("rrc.irat.irat_ho_info"), "InterRATHandoverInfo" },
+    [0x0103] = { check_and_get_dissector("rrc.sysinfo"), "SystemInformation_BCH" },
+    [0x0104] = { check_and_get_dissector("rrc.sysinfo.cont"), "System_Information_Container" },
+    [0x0105] = { check_and_get_dissector("rrc.ue_radio_access_cap_info"), "UE_RadioAccessCapabilityInfo" },
+    [0x0106] = { check_and_get_dissector("rrc.si.mib"), "MasterInformationBlock" },
+    [0x0107] = { check_and_get_dissector("rrc.si.sib1"), "SysInfoType1" },
+    [0x0108] = { check_and_get_dissector("rrc.si.sib2"), "SysInfoType2" },
+    [0x0109] = { check_and_get_dissector("rrc.si.sib3"), "SysInfoType3" },
+    [0x010a] = { check_and_get_dissector("rrc.si.sib4"), "SysInfoType4" },
+    [0x010b] = { check_and_get_dissector("rrc.si.sib5"), "SysInfoType5" },
+    [0x010c] = { check_and_get_dissector("rrc.si.sib5bis"), "SysInfoType5bis" },
+    [0x010d] = { check_and_get_dissector("rrc.si.sib6"), "SysInfoType6" },
+    [0x010e] = { check_and_get_dissector("rrc.si.sib7"), "SysInfoType7" },
+    [0x010f] = { check_and_get_dissector("rrc.si.sib8"), "SysInfoType8" },
+    [0x0110] = { check_and_get_dissector("rrc.si.sib9"), "SysInfoType9" },
+    [0x0111] = { check_and_get_dissector("rrc.si.sib10"), "SysInfoType10" },
+    [0x0112] = { check_and_get_dissector("rrc.si.sib11"), "SysInfoType11" },
+    [0x0113] = { check_and_get_dissector("rrc.si.sib11bis"), "SysInfoType11bis" },
+    [0x0114] = { check_and_get_dissector("rrc.si.sib12"), "SysInfoType12" },
+    [0x0115] = { check_and_get_dissector("rrc.si.sib13"), "SysInfoType13" },
+    [0x0116] = { check_and_get_dissector("rrc.si.sib13-1"), "SysInfoType13_1" },
+    [0x0117] = { check_and_get_dissector("rrc.si.sib13-2"), "SysInfoType13_2" },
+    [0x0118] = { check_and_get_dissector("rrc.si.sib13-3"), "SysInfoType13_3" },
+    [0x0119] = { check_and_get_dissector("rrc.si.sib13-4"), "SysInfoType13_4" },
+    [0x011a] = { check_and_get_dissector("rrc.si.sib14"), "SysInfoType14" },
+    [0x011b] = { check_and_get_dissector("rrc.si.sib15"), "SysInfoType15" },
+    [0x011c] = { check_and_get_dissector("rrc.si.sib15bis"), "SysInfoType15bis" },
+    [0x011d] = { check_and_get_dissector("rrc.si.sib15-1"), "SysInfoType15_1" },
+    [0x011e] = { check_and_get_dissector("rrc.si.sib15-1bis"), "SysInfoType15_1bis" },
+    [0x011f] = { check_and_get_dissector("rrc.si.sib15-2"), "SysInfoType15_2" },
+    [0x0120] = { check_and_get_dissector("rrc.si.sib15-2bis"), "SysInfoType15_2bis" },
+    [0x0121] = { check_and_get_dissector("rrc.si.sib15-2ter"), "SysInfoType15_2ter" },
+    [0x0122] = { check_and_get_dissector("rrc.si.sib15-3"), "SysInfoType15_3" },
+    [0x0123] = { check_and_get_dissector("rrc.si.sib15-3bis"), "SysInfoType15_3bis" },
+    [0x0124] = { check_and_get_dissector("rrc.si.sib15-4"), "SysInfoType15_4" },
+    [0x0125] = { check_and_get_dissector("rrc.si.sib15-5"), "SysInfoType15_5" },
+    [0x0126] = { check_and_get_dissector("rrc.si.sib15-6"), "SysInfoType15_6" },
+    [0x0127] = { check_and_get_dissector("rrc.si.sib15-7"), "SysInfoType15_7" },
+    [0x0128] = { check_and_get_dissector("rrc.si.sib15-8"), "SysInfoType15_8" },
+    [0x0129] = { check_and_get_dissector("rrc.si.sib16"), "SysInfoType16" },
+    [0x012a] = { check_and_get_dissector("rrc.si.sib17"), "SysInfoType17" },
+    [0x012b] = { check_and_get_dissector("rrc.si.sib18"), "SysInfoType18" },
+    [0x012c] = { check_and_get_dissector("rrc.si.sib19"), "SysInfoType19" },
+    [0x012d] = { check_and_get_dissector("rrc.si.sib20"), "SysInfoType20" },
+    [0x012e] = { check_and_get_dissector("rrc.si.sib21"), "SysInfoType21" },
+    [0x012f] = { check_and_get_dissector("rrc.si.sib22"), "SysInfoType22" },
+    [0x0130] = { check_and_get_dissector("rrc.si.sb1"), "SysInfoTypeSB1" },
+    [0x0131] = { check_and_get_dissector("rrc.si.sb2"), "SysInfoTypeSB2" },
+    [0x0132] = { check_and_get_dissector("rrc.s_to_trnc_cont"), "ToTargetRNC_Container" },
+    [0x0133] = { check_and_get_dissector("rrc.t_to_srnc_cont"), "TargetRNC_ToSourceRNC_Container" }
+}
+
 local gsmtapv3_lte_rrc_subtypes = {
     [0x0001] = { check_and_get_dissector("lte_rrc.bcch_bch"), "BCCH BCH" },
     [0x0002] = { check_and_get_dissector("lte_rrc.bcch_bch.mbms"), "BCCH BCH MBMS" },
@@ -353,7 +427,41 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
                                    :set_text(string.format("Type: 0x%04x (%s)", type, itemtext))
 
         pinfo.cols.protocol = "GSMTAPv3"
-        if type == 0x0400 then
+        if type == 0x0200 then
+            pinfo.cols.info = ""
+            itemtext = "Unknown"
+            if gsmtapv3_gsm_um_subtypes[subtype] then
+                itemtext = gsmtapv3_gsm_um_subtypes[subtype][2]
+            end
+            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
+            gsmtapv3_gsm_um_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
+        elseif type == 0x0205 then
+            pinfo.cols.info = ""
+            itemtext = "Unknown"
+            if gsmtapv3_gsm_abis_subtypes[subtype] then
+                itemtext = gsmtapv3_gsm_abis_subtypes[subtype][2]
+            end
+            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
+            gsmtapv3_gsm_abis_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
+        elseif type == 0x0303 then
+            pinfo.cols.info = ""
+            itemtext = "Unknown"
+            if gsmtapv3_umts_rrc_subtypes[subtype] then
+                itemtext = gsmtapv3_umts_rrc_subtypes[subtype][2]
+            end
+            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
+            -- UMTS RRC
+            gsmtapv3_umts_rrc_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
+        elseif type == 0x0400 then
             pinfo.cols.info = ""
             itemtext = "Unknown"
             if lte_mac_subtypes[subtype] then
