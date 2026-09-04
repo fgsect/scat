@@ -120,6 +120,19 @@ class TestNrCellKv(unittest.TestCase):
             'pci=710,earfcn=397465,earfcn_ul=397465,frequency=1987325000,protocol=nr,cell=scell,plmn=0,mcc=0,mnc=0,tac=0,cid=0,band=0,bwmhzdl=0,bwmhzul=0 rssi=0,rsrp=0,rsrq=0\n'
             'pci=710,earfcn=397465,earfcn_ul=397465,frequency=1987325000,protocol=nr,cell=ncell,plmn=0,mcc=0,mnc=0,tac=0,cid=0,band=0,bwmhzdl=0,bwmhzul=0 rssi=0,rsrp=-107.8203125,rsrq=-11.921875')
 
+    def test_meas_db_update_kv_skips_absent_serving_cell(self):
+        # serv_cell_pci == 0xffff means the UE has no serving cell on this measured
+        # carrier — SCAT must not emit an all-zero scell row for it. (These bogus
+        # rows are what made SA-NR captures look like "no TAC/CID".)
+        baseline = self.parser.parse_nr_ml1_meas_db_update(
+            log_header(0x10, 0, 0, 0, 0, 0), binascii.unhexlify(self.ML1_MEAS), dict())
+        self.assertIn('cell=scell', baseline['stdout'])   # normally emits one
+        b = bytearray(binascii.unhexlify(self.ML1_MEAS))
+        b[22:24] = b'\xff\xff'   # serv_cell_pci -> 0xffff
+        r = self.parser.parse_nr_ml1_meas_db_update(
+            log_header(0x10, 0, 0, 0, 0, 0), bytes(b), dict())
+        self.assertNotIn('cell=scell', r['stdout'])
+
     def test_rrc_scell_info_populates_cache(self):
         payload = binascii.unhexlify('040000009d02e0ca0900d6c609005a005a0000127df204000000060102010001297900004e00')
         pkt_header = log_header(0x10, 0, 0, 0, diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), 0)

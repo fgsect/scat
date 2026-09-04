@@ -145,7 +145,10 @@ class DiagNrLogParser:
                 else:
                     rsrp_str = ''
             nr_frequency = util.nrarfcn_to_frequency_hz(meas_carrier_list.raster_arfcn)
-            if cell_kv:
+            # serv_cell_pci == 0xffff means the UE has no serving cell on this
+            # measured carrier (neighbor-only) — don't emit an all-zero scell row
+            # for it. Its neighbor cells are still reported below.
+            if cell_kv and meas_carrier_list.serv_cell_pci != 0xffff:
                 nr_ident = util.serving_identity_fields(nr_cache, meas_carrier_list.raster_arfcn, meas_carrier_list.serv_cell_pci)
                 nr_earfcn_ul = nr_cache.get('earfcn_ul', meas_carrier_list.raster_arfcn) if nr_ident else meas_carrier_list.raster_arfcn
                 kv_lines.append(util.format_cell_kv('nr', 'scell', meas_carrier_list.serv_cell_pci,
