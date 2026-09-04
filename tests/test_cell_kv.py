@@ -26,6 +26,8 @@ class FakeParent:
         self.lte_last_bw_ul = [0, 0]
         self.lte_serving_cell = [{}, {}]
         self.nr_serving_cell = [{}, {}]
+        self.lte_serving_signal = [{}, {}]
+        self.nr_serving_signal = [{}, {}]
 
 
 log_header = namedtuple('QcDiagLogHeader', 'cmd_code reserved length1 length2 log_id timestamp')
@@ -152,6 +154,46 @@ class TestNrCellKv(unittest.TestCase):
         lines = r['stdout'].split('\n')
         self.assertEqual(lines[0], 'pci=710,earfcn=397465,earfcn_ul=390000,frequency=1987325000,protocol=nr,cell=scell,plmn=26201,mcc=262,mnc=1,tac=31017,cid=999,band=41,bwmhzdl=100,bwmhzul=100 rssi=0,rsrp=0,rsrq=0')
         self.assertIn('cell=ncell,plmn=0,mcc=0,mnc=0,tac=0,cid=0,band=0,bwmhzdl=0,bwmhzul=0', lines[1])
+
+
+class TestCellIdFromRrc(unittest.TestCase):
+    """Order-independent CellID capture: an RRC SCell Info packet emits a full
+    identity-bearing kv line joined to the last ML1 serving signal, so CellID is
+    captured even when the RRC packet arrives before the next ML1 measurement."""
+
+    def setUp(self):
+        self.parent = FakeParent()
+
+    def test_lte_rrc_emits_kv_with_cellid_when_signal_cached(self):
+        parser = DiagLteLogParser(parent=self.parent)
+        self.parent.lte_serving_signal[0] = {'earfcn': 1825, 'pci': 77,
+            'rssi': -60.0, 'rsrp': -95.5, 'rsrq': -11.0}
+        payload = binascii.unhexlify('034D0021070000714D00004B4B33C8B009159B03000000CC01020B0000')
+        r = parser.parse_lte_rrc_cell_info(lte_hdr(diagcmd.diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO), payload, dict())
+        self.assertEqual(r['stdout'], 'pci=77,earfcn=1825,earfcn_ul=19825,frequency=1867500000,protocol=lte,cell=scell,plmn=46011,mcc=460,mnc=11,tac=39701,cid=162580531,band=3,bwmhzdl=15,bwmhzul=15 rssi=-60.0,rsrp=-95.5,rsrq=-11.0')
+
+    def test_lte_rrc_emits_nothing_without_cached_signal(self):
+        parser = DiagLteLogParser(parent=self.parent)  # no signal cached
+        payload = binascii.unhexlify('034D0021070000714D00004B4B33C8B009159B03000000CC01020B0000')
+        r = parser.parse_lte_rrc_cell_info(lte_hdr(diagcmd.diag_log_code_lte.LOG_LTE_RRC_SERVING_CELL_INFO), payload, dict())
+        self.assertEqual(r['stdout'], '')  # all-zero-metric line suppressed
+
+    def test_nr_rrc_emits_kv_with_cellid_when_signal_cached(self):
+        parser = DiagNrLogParser(parent=self.parent)
+        self.parent.nr_serving_signal[0] = {'earfcn': 641760, 'pci': 669, 'rsrp': -88.0}
+        payload = binascii.unhexlify('040000009d02e0ca0900d6c609005a005a0000127df204000000060102010001297900004e00')
+        pkt_header = log_header(0x10, 0, 0, 0, diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_5gnr.LOG_5GNR_RRC_SERVING_CELL_INFO), 0)
+        r = parser.parse_nr_rrc_scell_info(pkt_header, payload, dict())
+        self.assertEqual(r['stdout'], 'pci=669,earfcn=641760,earfcn_ul=640726,frequency=3626400000,protocol=nr,cell=scell,plmn=26201,mcc=262,mnc=1,tac=31017,cid=21248152064,band=78,bwmhzdl=90,bwmhzul=90 rssi=0,rsrp=-88.0,rsrq=0')
+
+    def test_lte_ml1_scell_caches_signal(self):
+        parser = DiagLteLogParser(parent=self.parent)
+        payload = binascii.unhexlify('040100009C18D60AECC44E00E2244E00FFFCE30FFED80A0047AD56021D310100A2624100')
+        parser.parse_lte_ml1_scell_meas(lte_hdr(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_MEAS_AND_EVAL), payload, dict())
+        sig = self.parent.lte_serving_signal[0]
+        self.assertEqual(sig['earfcn'], 6300)
+        self.assertEqual(sig['pci'], 214)
+        self.assertAlmostEqual(sig['rsrp'], -101.25, places=4)
 
 
 if __name__ == '__main__':

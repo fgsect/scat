@@ -65,6 +65,7 @@ def scat_main():
     parser.add_argument('-L', '--layer', help='Specify the layers to see as GSMTAP packets (comma separated).\nAvailable layers: {}, Default: "ip,nas,rrc"'.format(', '.join(valid_layers)), type=str, default='ip,nas,rrc')
     parser.add_argument('-f', '--format', help='Select display format for LAC/RAC/TAC/CID: [d]ecimal, he[x]adecimal (default), [b]oth.', type=str, default='x', choices=['d', 'x', 'b'])
     parser.add_argument('--cell-kv', help='Emit LTE/5G-NR serving and neighbor cell measurements as key=value lines to stdout for machine parsing.', action='store_true')
+    parser.add_argument('--meas-gsmtap', help='Emit LTE/5G-NR serving and neighbor cell measurements (RSRP/RSRQ/RSSI/SINR) into the capture as GSMTAPv3 signal status reports.', action='store_true')
     parser.add_argument('-3', '--gsmtapv3', help='Enable GSMTAPv3 for 2G/3G/4G. Default: enabled only for 5G NR', action='store_true')
 
     input_group = parser.add_mutually_exclusive_group(required=True)
@@ -197,6 +198,7 @@ def scat_main():
             'layer': layers,
             'format': args.format,
             'cell-kv': args.cell_kv,
+            'meas-gsmtap': args.meas_gsmtap,
             'gsmtapv3': args.gsmtapv3})
     elif args.type == 'sec':
         if args.trace:

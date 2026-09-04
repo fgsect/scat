@@ -71,6 +71,11 @@ class QualcommParser(AbstractParser):
         # LTE/NR RRC SCell Info packets and joined onto ML1 measurement reports.
         self.lte_serving_cell = [{}, {}]
         self.nr_serving_cell = [{}, {}]
+        # Latest ML1 serving-cell signal (per radio) so an RRC SCell Info packet
+        # can emit an identity-bearing --cell-kv line even when it arrives before
+        # the next ML1 measurement (makes CellID capture order-independent).
+        self.lte_serving_signal = [{}, {}]
+        self.nr_serving_signal = [{}, {}]
 
         self.io_device: AbstractIO
         self.writer: AbstractWriter
@@ -82,6 +87,7 @@ class QualcommParser(AbstractParser):
         self.log_id_range = {}
         self.cacombos = False
         self.cell_kv = False
+        self.meas_gsmtap = False
         self.combine_stdout = False
         self.check_crc = True
         self.layers = []
@@ -296,6 +302,8 @@ class QualcommParser(AbstractParser):
                 self.cacombos = params[p]
             elif p == 'cell-kv':
                 self.cell_kv = params[p]
+            elif p == 'meas-gsmtap':
+                self.meas_gsmtap = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
             elif p == 'disable-crc-check':

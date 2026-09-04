@@ -475,18 +475,17 @@ def create_gsmtap_header(version: int = 2, payload_type: int = 0, timeslot: int 
         gsmtap_v3_metadata += struct.pack('!HHL', t.CHANNEL_NUMBER, 4, arfcn)
         header_len += 8
         for k, v in metadata.items():
-            if type(v) == int:
-                if k in (t.BAND_INDICATOR, t.BSIC_PSC_PCI, t.SUBFN, t.HFN):
-                    buf = struct.pack('!H', v)
-                elif k in (t.GSM_TIMESLOT, t.GSM_SUBSLOT, t.ANT_NUM):
-                    buf = struct.pack('!B', v)
-                elif k in (t.SIGNAL_LEVEL, t.RSSI, t.SNR, t.SINR, t.RSCP, t.ECIO, t.RSRP, t.RSRQ,
-                           t.SS_RSRP, t.CSI_RSRP, t.SRS_RSRP, t.SS_RSRQ, t.CSI_RSRQ, t.SS_SINR, t.CSI_SINR):
-                    buf = struct.pack('!f', v)
-                else:
-                    buf = struct.pack('!L', v)
-            else:
+            if isinstance(v, (bytes, bytearray)):
                 buf = v
+            elif k in (t.BAND_INDICATOR, t.BSIC_PSC_PCI, t.SUBFN, t.HFN):
+                buf = struct.pack('!H', v)
+            elif k in (t.GSM_TIMESLOT, t.GSM_SUBSLOT, t.ANT_NUM):
+                buf = struct.pack('!B', v)
+            elif k in (t.SIGNAL_LEVEL, t.RSSI, t.SNR, t.SINR, t.RSCP, t.ECIO, t.RSRP, t.RSRQ,
+                       t.SS_RSRP, t.CSI_RSRP, t.SRS_RSRP, t.SS_RSRQ, t.CSI_RSRQ, t.SS_SINR, t.CSI_SINR):
+                buf = struct.pack('!f', v)
+            else:
+                buf = struct.pack('!L', v)
             gsmtap_v3_metadata += struct.pack('!HH', k, len(buf))
             gsmtap_v3_metadata += buf
             header_len += (4 + len(buf))
@@ -794,6 +793,30 @@ def serving_identity_fields(cache_entry: dict, earfcn: int, pci: int) -> dict:
         return {}
     return {k: cache_entry[k] for k in ('plmn', 'mcc', 'mnc', 'tac', 'cid',
             'band', 'bwmhzdl', 'bwmhzul') if k in cache_entry}
+
+# Builds a GSMTAPv3 SIGNAL_STATUS_REPORT packet (header + metadata, no payload)
+# carrying a single cell's measurement. arfcn goes in CHANNEL_NUMBER; signal
+# metrics are emitted as float metadata (SS_* tags for NR, plain tags for LTE).
+# Any metric passed as None is omitted. Returns the GSMTAPv3 bytes.
+def build_signal_status_report(arfcn: int, pci=None, band=None, ts_sec: int = 0,
+        ts_usec: int = 0, rsrp=None, rsrq=None, rssi=None, sinr=None, is_nr: bool = False) -> bytes:
+    t = gsmtapv3_metadata_tags
+    md = {}
+    if pci is not None:
+        md[t.BSIC_PSC_PCI] = int(pci)
+    if band:
+        md[t.BAND_INDICATOR] = int(band)
+    if is_nr:
+        if rsrp is not None: md[t.SS_RSRP] = float(rsrp)
+        if rsrq is not None: md[t.SS_RSRQ] = float(rsrq)
+        if sinr is not None: md[t.SS_SINR] = float(sinr)
+    else:
+        if rsrp is not None: md[t.RSRP] = float(rsrp)
+        if rsrq is not None: md[t.RSRQ] = float(rsrq)
+        if rssi is not None: md[t.RSSI] = float(rssi)
+        if sinr is not None: md[t.SINR] = float(sinr)
+    return create_gsmtap_header(version=3, payload_type=gsmtapv3_types.SIGNAL_STATUS_REPORT,
+        arfcn=arfcn, device_sec=ts_sec, device_usec=ts_usec, metadata=md)
 
 def convert_mcc(mcc_digit_2: int, mcc_digit_1: int, mcc_digit_0: int) -> str:
     if mcc_digit_2 > 0x09 or mcc_digit_1 > 0x09 or mcc_digit_0 > 0x09:
