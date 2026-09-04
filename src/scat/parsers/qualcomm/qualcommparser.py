@@ -67,6 +67,11 @@ class QualcommParser(AbstractParser):
         self.lte_last_band_ind = [0, 0]
         self.lte_last_tcrnti = [1, 1]
 
+        # Serving-cell identity cache (per radio) for --cell-kv, populated from
+        # LTE/NR RRC SCell Info packets and joined onto ML1 measurement reports.
+        self.lte_serving_cell = [{}, {}]
+        self.nr_serving_cell = [{}, {}]
+
         self.io_device: AbstractIO
         self.writer: AbstractWriter
         self.parse_msgs = False
@@ -76,6 +81,7 @@ class QualcommParser(AbstractParser):
         self.emr_id_range = []
         self.log_id_range = {}
         self.cacombos = False
+        self.cell_kv = False
         self.combine_stdout = False
         self.check_crc = True
         self.layers = []
@@ -288,6 +294,8 @@ class QualcommParser(AbstractParser):
                 self.parse_msgs = params[p]
             elif p == 'cacombos':
                 self.cacombos = params[p]
+            elif p == 'cell-kv':
+                self.cell_kv = params[p]
             elif p == 'combine-stdout':
                 self.combine_stdout = params[p]
             elif p == 'disable-crc-check':
