@@ -258,17 +258,22 @@ class DiagNrLogParser:
 
         item_struct = namedtuple('QcDiagNrScellInfo', 'pci dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
         item_struct_v30000 = namedtuple('QcDiagNrScellInfoV30000', 'pci nr_cgi dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
+        item = None
         if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x04:
             # PCI 2b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
             item = item_struct._make(struct.unpack('<H LLHH Q H BH B LH', pkt_body[4:38]))
-        elif pkt_ver.rel_maj == 0x03:
-            if pkt_ver.rel_min == 0x00:
-                # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
-            elif pkt_ver.rel_min in (0x02, 0x03, ):
-                # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
-        else:
+        elif pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min == 0x00:
+            # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
+        elif pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min in (0x02, 0x03, ):
+            # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
+
+        if item is None:
+            # Any unhandled version (including a rel_maj==0x03 with an unlisted
+            # rel_min, which previously fell through and crashed with an undefined
+            # `item`) lands here: log the version + body so a new modem's layout
+            # can be added, and skip cleanly instead of raising.
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
