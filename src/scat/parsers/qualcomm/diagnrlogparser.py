@@ -73,6 +73,14 @@ class DiagNrLogParser:
     # ML1
     def parse_nr_ml1_meas_db_update(self, pkt_header, pkt_body: bytes, args: dict):
         stdout = ''
+        cell_kv = getattr(self.parent, 'cell_kv', False)
+        meas_gsmtap = getattr(self.parent, 'meas_gsmtap', False)
+        kv_lines = []
+        cp_pkts = []
+        radio_id = args['radio_id'] if (args and 'radio_id' in args) else 0
+        nr_cache = self.parent.nr_serving_cell[radio_id] if (self.parent and (cell_kv or meas_gsmtap) and radio_id in (0, 1)) else {}
+        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
+        ts_sec = calendar.timegm(pkt_ts.timetuple())
         pkt_ver = self.nr_pkt_ver._make(struct.unpack('<HH', pkt_body[0:4]))
         num_layers = 0
         current_offset = 0
@@ -83,12 +91,14 @@ class DiagNrLogParser:
             if pkt_ver.rel_min == 0x07:
                 ml1_2_7 = ml1_shared_struct_v2_7._make(struct.unpack('<BB2sII', pkt_body[4:16]))
                 num_layers = ml1_2_7.num_layers
-                stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_7.num_layers, ml1_2_7.ssb_periocity)
+                if not cell_kv:
+                    stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_7.num_layers, ml1_2_7.ssb_periocity)
                 current_offset = 16
             elif pkt_ver.rel_min in (0x09, 0x0a):
                 ml1_2_9 = ml1_shared_struct_v2_9._make(struct.unpack('<IBBHII', pkt_body[4:20]))
                 num_layers = ml1_2_9.num_layers
-                stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_9.num_layers, ml1_2_9.ssb_periocity)
+                if not cell_kv:
+                    stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_2_9.num_layers, ml1_2_9.ssb_periocity)
                 current_offset = 20
             else:
                 if self.parent:
@@ -99,7 +109,8 @@ class DiagNrLogParser:
             if pkt_ver.rel_min == 0x00:
                 ml1_3_0 = ml1_shared_struct_v2_9._make(struct.unpack('<IBBHII', pkt_body[4:20]))
                 num_layers = ml1_3_0.num_layers
-                stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_3_0.num_layers, ml1_3_0.ssb_periocity)
+                if not cell_kv:
+                    stdout += "NR ML1 Meas Packet: Layers: {}, ssb_periocity: {}\n".format(ml1_3_0.num_layers, ml1_3_0.ssb_periocity)
                 current_offset = 20
             else:
                 if self.parent:
@@ -137,12 +148,34 @@ class DiagNrLogParser:
                     )
                 else:
                     rsrp_str = ''
-            stdout += "Layer {}: NR-ARFCN: {}, SCell PCI: {:4d}/SSB: {}, {}, RX beam: {}/{}, Num Cells: {} (S: {})\n".format(
-                layer, meas_carrier_list.raster_arfcn, meas_carrier_list.serv_cell_pci, meas_carrier_list.serv_ssb & 0xf,
-                rsrp_str,
-                meas_carrier_list.serv_rx_beam_0 if meas_carrier_list.serv_rx_beam_0 != 0xffff else 'NA',
-                meas_carrier_list.serv_rx_beam_1 if meas_carrier_list.serv_rx_beam_1 != 0xffff else 'NA',
-                meas_carrier_list.num_cells, meas_carrier_list.serv_cell_index)
+            nr_frequency = util.nrarfcn_to_frequency_hz(meas_carrier_list.raster_arfcn)
+            nr_ident = util.serving_identity_fields(nr_cache, meas_carrier_list.raster_arfcn, meas_carrier_list.serv_cell_pci)
+            # serv_cell_pci == 0xffff means the UE has no serving cell on this
+            # measured carrier — skip its all-zero serving-cell output (the kv row
+            # and the GSMTAP signal report). Its neighbor cells are still reported.
+            has_serving = meas_carrier_list.serv_cell_pci != 0xffff
+            if cell_kv:
+                if has_serving:
+                    nr_earfcn_ul = nr_cache.get('earfcn_ul', meas_carrier_list.raster_arfcn) if nr_ident else meas_carrier_list.raster_arfcn
+                    nr_serv_rsrp = self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_0)
+                    if self.parent and radio_id in (0, 1):
+                        self.parent.nr_serving_signal[radio_id] = {'earfcn': meas_carrier_list.raster_arfcn,
+                            'pci': meas_carrier_list.serv_cell_pci, 'rsrp': nr_serv_rsrp}
+                    kv_lines.append(util.format_cell_kv('nr', 'scell', meas_carrier_list.serv_cell_pci,
+                        meas_carrier_list.raster_arfcn, nr_earfcn_ul, nr_frequency,
+                        rsrp=nr_serv_rsrp, **nr_ident))
+            else:
+                stdout += "Layer {}: NR-ARFCN: {}, SCell PCI: {:4d}/SSB: {}, {}, RX beam: {}/{}, Num Cells: {} (S: {})\n".format(
+                    layer, meas_carrier_list.raster_arfcn, meas_carrier_list.serv_cell_pci, meas_carrier_list.serv_ssb & 0xf,
+                    rsrp_str,
+                    meas_carrier_list.serv_rx_beam_0 if meas_carrier_list.serv_rx_beam_0 != 0xffff else 'NA',
+                    meas_carrier_list.serv_rx_beam_1 if meas_carrier_list.serv_rx_beam_1 != 0xffff else 'NA',
+                    meas_carrier_list.num_cells, meas_carrier_list.serv_cell_index)
+            if meas_gsmtap and has_serving:
+                cp_pkts.append(util.build_signal_status_report(meas_carrier_list.raster_arfcn,
+                    pci=meas_carrier_list.serv_cell_pci, band=nr_ident.get('band'),
+                    ts_sec=ts_sec, ts_usec=pkt_ts.microsecond,
+                    rsrp=self.parse_float_q7(meas_carrier_list.serv_rsrp_rx_0), is_nr=True))
 
             if meas_carrier_list.num_cells == 0xff or meas_carrier_list.num_cells == 0x00:
                 if meas_carrier_list.serv_cell_index > 0x00 and meas_carrier_list.serv_cell_index < 0xff:
@@ -156,17 +189,29 @@ class DiagNrLogParser:
                 cell_list_struct = namedtuple('QcDiagNrMl1Packet', 'pci pbch_sfn num_beams null_0 cell_quality_rsrp cell_quality_rsrq')
                 cell_list = cell_list_struct._make(struct.unpack('<HHB3sII', pkt_body[current_offset:current_offset+16]))
                 current_offset += 16
-                stdout += "└── Cell {}: PCI: {:4d}, PBCH SFN: {}, RSRP: {:.2f}, RSRQ: {:.2f}, Num Beams: {}\n".format(
-                    cell, cell_list.pci, cell_list.pbch_sfn,
-                    self.parse_float_q7(cell_list.cell_quality_rsrp), self.parse_float_q7(cell_list.cell_quality_rsrq),
-                    cell_list.num_beams)
+                if cell_kv:
+                    kv_lines.append(util.format_cell_kv('nr', 'ncell', cell_list.pci,
+                        meas_carrier_list.raster_arfcn, meas_carrier_list.raster_arfcn, nr_frequency,
+                        rsrp=self.parse_float_q7(cell_list.cell_quality_rsrp),
+                        rsrq=self.parse_float_q7(cell_list.cell_quality_rsrq)))
+                else:
+                    stdout += "└── Cell {}: PCI: {:4d}, PBCH SFN: {}, RSRP: {:.2f}, RSRQ: {:.2f}, Num Beams: {}\n".format(
+                        cell, cell_list.pci, cell_list.pbch_sfn,
+                        self.parse_float_q7(cell_list.cell_quality_rsrp), self.parse_float_q7(cell_list.cell_quality_rsrq),
+                        cell_list.num_beams)
+                if meas_gsmtap:
+                    cp_pkts.append(util.build_signal_status_report(meas_carrier_list.raster_arfcn,
+                        pci=cell_list.pci, ts_sec=ts_sec, ts_usec=pkt_ts.microsecond,
+                        rsrp=self.parse_float_q7(cell_list.cell_quality_rsrp),
+                        rsrq=self.parse_float_q7(cell_list.cell_quality_rsrq), is_nr=True))
                 for beam in range(cell_list.num_beams):
                     beam_meas_struct = namedtuple('QcDiagNrMl1Packet', 'ssb_index null_0 rx_beam_0 rx_beam_1 null_1 ssb_ref_timing rx_beam_info_rsrp_0 rx_beam_info_rsrp_1 nr2nr_filtered_beam_rsrp_l3 nr2nr_filtered_beam_rsrq_l3 l_2_nr_filtered_tx_beam_rsrp_l3 l_2_nr_filtered_tx_beam_rsrq_l3')
                     beam_meas_struct_v3 = namedtuple('QcDiagNrMl1PacketV3', 'ssb_index null_0 rx_beam_0 rx_beam_1 null_1 ssb_ref_timing rx_beam_info_rsrp_0 rx_beam_info_rsrp_1 unk_0 unk_1 unk_2 unk_3 unk_4 unk_5 unk_6 unk_7 unk_8 unk_9 nr2nr_filtered_beam_rsrp_l3 nr2nr_filtered_beam_rsrq_l3 l_2_nr_filtered_tx_beam_rsrp_l3 l_2_nr_filtered_tx_beam_rsrq_l3')
                     if pkt_ver.rel_maj == 0x02 and pkt_ver.rel_min in (0x07, 0x09):
                         beam_meas = beam_meas_struct._make(struct.unpack('<HHHHIQIIIIII', pkt_body[current_offset: current_offset+44]))
                         current_offset += 44
-                        stdout += "    └── Beam {}: SSB[{}] Beam ID: {}/{}, RSRP: {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr): {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr): {:.2f}/{:.2f}\n".format(
+                        if not cell_kv:
+                            stdout += "    └── Beam {}: SSB[{}] Beam ID: {}/{}, RSRP: {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr): {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr): {:.2f}/{:.2f}\n".format(
                             beam, beam_meas.ssb_index,
                             beam_meas.rx_beam_0, beam_meas.rx_beam_1,
                             self.parse_float_q7(beam_meas.rx_beam_info_rsrp_0), self.parse_float_q7(beam_meas.rx_beam_info_rsrp_1),
@@ -176,7 +221,8 @@ class DiagNrLogParser:
                     elif (pkt_ver.rel_maj == 0x02 and pkt_ver.rel_min in (0x0a, )) or pkt_ver.rel_maj == 0x03:
                         beam_meas = beam_meas_struct_v3._make(struct.unpack('<HHHHIQIIIIIIIIIIIIIIII', pkt_body[current_offset: current_offset+84]))
                         current_offset += 84
-                        stdout += "    └── Beam {}: SSB[{}] Beam ID: {}/{}, RSRP: {:.2f}/{:.2f}, RSRQ: {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr): {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr): {:.2f}/{:.2f}\n".format(
+                        if not cell_kv:
+                            stdout += "    └── Beam {}: SSB[{}] Beam ID: {}/{}, RSRP: {:.2f}/{:.2f}, RSRQ: {:.2f}/{:.2f}, Filtered RSRP/RSRQ (Nr2Nr): {:.2f}/{:.2f}, Filtered RSRP/RSRQ (L2Nr): {:.2f}/{:.2f}\n".format(
                             beam, beam_meas.ssb_index,
                             beam_meas.rx_beam_0, beam_meas.rx_beam_1,
                             self.parse_float_q7(beam_meas.rx_beam_info_rsrp_0), self.parse_float_q7(beam_meas.rx_beam_info_rsrp_1),
@@ -185,8 +231,10 @@ class DiagNrLogParser:
                             self.parse_float_q7(beam_meas.l_2_nr_filtered_tx_beam_rsrp_l3), self.parse_float_q7(beam_meas.l_2_nr_filtered_tx_beam_rsrq_l3),
                         )
 
-        pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
-        return {'stdout': stdout.rstrip(), 'ts': pkt_ts}
+        result = {'stdout': '\n'.join(kv_lines) if cell_kv else stdout.rstrip(), 'ts': pkt_ts}
+        if cp_pkts:
+            result['cp'] = cp_pkts
+        return result
 
     # RRC
     def parse_nr_mib_info(self, pkt_header, pkt_body: bytes, args: dict):
@@ -233,21 +281,51 @@ class DiagNrLogParser:
 
         item_struct = namedtuple('QcDiagNrScellInfo', 'pci dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
         item_struct_v30000 = namedtuple('QcDiagNrScellInfoV30000', 'pci nr_cgi dl_nrarfcn ul_nrarfcn dl_bandwidth ul_bandwidth cell_id mcc mnc_digit mnc allowed_access tac band')
+        item = None
         if pkt_ver.rel_maj == 0x00 and pkt_ver.rel_min == 0x04:
             # PCI 2b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
             item = item_struct._make(struct.unpack('<H LLHH Q H BH B LH', pkt_body[4:38]))
-        elif pkt_ver.rel_maj == 0x03:
-            if pkt_ver.rel_min == 0x00:
-                # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
-            elif pkt_ver.rel_min in (0x02, 0x03, ):
-                # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
-                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
-        else:
+        elif pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min == 0x00:
+            # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
+        elif pkt_ver.rel_maj == 0x03 and pkt_ver.rel_min in (0x02, 0x03, ):
+            # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
+            item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
+
+        if item is None:
+            # Any unhandled version (including a rel_maj==0x03 with an unlisted
+            # rel_min, which previously fell through and crashed with an undefined
+            # `item`) lands here: log the version + body so a new modem's layout
+            # can be added, and skip cleanly instead of raising.
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
                 self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
             return None
+
+        radio_id = args['radio_id'] if (args and 'radio_id' in args) else 0
+        if self.parent and radio_id in (0, 1):
+            self.parent.nr_serving_cell[radio_id] = {
+                'pci': item.pci, 'earfcn': item.dl_nrarfcn, 'earfcn_ul': item.ul_nrarfcn,
+                'plmn': util.format_plmn(item.mcc, item.mnc, item.mnc_digit),
+                'mcc': item.mcc, 'mnc': item.mnc, 'tac': item.tac,
+                'cid': item.cell_id, 'band': item.band,
+                'bwmhzdl': item.dl_bandwidth, 'bwmhzul': item.ul_bandwidth,
+            }
+
+        if getattr(self.parent, 'cell_kv', False):
+            # Emit an identity-bearing serving-cell line (CellID/TAC/PLMN) joined to
+            # the last ML1 signal, so CellID is captured order-independently. Skip
+            # when no signal is cached yet (the ML1 join fills it onto the next meas).
+            sig = self.parent.nr_serving_signal[radio_id] if radio_id in (0, 1) else {}
+            if sig.get('earfcn') == item.dl_nrarfcn and sig.get('pci') == item.pci:
+                stdout = util.format_cell_kv('nr', 'scell', item.pci, item.dl_nrarfcn,
+                    item.ul_nrarfcn, util.nrarfcn_to_frequency_hz(item.dl_nrarfcn),
+                    rsrp=sig['rsrp'], plmn=util.format_plmn(item.mcc, item.mnc, item.mnc_digit),
+                    mcc=item.mcc, mnc=item.mnc, tac=item.tac, cid=item.cell_id,
+                    band=item.band, bwmhzdl=item.dl_bandwidth, bwmhzul=item.ul_bandwidth)
+            else:
+                stdout = ''
+            return {'stdout': stdout, 'ts': pkt_ts}
 
         if self.display_format == 'd':
             tac_cid_fmt = 'TAC/CID: {}/{}'.format(item.tac, item.cell_id)
