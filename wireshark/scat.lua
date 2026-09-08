@@ -25,6 +25,19 @@ table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_md_tlv_type)
 table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_md_tlv_len)
 table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_md_tlv_val)
 
+-- GSM-only "Channel number" (0x0002) encoding: for GSM Um/Um-burst, this metadata is
+-- fixed at 16 bits and reuses GSMTAPv2's ARFCN packing (GSMTAP_ARFCN_F_PCS/F_UPLINK/MASK):
+-- bit 15 = PCS band, bit 14 = uplink, bits 0-13 = ARFCN. Other radio types carry a plain,
+-- unpacked 32-bit ARFCN/UARFCN/EARFCN/NR-ARFCN value with no such flag bits.
+local F_gsmtapv3_gsm_channel_number = ProtoField.uint16("gsmtapv3.gsm.channel_number", "Channel number (raw)", base.HEX)
+local F_gsmtapv3_gsm_arfcn = ProtoField.uint16("gsmtapv3.gsm.arfcn", "ARFCN", base.DEC, nil, 0x3fff)
+local F_gsmtapv3_gsm_uplink = ProtoField.bool("gsmtapv3.gsm.uplink", "Uplink", 16, nil, 0x4000)
+local F_gsmtapv3_gsm_pcs = ProtoField.bool("gsmtapv3.gsm.pcs", "PCS band", 16, nil, 0x8000)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_gsm_channel_number)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_gsm_arfcn)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_gsm_uplink)
+table.insert(gsmtap_wrapper_proto.fields, F_gsmtapv3_gsm_pcs)
+
 -- Dissectors
 local ip_dissector = Dissector.get("ip")
 local udp_port_table = DissectorTable.get("udp.port")
@@ -170,7 +183,31 @@ for k, v in pairs(gsmtapv3_metadata_tags) do
     -- end
 end
 
+local GSMTAPV3_UM_CHANNEL_PACCH     = 0x000b
+local GSMTAPV3_UM_CHANNEL_PTCCH     = 0x000e
+-- ACCH is a flag bit (0x0100) OR'd onto the base channel value (e.g. SDCCH|ACCH == SACCH)
+local GSMTAPV3_UM_CHANNEL_ACCH      = 0x0100
+
+-- TODO: PDCH, PTCCH, VOICE_F/VOICE_H are not implemented in this Lua dissector.
+-- Falling back to data.
 local gsmtapv3_gsm_um_subtypes = {
+    [0x0001] = { check_and_get_dissector("gsm_a_ccch"), "BCCH" },
+    [0x0002] = { check_and_get_dissector("gsm_a_ccch"), "CCCH" },
+    [0x0003] = { check_and_get_dissector("data"), "RACH" },
+    [0x0004] = { check_and_get_dissector("gsm_a_ccch"), "AGCH" },
+    [0x0005] = { check_and_get_dissector("gsm_a_ccch"), "PCH" },
+    [0x0006] = { check_and_get_dissector("lapdm"), "SDCCH" },
+    [0x0007] = { check_and_get_dissector("lapdm"), "SDCCH/4" },
+    [0x0008] = { check_and_get_dissector("lapdm"), "SDCCH/8" },
+    [0x0009] = { check_and_get_dissector("lapdm"), "FACCH/F" },
+    [0x000a] = { check_and_get_dissector("lapdm"), "FACCH/H" },
+    [0x000b] = { check_and_get_dissector("data"), "PACCH" },
+    [0x000c] = { check_and_get_dissector("gsm_cbch"), "CBCH/52" },
+    [0x000d] = { check_and_get_dissector("data"), "PDCH" },
+    [0x000e] = { check_and_get_dissector("data"), "PTCCH" },
+    [0x000f] = { check_and_get_dissector("gsm_cbch"), "CBCH/51" },
+    [0x0010] = { check_and_get_dissector("data"), "Voice Payload (FR/EFR/AMR)" },
+    [0x0011] = { check_and_get_dissector("data"), "Voice Payload (HR/AMR)" },
 }
 
 local gsmtapv3_gsm_abis_subtypes = {
@@ -345,7 +382,7 @@ local gsmtapv3_nas_5gs_subtypes = {
     [0x0001] = { check_and_get_dissector("nas-5gs"), "NAS/5GS" }
 }
 
-function gsmtapv3_parse_metadata(t, buffer, buffer_len)
+function gsmtapv3_parse_metadata(t, buffer, buffer_len, pinfo, is_gsm)
     local offset = 0
 
     while offset < (buffer_len) do
@@ -373,29 +410,49 @@ function gsmtapv3_parse_metadata(t, buffer, buffer_len)
         t:add(F_gsmtapv3_md_tlv_len, buffer(offset+2, 2)):set_text(string.format("Length: %d", len))
         offset = offset + 4
 
-        md_field = proto_fields_metadata[type]
-        md_tag = gsmtapv3_metadata_tags[type]
-        if md_tag[3] == ftypes.UINT16 then
-            t:add(md_field, buffer(offset, 2))
-        elseif md_tag[3] == ftypes.UINT32 then
-            t:add(md_field, buffer(offset, 4))
-        elseif md_tag[3] == ftypes.UINT64 then
-            t:add(md_field, buffer(offset, 8))
-        elseif md_tag[3] == ftypes.STRING then
-            t:add(md_field, buffer(offset, len):string(ENC_UTF_8))
-        elseif md_tag[3] == ftypes.FLOAT then
-            t:add(md_field, buffer(offset, 4))
+        if is_gsm and type == 0x0002 and len == 2 then
+            -- GSM Um/Um Burst: Channel number is fixed at 16 bits here and reuses
+            -- GSMTAPv2's ARFCN packing (bit 15 = PCS, bit 14 = uplink, bits 0-13 = ARFCN).
+            local raw16 = buffer(offset, 2):uint()
+            local is_pcs = raw16 >= 0x8000
+            local is_uplink = (raw16 % 0x8000) >= 0x4000
+            local arfcn_num = raw16 % 0x4000
+
+            local channel_item = t:add(F_gsmtapv3_gsm_channel_number, buffer(offset, 2))
+            channel_item:add(F_gsmtapv3_gsm_pcs, buffer(offset, 2))
+            channel_item:add(F_gsmtapv3_gsm_uplink, buffer(offset, 2))
+            channel_item:add(F_gsmtapv3_gsm_arfcn, buffer(offset, 2))
+            channel_item:set_text(string.format("Channel number: ARFCN %u%s (%s)",
+                arfcn_num, is_pcs and ", PCS" or "", is_uplink and "Uplink" or "Downlink"))
+
+            if pinfo then
+                pinfo.p2p_dir = is_uplink and P2P_DIR_SENT or P2P_DIR_RECV
+            end
         else
-            if type == 0x0000 then
-                -- "Packet timestamp"
-                if len == 12 then
-                    -- sec 8, usec 4
-                    time_sec = buffer(offset, 8):uint64():tonumber()
-                    time_nsec = buffer(offset+8, 4):uint()
-                    t:add(md_field, buffer(offset, len), NSTime.new(time_sec, time_nsec))
-                end
+            md_field = proto_fields_metadata[type]
+            md_tag = gsmtapv3_metadata_tags[type]
+            if md_tag[3] == ftypes.UINT16 then
+                t:add(md_field, buffer(offset, 2))
+            elseif md_tag[3] == ftypes.UINT32 then
+                t:add(md_field, buffer(offset, 4))
+            elseif md_tag[3] == ftypes.UINT64 then
+                t:add(md_field, buffer(offset, 8))
+            elseif md_tag[3] == ftypes.STRING then
+                t:add(md_field, buffer(offset, len):string(ENC_UTF_8))
+            elseif md_tag[3] == ftypes.FLOAT then
+                t:add(md_field, buffer(offset, 4))
             else
-                t:add(F_gsmtapv3_md_tlv_val, buffer(offset, len)):set_text(string.format("Value: %s", tostring(buffer(offset, len):bytes())))
+                if type == 0x0000 then
+                    -- "Packet timestamp"
+                    if len == 12 then
+                        -- sec 8, usec 4
+                        time_sec = buffer(offset, 8):uint64():tonumber()
+                        time_nsec = buffer(offset+8, 4):uint()
+                        t:add(md_field, buffer(offset, len), NSTime.new(time_sec, time_nsec))
+                    end
+                else
+                    t:add(F_gsmtapv3_md_tlv_val, buffer(offset, len)):set_text(string.format("Value: %s", tostring(buffer(offset, len):bytes())))
+                end
             end
         end
         offset = offset + len
@@ -430,14 +487,53 @@ function gsmtap_wrapper_proto.dissector(tvbuffer, pinfo, treeitem)
         if type == 0x0200 then
             pinfo.cols.info = ""
             itemtext = "Unknown"
-            if gsmtapv3_gsm_um_subtypes[subtype] then
-                itemtext = gsmtapv3_gsm_um_subtypes[subtype][2]
+            -- ACCH is an added flag bit (0x0100), same idea as the v2 GSMTAP_CHANNEL_ACCH bit,
+            -- just shifted since sub_type is 16-bit here. Strip it to look up the base channel.
+            local is_acch = subtype >= GSMTAPV3_UM_CHANNEL_ACCH
+            local base_subtype = subtype % GSMTAPV3_UM_CHANNEL_ACCH
+            local um_entry = gsmtapv3_gsm_um_subtypes[base_subtype]
+            local um_dissector = check_and_get_dissector("data")
+            if um_entry then
+                itemtext = um_entry[2] .. (is_acch and " (SACCH)" or "")
+                um_dissector = um_entry[1]
             end
-            local child, subtype_value = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
-                                    :set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            local subtype_item = t:add(F_gsmtapv3_subtype, tvbuffer(6, 2))
+            subtype_item:set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
             local bytes_to_parse = math.min(tvbuffer:len() - 8, 4 * hdr_len - 8)
-            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse)
-            gsmtapv3_gsm_um_subtypes[subtype][1]:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
+            -- Parses the Channel number metadata (if present) and sets pinfo.p2p_dir from
+            -- its uplink bit -- needed below before PACCH/PTCCH can be told apart.
+            gsmtap_data_start_pos = gsmtap_data_start_pos + gsmtapv3_parse_metadata(t, tvbuffer(8, bytes_to_parse), bytes_to_parse, pinfo, true)
+
+            -- Direction-dependent channel handling, mirroring dissect_gsmtap_v2()'s
+            -- switch on GSMTAP_CHANNEL_PACCH/PTCCH in packet-gsmtap.c. Requires
+            -- pinfo.p2p_dir, which was just set above from the Channel number TLV.
+            if base_subtype == GSMTAPV3_UM_CHANNEL_PACCH then
+                if pinfo.p2p_dir == P2P_DIR_SENT then
+                    um_dissector = check_and_get_dissector("gsm_rlcmac_ul")
+                    itemtext = "PACCH (UL)"
+                else
+                    um_dissector = check_and_get_dissector("gsm_rlcmac_dl")
+                    itemtext = "PACCH (DL)"
+                end
+                subtype_item:set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            elseif base_subtype == GSMTAPV3_UM_CHANNEL_PTCCH then
+                -- Per 3GPP TS 45.003 5.2: PTCCH/D (downlink) carries CS-1-coded Timing
+                -- Advance updates; PTCCH/U (uplink) carries raw Access Bursts. The C
+                -- dissector decodes PTCCH/D via the internal, non-exported
+                -- dissect_ptcch_dl() helper, which isn't reachable from Lua, so both
+                -- directions still fall back to "data" here -- only the label reflects
+                -- direction for now.
+                itemtext = (pinfo.p2p_dir == P2P_DIR_RECV) and "PTCCH/D" or "PTCCH/U"
+                subtype_item:set_text(string.format("Subtype: 0x%04x (%s)", subtype, itemtext))
+            end
+
+            -- On SACCH, a 2-byte L1 header (power level/FPC, timing advance) precedes the
+            -- LAPDm frame, same as GSMTAPv2's dissect_sacch_l1h() handling.
+            if is_acch and gsmtap_data_start_pos + 2 <= tvbuffer:len() then
+                t:add(F_gsmtapv3_md_tlv_val, tvbuffer(gsmtap_data_start_pos, 2)):set_text("SACCH L1 header")
+                gsmtap_data_start_pos = gsmtap_data_start_pos + 2
+            end
+            um_dissector:call(tvbuffer:range(gsmtap_data_start_pos):tvb(), pinfo, treeitem)
         elseif type == 0x0205 then
             pinfo.cols.info = ""
             itemtext = "Unknown"
