@@ -47,21 +47,23 @@ class HisiNestedParser:
             # if wcdma_rrc_len == 0:
             #     return None
 
+            t_v2 = util.gsmtap_umts_rrc_types
+            t_v3 = util.gsmtapv3_umts_rrc_types
             channel_type_map = {
-                0x02: util.gsmtap_umts_rrc_types.DL_CCCH,
-                0x03: util.gsmtap_umts_rrc_types.DL_DCCH,
-                0x08: util.gsmtap_umts_rrc_types.UL_CCCH,
-                0x09: util.gsmtap_umts_rrc_types.UL_DCCH,
-                0x0d: util.gsmtap_umts_rrc_types.MasterInformationBlock,
-                0x0e: util.gsmtap_umts_rrc_types.SysInfoTypeSB1,
-                0x10: util.gsmtap_umts_rrc_types.SysInfoType1,
-                0x11: util.gsmtap_umts_rrc_types.SysInfoType2,
-                0x12: util.gsmtap_umts_rrc_types.SysInfoType3,
-                0x14: util.gsmtap_umts_rrc_types.SysInfoType5,
-                0x16: util.gsmtap_umts_rrc_types.SysInfoType7,
-                0x1a: util.gsmtap_umts_rrc_types.SysInfoType11,
-                0x1c: util.gsmtap_umts_rrc_types.SysInfoType12,
-                0x2d: util.gsmtap_umts_rrc_types.SysInfoType19,
+                0x02: (t_v2.DL_CCCH,        t_v3.DL_CCCH),
+                0x03: (t_v2.DL_DCCH,        t_v3.DL_DCCH),
+                0x08: (t_v2.UL_CCCH,        t_v3.UL_CCCH),
+                0x09: (t_v2.UL_DCCH,        t_v3.UL_DCCH),
+                0x0d: (t_v2.MasterInformationBlock, t_v3.MasterInformationBlock),
+                0x0e: (t_v2.SysInfoTypeSB1, t_v3.SysInfoTypeSB1),
+                0x10: (t_v2.SysInfoType1,   t_v3.SysInfoType1),
+                0x11: (t_v2.SysInfoType2,   t_v3.SysInfoType2),
+                0x12: (t_v2.SysInfoType3,   t_v3.SysInfoType3),
+                0x14: (t_v2.SysInfoType5,   t_v3.SysInfoType5),
+                0x16: (t_v2.SysInfoType7,   t_v3.SysInfoType7),
+                0x1a: (t_v2.SysInfoType11,  t_v3.SysInfoType11),
+                0x1c: (t_v2.SysInfoType12,  t_v3.SysInfoType12),
+                0x2d: (t_v2.SysInfoType19,  t_v3.SysInfoType19),
             }
 
             if not (wcdma_rrc_header.type in channel_type_map.keys()):
@@ -77,11 +79,18 @@ class HisiNestedParser:
 
             # TODO: parse huawei ts
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.UMTS_RRC,
-                arfcn = 0,
-                sub_type = channel_type_map[wcdma_rrc_header.type])
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.UMTS_RRC,
+                    arfcn = 0,
+                    sub_type = channel_type_map[wcdma_rrc_header.type][1])
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.UMTS_RRC,
+                    arfcn = 0,
+                    sub_type = channel_type_map[wcdma_rrc_header.type][0])
 
             return {'layer': 'rrc', 'cp': [gsmtap_hdr + wcdma_rrc_content]}
         elif pkt_data[0] == 0x03:
@@ -94,11 +103,18 @@ class HisiNestedParser:
                 if self.parent.logger:
                     self.parent.logger.log(logging.WARNING, "Length mismatch: len1={}, len2={}, diff should be 4".format(abis_header.len1, abis_header.len2))
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.ABIS,
-                arfcn = 0,
-                sub_type = 0)
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.ABIS,
+                    arfcn = 0,
+                    sub_type = 0)
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.ABIS,
+                    arfcn = 0,
+                    sub_type = 0)
 
             return {'layer': 'nas', 'cp': [gsmtap_hdr + abis_data[:abis_header.len2]]}
 
@@ -111,21 +127,34 @@ class HisiNestedParser:
 
             if ota_data[0] == 0b0110:
                 # GSM RR, regardless of direction
-                gsmtap_hdr = util.create_gsmtap_header(
-                    version = 2,
-                    payload_type = util.gsmtap_type.ABIS,
-                    arfcn = 0)
+                if self.gsmtapv3:
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 3,
+                        payload_type = util.gsmtapv3_types.ABIS,
+                        arfcn = 0)
+                else:
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 2,
+                        payload_type = util.gsmtap_type.ABIS,
+                        arfcn = 0)
 
                 return {'layer': 'rrc', 'cp': [gsmtap_hdr + ota_data[:ota_header.len]]}
             else:
                 # 3GPP TS 24.007, Section 11.3 Non standard L3 messages
                 if (ota_data[0] & 0b11 == 0b01) and (ota_data[1] == 0b0110):
                     # RR with pseudo length
-                    gsmtap_hdr = util.create_gsmtap_header(
-                        version = 2,
-                        payload_type = util.gsmtap_type.UM,
-                        arfcn = 0,
-                        sub_type = util.gsmtap_channel.CCCH)
+                    if self.gsmtapv3:
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 3,
+                            payload_type = util.gsmtapv3_types.UM,
+                            arfcn = 0,
+                            sub_type = util.gsmtapv3_um_types.CCCH)
+                    else:
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 2,
+                            payload_type = util.gsmtap_type.UM,
+                            arfcn = 0,
+                            sub_type = util.gsmtap_channel.CCCH)
                 else:
                     # 3GPP TS 44.018, Table 10.4.2:
                     if (ota_data[0] & 0b10000000 == 0x0) and (((ota_data[0] & 0b01111100) >> 2) in (0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)):

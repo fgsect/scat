@@ -53,14 +53,16 @@ class HisiLogParser:
             # 05: PCCH 06: BCCH DL-SCH 07: BCCH BCH
             # 08: UECapabilityInfoEUTRA - GSMTAP cannot encapsulate it
 
+            t_v2 = util.gsmtap_lte_rrc_types
+            t_v3 = util.gsmtapv3_lte_rrc_types
             rrc_subtype_map = {
-                0x01: util.gsmtap_lte_rrc_types.DL_DCCH,
-                0x02: util.gsmtap_lte_rrc_types.UL_DCCH,
-                0x03: util.gsmtap_lte_rrc_types.DL_CCCH,
-                0x04: util.gsmtap_lte_rrc_types.UL_CCCH,
-                0x05: util.gsmtap_lte_rrc_types.PCCH,
-                0x06: util.gsmtap_lte_rrc_types.BCCH_DL_SCH,
-                0x07: util.gsmtap_lte_rrc_types.BCCH_BCH,
+                0x01: (t_v2.DL_DCCH,     t_v3.DL_DCCH),
+                0x02: (t_v2.UL_DCCH,     t_v3.UL_DCCH),
+                0x03: (t_v2.DL_CCCH,     t_v3.DL_CCCH),
+                0x04: (t_v2.UL_CCCH,     t_v3.UL_CCCH),
+                0x05: (t_v2.PCCH,        t_v3.PCCH),
+                0x06: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
+                0x07: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
             }
 
             if rrc_chan_type == 8:
@@ -73,11 +75,18 @@ class HisiLogParser:
                     self.parent.logger.log(logging.WARNING, 'Unknown LTE RRC channel type {:#x}'.format(rrc_chan_type))
                 return None
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.LTE_RRC,
-                arfcn = self.parent.lte_last_earfcn_dl[0] if self.parent else 0,
-                sub_type = rrc_subtype_map[rrc_chan_type])
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.LTE_RRC,
+                    arfcn = self.parent.lte_last_earfcn_dl[0] if self.parent else 0,
+                    sub_type = rrc_subtype_map[rrc_chan_type][1])
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.LTE_RRC,
+                    arfcn = self.parent.lte_last_earfcn_dl[0] if self.parent else 0,
+                    sub_type = rrc_subtype_map[rrc_chan_type][0])
 
             return {'layer': 'rrc', 'cp': [gsmtap_hdr + pkt_content]}
 
@@ -85,11 +94,18 @@ class HisiLogParser:
             # NAS-EPS EMM, ESM
             pkt_content = ota_content
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.LTE_NAS,
-                arfcn = 0,
-                sub_type = 0)
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.NAS_EPS,
+                    arfcn = 0,
+                    sub_type = 0)
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.LTE_NAS,
+                    arfcn = 0,
+                    sub_type = 0)
 
             return {'layer': 'nas', 'cp': [gsmtap_hdr + pkt_content]}
 
