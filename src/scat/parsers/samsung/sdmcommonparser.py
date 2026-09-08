@@ -120,26 +120,34 @@ class SdmCommonParser:
 
     def _parse_sdm_common_signaling(self, sdm_pkt_hdr, type: int, subtype: int, direction: int, length: int, msg: bytes):
         if type == 0x30: # UMTS RRC
+            t_v2 = util.gsmtap_umts_rrc_types
+            t_v3 = util.gsmtapv3_umts_rrc_types
             chan_map_ul = {
-                0x30: util.gsmtap_umts_rrc_types.UL_CCCH,
-                0x31: util.gsmtap_umts_rrc_types.UL_DCCH
+                0x30: (t_v2.UL_CCCH, t_v3.UL_CCCH),
+                0x31: (t_v2.UL_DCCH, t_v3.UL_DCCH),
                 }
             chan_map_dl = {
-                0x30: util.gsmtap_umts_rrc_types.DL_CCCH,
-                0x31: util.gsmtap_umts_rrc_types.DL_DCCH,
-                0x32: util.gsmtap_umts_rrc_types.BCCH_BCH,
-                0x34: util.gsmtap_umts_rrc_types.PCCH
+                0x30: (t_v2.DL_CCCH,  t_v3.DL_CCCH),
+                0x31: (t_v2.DL_DCCH,  t_v3.DL_DCCH),
+                0x32: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+                0x34: (t_v2.PCCH,     t_v3.PCCH),
                 }
 
             gsmtap_subtype = 0
             if direction == 2:
-                gsmtap_subtype = chan_map_dl[subtype]
+                if self.gsmtapv3:
+                    gsmtap_subtype = chan_map_dl[subtype][1]
+                else:
+                    gsmtap_subtype = chan_map_dl[subtype][0]
                 if self.parent:
                     arfcn = self.parent.umts_last_uarfcn_dl[sdm_pkt_hdr.radio_id]
                 else:
                     arfcn = 0
             elif direction == 1:
-                gsmtap_subtype = chan_map_ul[subtype]
+                if self.gsmtapv3:
+                    gsmtap_subtype = chan_map_ul[subtype][1]
+                else:
+                    gsmtap_subtype = chan_map_ul[subtype][0]
                 if self.parent:
                     arfcn = self.parent.umts_last_uarfcn_ul[sdm_pkt_hdr.radio_id]
                 else:
@@ -149,11 +157,18 @@ class SdmCommonParser:
                     self.parent.logger.log(logging.WARNING, 'Unknown direction 0x{:02x}'.format(direction))
                 return None
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.UMTS_RRC,
-                arfcn = arfcn,
-                sub_type = gsmtap_subtype)
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.UMTS_RRC,
+                    arfcn = arfcn,
+                    sub_type = gsmtap_subtype)
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.UMTS_RRC,
+                    arfcn = arfcn,
+                    sub_type = gsmtap_subtype)
 
             return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x01: # UMTS NAS
@@ -162,10 +177,16 @@ class SdmCommonParser:
             if direction == 1:
                 arfcn = arfcn | (1 << 14)
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.ABIS,
-                arfcn = arfcn)
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.ABIS,
+                    arfcn = arfcn)
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.ABIS,
+                    arfcn = arfcn)
 
             return {'layer': 'nas', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x20: # GSM RR
@@ -179,19 +200,32 @@ class SdmCommonParser:
 
             if msg[0] == 0b0110:
                 # GSM RR, regardless of direction
-                gsmtap_hdr = util.create_gsmtap_header(
-                    version = 2,
-                    arfcn = arfcn,
-                    payload_type = util.gsmtap_type.ABIS)
+                if self.gsmtapv3:
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 3,
+                        arfcn = arfcn,
+                        payload_type = util.gsmtapv3_types.ABIS)
+                else:
+                    gsmtap_hdr = util.create_gsmtap_header(
+                        version = 2,
+                        arfcn = arfcn,
+                        payload_type = util.gsmtap_type.ABIS)
             else:
                 # 3GPP TS 24.007, Section 11.3 Non standard L3 messages
                 if (msg[0] & 0b11 == 0b01) and (msg[1] == 0b0110):
                     # RR with pseudo length
-                    gsmtap_hdr = util.create_gsmtap_header(
-                        version = 2,
-                        payload_type = util.gsmtap_type.UM,
-                        arfcn = arfcn,
-                        sub_type = util.gsmtap_channel.CCCH)
+                    if self.gsmtapv3:
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 3,
+                            payload_type = util.gsmtapv3_types.UM,
+                            arfcn = arfcn,
+                            sub_type = util.gsmtapv3_um_types.CCCH)
+                    else:
+                        gsmtap_hdr = util.create_gsmtap_header(
+                            version = 2,
+                            payload_type = util.gsmtap_type.UM,
+                            arfcn = arfcn,
+                            sub_type = util.gsmtap_channel.CCCH)
                 else:
                     # 3GPP TS 44.018, Table 10.4.2:
                     if (msg[0] & 0b10000000 == 0x0) and (((msg[0] & 0b01111100) >> 2) in (0, 1, 2, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13)):
@@ -220,11 +254,18 @@ class SdmCommonParser:
             if direction == 1:
                 arfcn = arfcn | (1 << 14)
 
-            gsmtap_hdr = util.create_gsmtap_header(
-                version = 2,
-                payload_type = util.gsmtap_type.UM,
-                arfcn = arfcn,
-                sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
+            if self.gsmtapv3:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 3,
+                    payload_type = util.gsmtapv3_types.UM,
+                    arfcn = arfcn,
+                    sub_type = util.gsmtapv3_um_types.PACCH) # Subtype (PACCH dissects as MAC)
+            else:
+                gsmtap_hdr = util.create_gsmtap_header(
+                    version = 2,
+                    payload_type = util.gsmtap_type.UM,
+                    arfcn = arfcn,
+                    sub_type = util.gsmtap_channel.PACCH) # Subtype (PACCH dissects as MAC)
 
             return {'layer': 'mac', 'cp': [gsmtap_hdr + msg]}
         elif type == 0x40: # SIP
