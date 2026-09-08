@@ -363,8 +363,6 @@ class DiagGsmLogParser:
         item = item_struct._make(struct.unpack('<BBB', pkt_body[0:3]))
         l3_message = pkt_body[3:]
 
-        payload_type = util.gsmtap_type.UM
-
         if item.message_len != len(l3_message):
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Payload length ({}) does not match with expected ({})'.format(len(l3_message), item.message_len))
@@ -378,19 +376,42 @@ class DiagGsmLogParser:
         chan = item.chan_type_dir & 0x7F
 
         # 3: PACCH, 4: Unknown
-        channel_type = chan
+        channel_gsmtap = 0
+        channel_type_map_v2 = [0,
+                               0,
+                               0,
+                               util.gsmtap_channel.PACCH,
+                               util.gsmtap_channel.PACCH]
+        channel_type_map_v3 = [0,
+                               0,
+                               0,
+                               util.gsmtapv3_um_types.PACCH,
+                               util.gsmtapv3_um_types.PACCH]
+        if self.gsmtapv3:
+            if chan in channel_type_map_v3:
+                channel_gsmtap = channel_type_map_v3[chan]
+        else:
+            if chan in channel_type_map_v2:
+                channel_gsmtap = channel_type_map_v2[chan]
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = payload_type,
-            arfcn = arfcn,
-            sub_type = channel_type,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+        if self.gsmtapv3:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.UM,
+                arfcn = arfcn,
+                sub_type = channel_gsmtap,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.UM,
+                arfcn = arfcn,
+                sub_type = channel_gsmtap)
 
         return {'layer': 'mac', 'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
 
