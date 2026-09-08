@@ -261,129 +261,138 @@ class DiagWcdmaLogParser:
         if args is not None and 'radio_id' in args:
             radio_id = args['radio_id']
 
+        t_v2 = util.gsmtap_umts_rrc_types
+        t_v3 = util.gsmtapv3_umts_rrc_types
         channel_type_map = {
-            0: util.gsmtap_umts_rrc_types.UL_CCCH,
-            1: util.gsmtap_umts_rrc_types.UL_DCCH,
-            2: util.gsmtap_umts_rrc_types.DL_CCCH,
-            3: util.gsmtap_umts_rrc_types.DL_DCCH,
-            4: util.gsmtap_umts_rrc_types.BCCH_BCH, # Encoded
-            5: util.gsmtap_umts_rrc_types.BCCH_FACH, # Encoded
-            6: util.gsmtap_umts_rrc_types.PCCH,
-            7: util.gsmtap_umts_rrc_types.MCCH,
-            8: util.gsmtap_umts_rrc_types.MSCH,
-            10: util.gsmtap_umts_rrc_types.System_Information_Container,
+            0:  (t_v2.UL_CCCH,   t_v3.UL_CCCH),
+            1:  (t_v2.UL_DCCH,   t_v3.UL_DCCH),
+            2:  (t_v2.DL_CCCH,   t_v3.DL_CCCH),
+            3:  (t_v2.DL_DCCH,   t_v3.DL_DCCH),
+            4:  (t_v2.BCCH_BCH,  t_v3.BCCH_BCH), # Encoded
+            5:  (t_v2.BCCH_FACH, t_v3.BCCH_FACH), # Encoded
+            6:  (t_v2.PCCH,      t_v3.PCCH),
+            7:  (t_v2.MCCH,      t_v3.MCCH),
+            8:  (t_v2.MSCH,      t_v3.MSCH),
+            10: (t_v2.System_Information_Container, t_v3.System_Information_Container),
         }
 
         channel_type_map_extended_type = {
-            9: util.gsmtap_umts_rrc_types.BCCH_BCH, # Extension SIBs
-            0xFE: util.gsmtap_umts_rrc_types.BCCH_BCH, # Decoded
-            0xFF: util.gsmtap_umts_rrc_types.BCCH_FACH # Decoded
+            9:    (t_v2.BCCH_BCH,  t_v3.BCCH_BCH), # Extension SIBs
+            0xFE: (t_v2.BCCH_BCH,  t_v3.BCCH_BCH), # Decoded
+            0xFF: (t_v2.BCCH_FACH, t_v3.BCCH_FACH), # Decoded
         }
 
         sib_type_map = {
-            0: util.gsmtap_umts_rrc_types.MasterInformationBlock,
-            1: util.gsmtap_umts_rrc_types.SysInfoType1,
-            2: util.gsmtap_umts_rrc_types.SysInfoType2,
-            3: util.gsmtap_umts_rrc_types.SysInfoType3,
-            4: util.gsmtap_umts_rrc_types.SysInfoType4,
-            5: util.gsmtap_umts_rrc_types.SysInfoType5,
-            6: util.gsmtap_umts_rrc_types.SysInfoType6,
-            7: util.gsmtap_umts_rrc_types.SysInfoType7,
-            8: util.gsmtap_umts_rrc_types.SysInfoType8,
-            9: util.gsmtap_umts_rrc_types.SysInfoType9,
-            10: util.gsmtap_umts_rrc_types.SysInfoType10,
-            11: util.gsmtap_umts_rrc_types.SysInfoType11,
-            12: util.gsmtap_umts_rrc_types.SysInfoType12,
-            13: util.gsmtap_umts_rrc_types.SysInfoType13,
-            14: util.gsmtap_umts_rrc_types.SysInfoType13_1,
-            15: util.gsmtap_umts_rrc_types.SysInfoType13_2,
-            16: util.gsmtap_umts_rrc_types.SysInfoType13_3,
-            17: util.gsmtap_umts_rrc_types.SysInfoType13_4,
-            18: util.gsmtap_umts_rrc_types.SysInfoType14,
-            19: util.gsmtap_umts_rrc_types.SysInfoType15,
-            20: util.gsmtap_umts_rrc_types.SysInfoType15_1,
-            21: util.gsmtap_umts_rrc_types.SysInfoType15_2,
-            22: util.gsmtap_umts_rrc_types.SysInfoType15_3,
-            23: util.gsmtap_umts_rrc_types.SysInfoType16,
-            24: util.gsmtap_umts_rrc_types.SysInfoType17,
-            25: util.gsmtap_umts_rrc_types.SysInfoType15_4,
-            26: util.gsmtap_umts_rrc_types.SysInfoType18,
-            27: util.gsmtap_umts_rrc_types.SysInfoTypeSB1,
-            28: util.gsmtap_umts_rrc_types.SysInfoTypeSB2,
-            29: util.gsmtap_umts_rrc_types.SysInfoType15_5,
-            30: util.gsmtap_umts_rrc_types.SysInfoType5bis,
-            31: util.gsmtap_umts_rrc_types.SysInfoType11bis,
+            0:  (t_v2.MasterInformationBlock, t_v3.MasterInformationBlock),
+            1:  (t_v2.SysInfoType1,     t_v3.SysInfoType1),
+            2:  (t_v2.SysInfoType2,     t_v3.SysInfoType2),
+            3:  (t_v2.SysInfoType3,     t_v3.SysInfoType3),
+            4:  (t_v2.SysInfoType4,     t_v3.SysInfoType4),
+            5:  (t_v2.SysInfoType5,     t_v3.SysInfoType5),
+            6:  (t_v2.SysInfoType6,     t_v3.SysInfoType6),
+            7:  (t_v2.SysInfoType7,     t_v3.SysInfoType7),
+            8:  (t_v2.SysInfoType8,     t_v3.SysInfoType8),
+            9:  (t_v2.SysInfoType9,     t_v3.SysInfoType9),
+            10: (t_v2.SysInfoType10,    t_v3.SysInfoType10),
+            11: (t_v2.SysInfoType11,    t_v3.SysInfoType11),
+            12: (t_v2.SysInfoType12,    t_v3.SysInfoType12),
+            13: (t_v2.SysInfoType13,    t_v3.SysInfoType13),
+            14: (t_v2.SysInfoType13_1,  t_v3.SysInfoType13_1),
+            15: (t_v2.SysInfoType13_2,  t_v3.SysInfoType13_2),
+            16: (t_v2.SysInfoType13_3,  t_v3.SysInfoType13_3),
+            17: (t_v2.SysInfoType13_4,  t_v3.SysInfoType13_4),
+            18: (t_v2.SysInfoType14,    t_v3.SysInfoType14),
+            19: (t_v2.SysInfoType15,    t_v3.SysInfoType15),
+            20: (t_v2.SysInfoType15_1,  t_v3.SysInfoType15_1),
+            21: (t_v2.SysInfoType15_2,  t_v3.SysInfoType15_2),
+            22: (t_v2.SysInfoType15_3,  t_v3.SysInfoType15_3),
+            23: (t_v2.SysInfoType16,    t_v3.SysInfoType16),
+            24: (t_v2.SysInfoType17,    t_v3.SysInfoType17),
+            25: (t_v2.SysInfoType15_4,  t_v3.SysInfoType15_4),
+            26: (t_v2.SysInfoType18,    t_v3.SysInfoType18),
+            27: (t_v2.SysInfoTypeSB1,   t_v3.SysInfoTypeSB1),
+            28: (t_v2.SysInfoTypeSB2,   t_v3.SysInfoTypeSB2),
+            29: (t_v2.SysInfoType15_5,  t_v3.SysInfoType15_5),
+            30: (t_v2.SysInfoType5bis,  t_v3.SysInfoType5bis),
+            31: (t_v2.SysInfoType11bis, t_v3.SysInfoType11bis),
             # Extension SIB
-            66: util.gsmtap_umts_rrc_types.SysInfoType11bis,
-            67: util.gsmtap_umts_rrc_types.SysInfoType19
+            66: (t_v2.SysInfoType11bis, t_v3.SysInfoType11bis),
+            67: (t_v2.SysInfoType19,    t_v3.SysInfoType19),
         }
 
         channel_type_map_new = {
-            0x80: util.gsmtap_umts_rrc_types.UL_CCCH,
-            0x81: util.gsmtap_umts_rrc_types.UL_DCCH,
-            0x82: util.gsmtap_umts_rrc_types.DL_CCCH,
-            0x83: util.gsmtap_umts_rrc_types.DL_DCCH,
-            0x84: util.gsmtap_umts_rrc_types.BCCH_BCH, # Encoded
-            0x85: util.gsmtap_umts_rrc_types.BCCH_FACH, # Encoded
-            0x86: util.gsmtap_umts_rrc_types.PCCH,
-            0x87: util.gsmtap_umts_rrc_types.MCCH,
-            0x88: util.gsmtap_umts_rrc_types.MSCH,
+            0x80: (t_v2.UL_CCCH,   t_v3.UL_CCCH),
+            0x81: (t_v2.UL_DCCH,   t_v3.UL_DCCH),
+            0x82: (t_v2.DL_CCCH,   t_v3.DL_CCCH),
+            0x83: (t_v2.DL_DCCH,   t_v3.DL_DCCH),
+            0x84: (t_v2.BCCH_BCH,  t_v3.BCCH_BCH), # Encoded
+            0x85: (t_v2.BCCH_FACH, t_v3.BCCH_FACH), # Encoded
+            0x86: (t_v2.PCCH,      t_v3.PCCH),
+            0x87: (t_v2.MCCH,      t_v3.MCCH),
+            0x88: (t_v2.MSCH,      t_v3.MSCH),
         }
         channel_type_map_new_extended_type = {
-            0x89: util.gsmtap_umts_rrc_types.BCCH_BCH, # Extension SIBs
-            0xF0: util.gsmtap_umts_rrc_types.BCCH_BCH, # Decoded
+            0x89: (t_v2.BCCH_BCH, t_v3.BCCH_BCH), # Extension SIBs
+            0xF0: (t_v2.BCCH_BCH, t_v3.BCCH_BCH), # Decoded
         }
         sib_type_map_new = {
-            0: util.gsmtap_umts_rrc_types.MasterInformationBlock,
-            1: util.gsmtap_umts_rrc_types.SysInfoType1,
-            2: util.gsmtap_umts_rrc_types.SysInfoType2,
-            3: util.gsmtap_umts_rrc_types.SysInfoType3,
-            4: util.gsmtap_umts_rrc_types.SysInfoType4,
-            5: util.gsmtap_umts_rrc_types.SysInfoType5,
-            6: util.gsmtap_umts_rrc_types.SysInfoType6,
-            7: util.gsmtap_umts_rrc_types.SysInfoType7,
-            8: util.gsmtap_umts_rrc_types.SysInfoType8,
-            9: util.gsmtap_umts_rrc_types.SysInfoType9,
-            10: util.gsmtap_umts_rrc_types.SysInfoType10,
-            11: util.gsmtap_umts_rrc_types.SysInfoType11,
-            12: util.gsmtap_umts_rrc_types.SysInfoType12,
-            13: util.gsmtap_umts_rrc_types.SysInfoType13,
-            14: util.gsmtap_umts_rrc_types.SysInfoType13_1,
-            15: util.gsmtap_umts_rrc_types.SysInfoType13_2,
-            16: util.gsmtap_umts_rrc_types.SysInfoType13_3,
-            17: util.gsmtap_umts_rrc_types.SysInfoType13_4,
-            18: util.gsmtap_umts_rrc_types.SysInfoType14,
-            19: util.gsmtap_umts_rrc_types.SysInfoType15,
-            20: util.gsmtap_umts_rrc_types.SysInfoType15_1,
-            21: util.gsmtap_umts_rrc_types.SysInfoType15_2,
-            22: util.gsmtap_umts_rrc_types.SysInfoType15_3,
-            23: util.gsmtap_umts_rrc_types.SysInfoType16,
-            24: util.gsmtap_umts_rrc_types.SysInfoType17,
-            25: util.gsmtap_umts_rrc_types.SysInfoType15_4,
-            26: util.gsmtap_umts_rrc_types.SysInfoType18,
-            27: util.gsmtap_umts_rrc_types.SysInfoTypeSB1,
-            28: util.gsmtap_umts_rrc_types.SysInfoTypeSB2,
-            29: util.gsmtap_umts_rrc_types.SysInfoType15_5,
-            30: util.gsmtap_umts_rrc_types.SysInfoType5bis,
-            31: util.gsmtap_umts_rrc_types.SysInfoType19,
+             0: (t_v2.MasterInformationBlock, t_v3.MasterInformationBlock),
+             1: (t_v2.SysInfoType1,     t_v3.SysInfoType1),
+             2: (t_v2.SysInfoType2,     t_v3.SysInfoType2),
+             3: (t_v2.SysInfoType3,     t_v3.SysInfoType3),
+             4: (t_v2.SysInfoType4,     t_v3.SysInfoType4),
+             5: (t_v2.SysInfoType5,     t_v3.SysInfoType5),
+             6: (t_v2.SysInfoType6,     t_v3.SysInfoType6),
+             7: (t_v2.SysInfoType7,     t_v3.SysInfoType7),
+             8: (t_v2.SysInfoType8,     t_v3.SysInfoType8),
+             9: (t_v2.SysInfoType9,     t_v3.SysInfoType9),
+            10: (t_v2.SysInfoType10,    t_v3.SysInfoType10),
+            11: (t_v2.SysInfoType11,    t_v3.SysInfoType11),
+            12: (t_v2.SysInfoType12,    t_v3.SysInfoType12),
+            13: (t_v2.SysInfoType13,    t_v3.SysInfoType13),
+            14: (t_v2.SysInfoType13_1,  t_v3.SysInfoType13_1),
+            15: (t_v2.SysInfoType13_2,  t_v3.SysInfoType13_2),
+            16: (t_v2.SysInfoType13_3,  t_v3.SysInfoType13_3),
+            17: (t_v2.SysInfoType13_4,  t_v3.SysInfoType13_4),
+            18: (t_v2.SysInfoType14,    t_v3.SysInfoType14),
+            19: (t_v2.SysInfoType15,    t_v3.SysInfoType15),
+            20: (t_v2.SysInfoType15_1,  t_v3.SysInfoType15_1),
+            21: (t_v2.SysInfoType15_2,  t_v3.SysInfoType15_2),
+            22: (t_v2.SysInfoType15_3,  t_v3.SysInfoType15_3),
+            23: (t_v2.SysInfoType16,    t_v3.SysInfoType16),
+            24: (t_v2.SysInfoType17,    t_v3.SysInfoType17),
+            25: (t_v2.SysInfoType15_4,  t_v3.SysInfoType15_4),
+            26: (t_v2.SysInfoType18,    t_v3.SysInfoType18),
+            27: (t_v2.SysInfoTypeSB1,   t_v3.SysInfoTypeSB1),
+            28: (t_v2.SysInfoTypeSB2,   t_v3.SysInfoTypeSB2),
+            29: (t_v2.SysInfoType15_5,  t_v3.SysInfoType15_5),
+            30: (t_v2.SysInfoType5bis,  t_v3.SysInfoType5bis),
+            31: (t_v2.SysInfoType19,    t_v3.SysInfoType19),
             # Extension SIB
-            66: util.gsmtap_umts_rrc_types.SysInfoType11bis,
-            67: util.gsmtap_umts_rrc_types.SysInfoType19
+            66: (t_v2.SysInfoType11bis, t_v3.SysInfoType11bis),
+            67: (t_v2.SysInfoType19,    t_v3.SysInfoType19),
         }
 
+        gsmtapv3_metadata = dict()
         if item.channel_type in channel_type_map.keys():
             arfcn = self.parent.umts_last_uarfcn_dl[radio_id]
             if item.channel_type == 0 or item.channel_type == 1:
                 arfcn = self.parent.umts_last_uarfcn_ul[radio_id]
 
-            subtype = channel_type_map[item.channel_type]
+            if self.gsmtapv3:
+                subtype = channel_type_map[item.channel_type][1]
+            else:
+                subtype = channel_type_map[item.channel_type][0]
             msg_content = pkt_body[4:]
         elif item.channel_type in channel_type_map_extended_type.keys():
             arfcn = self.parent.umts_last_uarfcn_dl[radio_id]
 
             # uint8 subtype, uint8 msg[]
             if pkt_body[4] in sib_type_map.keys():
-                subtype = sib_type_map[pkt_body[4]]
+                if self.gsmtapv3:
+                    subtype = sib_type_map[pkt_body[4]][1]
+                else:
+                    subtype = sib_type_map[pkt_body[4]][0]
                 msg_content = pkt_body[5:]
             else:
                 if self.parent:
@@ -394,14 +403,22 @@ class DiagWcdmaLogParser:
             # uint16 uarfcn, uint16 psc, uint8 msg[]
             arfcn, psc = struct.unpack('<HH', pkt_body[4:8])
 
-            subtype = channel_type_map_new[item.channel_type]
+            if self.gsmtapv3:
+                gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = psc
+                subtype = channel_type_map_new[item.channel_type][1]
+            else:
+                subtype = channel_type_map_new[item.channel_type][0]
             msg_content = pkt_body[8:]
         elif item.channel_type in channel_type_map_new_extended_type.keys():
             # uint16 uarfcn, uint16 psc, uint8 subtype, uint8 msg[]
             arfcn, psc = struct.unpack('<HH', pkt_body[4:8])
 
             if pkt_body[8] in sib_type_map_new.keys():
-                subtype = sib_type_map_new[pkt_body[8]]
+                if self.gsmtapv3:
+                    gsmtapv3_metadata[util.gsmtapv3_metadata_tags.BSIC_PSC_PCI] = psc
+                    subtype = sib_type_map_new[pkt_body[8]][1]
+                else:
+                    subtype = sib_type_map_new[pkt_body[8]][0]
                 msg_content = pkt_body[9:]
             else:
                 if self.parent:
@@ -418,12 +435,20 @@ class DiagWcdmaLogParser:
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.UMTS_RRC,
-            arfcn = arfcn,
-            sub_type = subtype,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+        if self.gsmtapv3:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.UMTS_RRC,
+                arfcn = arfcn,
+                sub_type = subtype,
+                device_sec = ts_sec,
+                device_usec = ts_usec,
+                metadata = gsmtapv3_metadata)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.UMTS_RRC,
+                arfcn = arfcn,
+                sub_type = subtype)
 
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}

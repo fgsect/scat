@@ -51,12 +51,18 @@ class DiagUmtsLogParser:
 
         # msg_hdr[1] == L3 message length
         # Rest of content: L3 message
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.ABIS,
-            arfcn = 0,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+        if self.gsmtapv3:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.ABIS,
+                arfcn = 0,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.ABIS,
+                arfcn = 0)
 
         return {'layer': 'nas', 'cp': [gsmtap_hdr + msg_content], 'radio_id': radio_id, 'ts': pkt_ts}
 

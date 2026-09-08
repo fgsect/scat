@@ -450,9 +450,7 @@ class DiagLteLogParser:
                 version = 2,
                 payload_type = util.gsmtap_type.LTE_RRC,
                 arfcn = item.earfcn,
-                sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH,
-                device_sec = ts_sec,
-                device_usec = ts_usec)
+                sub_type = util.gsmtap_lte_rrc_types.BCCH_BCH)
 
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + mib_payload], 'ts': pkt_ts, 'stdout': stdout}
 
@@ -1335,88 +1333,90 @@ class DiagLteLogParser:
         if pkt_version in (0x02, 0x03, 0x04, 0x06, 0x07, 0x08, 0x0d, 0x16):
             # RRC Packet <v9, v13, v22
             rrc_subtype_map = {
-                1: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+                1: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
                 2: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
-                3: (t_v2.MCCH, t_v3.MCCH),
-                4: (t_v2.PCCH, t_v3.PCCH),
-                5: (t_v2.DL_CCCH, t_v3.DL_CCCH),
-                6: (t_v2.DL_DCCH, t_v3.DL_DCCH),
-                7: (t_v2.UL_CCCH, t_v3.UL_CCCH),
-                8: (t_v2.UL_DCCH, t_v3.UL_DCCH)
+                3: (t_v2.MCCH,        t_v3.MCCH),
+                4: (t_v2.PCCH,        t_v3.PCCH),
+                5: (t_v2.DL_CCCH,     t_v3.DL_CCCH),
+                6: (t_v2.DL_DCCH,     t_v3.DL_DCCH),
+                7: (t_v2.UL_CCCH,     t_v3.UL_CCCH),
+                8: (t_v2.UL_DCCH,     t_v3.UL_DCCH)
             }
         elif pkt_version in (0x09, 0x0c):
             # RRC Packet v9-v12
             rrc_subtype_map = {
-                8: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+                8: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
                 9: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
-                10: (t_v2.MCCH, t_v3.MCCH),
-                11: (t_v2.PCCH, t_v3.PCCH),
-                12: (t_v2.DL_CCCH, t_v3.DL_CCCH),
-                13: (t_v2.DL_DCCH, t_v3.DL_DCCH),
-                14: (t_v2.UL_CCCH, t_v3.UL_CCCH),
-                15: (t_v2.UL_DCCH, t_v3.UL_DCCH)
+                10: (t_v2.MCCH,       t_v3.MCCH),
+                11: (t_v2.PCCH,       t_v3.PCCH),
+                12: (t_v2.DL_CCCH,    t_v3.DL_CCCH),
+                13: (t_v2.DL_DCCH,    t_v3.DL_DCCH),
+                14: (t_v2.UL_CCCH,    t_v3.UL_CCCH),
+                15: (t_v2.UL_DCCH,    t_v3.UL_DCCH)
             }
         elif pkt_version in (0x0e,):
             # RRC Packet v14
             rrc_subtype_map = {
-                1: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+                1: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
                 2: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
-                4: (t_v2.MCCH, t_v3.MCCH),
-                5: (t_v2.PCCH, t_v3.PCCH),
-                6: (t_v2.DL_CCCH, t_v3.DL_CCCH),
-                7: (t_v2.DL_DCCH, t_v3.DL_DCCH),
-                8: (t_v2.UL_CCCH, t_v3.UL_CCCH),
-                9: (t_v2.UL_DCCH, t_v3.UL_DCCH)
+                4: (t_v2.MCCH,        t_v3.MCCH),
+                5: (t_v2.PCCH,        t_v3.PCCH),
+                6: (t_v2.DL_CCCH,     t_v3.DL_CCCH),
+                7: (t_v2.DL_DCCH,     t_v3.DL_DCCH),
+                8: (t_v2.UL_CCCH,     t_v3.UL_CCCH),
+                9: (t_v2.UL_DCCH,     t_v3.UL_DCCH)
             }
         elif pkt_version in (0x0f, 0x10):
             # RRC Packet v15, v16
             rrc_subtype_map = {
-                1: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+                1: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
                 2: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
-                4: (t_v2.MCCH, t_v3.MCCH),
-                5: (t_v2.PCCH, t_v3.PCCH),
-                6: (t_v2.DL_CCCH, t_v3.DL_CCCH),
-                7: (t_v2.DL_DCCH, t_v3.DL_DCCH),
-                8: (t_v2.UL_CCCH, t_v3.UL_CCCH),
-                9: (t_v2.UL_DCCH, t_v3.UL_DCCH)
+                4: (t_v2.MCCH,        t_v3.MCCH),
+                5: (t_v2.PCCH,        t_v3.PCCH),
+                6: (t_v2.DL_CCCH,     t_v3.DL_CCCH),
+                7: (t_v2.DL_DCCH,     t_v3.DL_DCCH),
+                8: (t_v2.UL_CCCH,     t_v3.UL_CCCH),
+                9: (t_v2.UL_DCCH,     t_v3.UL_DCCH)
             }
         elif pkt_version in (0x13, 0x1a, 0x1b, 0x1d, 0x1e, 0x1f):
             # RRC Packet v19, v26, v27, v29, v30
             rrc_subtype_map = {
-                1: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
-                3: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
-                6: (t_v2.MCCH, t_v3.MCCH),
-                7: (t_v2.PCCH, t_v3.PCCH),
-                8: (t_v2.DL_CCCH, t_v3.DL_CCCH),
-                9: (t_v2.DL_DCCH, t_v3.DL_DCCH),
-                10: (t_v2.UL_CCCH, t_v3.UL_CCCH),
-                11: (t_v2.UL_DCCH, t_v3.UL_DCCH),
-                45: (t_v2.BCCH_BCH_NB, t_v3.BCCH_BCH_NB),
+                 1: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
+                 3: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
+                 6: (t_v2.MCCH,        t_v3.MCCH),
+                 7: (t_v2.PCCH,        t_v3.PCCH),
+                 8: (t_v2.DL_CCCH,     t_v3.DL_CCCH),
+                 9: (t_v2.DL_DCCH,     t_v3.DL_DCCH),
+                10: (t_v2.UL_CCCH,     t_v3.UL_CCCH),
+                11: (t_v2.UL_DCCH,     t_v3.UL_DCCH),
+
+                45: (t_v2.BCCH_BCH_NB,    t_v3.BCCH_BCH_NB),
                 46: (t_v2.BCCH_DL_SCH_NB, t_v3.BCCH_DL_SCH_NB),
-                47: (t_v2.PCCH_NB, t_v3.PCCH_NB),
-                48: (t_v2.DL_CCCH_NB, t_v3.DL_CCCH_NB),
-                49: (t_v2.DL_DCCH_NB, t_v3.DL_DCCH_NB),
-                50: (t_v2.UL_CCCH_NB, t_v3.UL_CCCH_NB),
-                52: (t_v2.UL_DCCH_NB, t_v3.UL_DCCH_NB)
+                47: (t_v2.PCCH_NB,        t_v3.PCCH_NB),
+                48: (t_v2.DL_CCCH_NB,     t_v3.DL_CCCH_NB),
+                49: (t_v2.DL_DCCH_NB,     t_v3.DL_DCCH_NB),
+                50: (t_v2.UL_CCCH_NB,     t_v3.UL_CCCH_NB),
+                52: (t_v2.UL_DCCH_NB,     t_v3.UL_DCCH_NB)
             }
         elif pkt_version in (0x14, 0x18, 0x19):
             # RRC Packet v20, v24, v25
             rrc_subtype_map = {
-                1: (t_v2.BCCH_BCH, t_v3.BCCH_BCH),
+                1: (t_v2.BCCH_BCH,    t_v3.BCCH_BCH),
                 2: (t_v2.BCCH_DL_SCH, t_v3.BCCH_DL_SCH),
-                4: (t_v2.MCCH, t_v3.MCCH),
-                5: (t_v2.PCCH, t_v3.PCCH),
-                6: (t_v2.DL_CCCH, t_v3.DL_CCCH),
-                7: (t_v2.DL_DCCH, t_v3.DL_DCCH),
-                8: (t_v2.UL_CCCH, t_v3.UL_CCCH),
-                9: (t_v2.UL_DCCH, t_v3.UL_DCCH),
-                54: (t_v2.BCCH_BCH_NB, t_v3.BCCH_BCH_NB),
+                4: (t_v2.MCCH,        t_v3.MCCH),
+                5: (t_v2.PCCH,        t_v3.PCCH),
+                6: (t_v2.DL_CCCH,     t_v3.DL_CCCH),
+                7: (t_v2.DL_DCCH,     t_v3.DL_DCCH),
+                8: (t_v2.UL_CCCH,     t_v3.UL_CCCH),
+                9: (t_v2.UL_DCCH,     t_v3.UL_DCCH),
+
+                54: (t_v2.BCCH_BCH_NB,    t_v3.BCCH_BCH_NB),
                 55: (t_v2.BCCH_DL_SCH_NB, t_v3.BCCH_DL_SCH_NB),
-                56: (t_v2.PCCH_NB, t_v3.PCCH_NB),
-                57: (t_v2.DL_CCCH_NB, t_v3.DL_CCCH_NB),
-                58: (t_v2.DL_DCCH_NB, t_v3.DL_DCCH_NB),
-                59: (t_v2.UL_CCCH_NB, t_v3.UL_CCCH_NB),
-                61: (t_v2.UL_DCCH_NB, t_v3.UL_DCCH_NB),
+                56: (t_v2.PCCH_NB,        t_v3.PCCH_NB),
+                57: (t_v2.DL_CCCH_NB,     t_v3.DL_CCCH_NB),
+                58: (t_v2.DL_DCCH_NB,     t_v3.DL_DCCH_NB),
+                59: (t_v2.UL_CCCH_NB,     t_v3.UL_CCCH_NB),
+                61: (t_v2.UL_DCCH_NB,     t_v3.UL_DCCH_NB),
             }
         else:
             if self.parent:
@@ -1454,9 +1454,7 @@ class DiagLteLogParser:
                 payload_type = util.gsmtap_type.LTE_RRC,
                 arfcn = item.earfcn,
                 frame_number = sfn,
-                sub_type = gsmtap_subtype[0],
-                device_sec = ts_sec,
-                device_usec = ts_usec)
+                sub_type = gsmtap_subtype[0])
 
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}
 
@@ -1494,8 +1492,6 @@ class DiagLteLogParser:
                 version = 2,
                 payload_type = util.gsmtap_type.LTE_NAS,
                 arfcn = 0,
-                sub_type = 0 if plain else 1,
-                device_sec = ts_sec,
-                device_usec = ts_usec)
+                sub_type = 0 if plain else 1)
 
         return {'layer': 'nas', 'cp': [gsmtap_hdr + msg_content], 'ts': pkt_ts}

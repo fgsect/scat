@@ -280,7 +280,15 @@ class DiagGsmLogParser:
         # 0: DCCH, 1: BCCH, 2: RACH, 3: CCCH, 4: SACCH, 5: SDCCH, 6: FACCH
         # DCCH, SACCH requires pseudo length
         rr_channel_map = [8, util.gsmtap_channel.BCCH, util.gsmtap_channel.RACH, util.gsmtap_channel.CCCH, 0x88]
-        channel_type = rr_channel_map[chan]
+        rr_channel_map_v3 = [util.gsmtapv3_um_types.SDCCH_8,
+                             util.gsmtapv3_um_types.BCCH,
+                             util.gsmtapv3_um_types.RACH,
+                             util.gsmtapv3_um_types.CCCH,
+                             (util.gsmtapv3_um_types.SDCCH_8 | util.gsmtapv3_um_types.AGCH)]
+        if self.gsmtapv3:
+            channel_type = rr_channel_map_v3[chan]
+        else:
+            channel_type = rr_channel_map[chan]
 
         pkt_ts = util.parse_qxdm_ts(pkt_header.timestamp)
         ts_sec = calendar.timegm(pkt_ts.timetuple())
@@ -325,13 +333,20 @@ class DiagGsmLogParser:
 
         # SACCH DL/Measurement Information: Short PD format
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.UM,
-            arfcn = arfcn,
-            sub_type = channel_type,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+        if self.gsmtapv3:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.UM,
+                arfcn = arfcn,
+                sub_type = channel_type,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.UM,
+                arfcn = arfcn,
+                sub_type = channel_type)
 
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
 
@@ -397,11 +412,17 @@ class DiagGsmLogParser:
         ts_sec = calendar.timegm(pkt_ts.timetuple())
         ts_usec = pkt_ts.microsecond
 
-        gsmtap_hdr = util.create_gsmtap_header(
-            version = 2,
-            payload_type = util.gsmtap_type.ABIS,
-            arfcn = arfcn,
-            device_sec = ts_sec,
-            device_usec = ts_usec)
+        if self.gsmtapv3:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 3,
+                payload_type = util.gsmtapv3_types.ABIS,
+                arfcn = arfcn,
+                device_sec = ts_sec,
+                device_usec = ts_usec)
+        else:
+            gsmtap_hdr = util.create_gsmtap_header(
+                version = 2,
+                payload_type = util.gsmtap_type.ABIS,
+                arfcn = arfcn)
 
         return {'layer': 'rrc', 'cp': [gsmtap_hdr + l3_message], 'ts': pkt_ts, 'radio_id': radio_id}
