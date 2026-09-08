@@ -357,6 +357,94 @@ class gsmtapv3_metadata_tags(IntEnum):
     END_OF_METADATA = 0xfffe
 
 @unique
+class gsmtapv3_um_types(IntEnum):
+    BCCH    = 0x0001
+    CCCH    = 0x0002
+    RACH    = 0x0003
+    AGCH    = 0x0004
+    PCH     = 0x0005
+    SDCCH   = 0x0006
+    SDCCH_4 = 0x0007
+    SDCCH_8 = 0x0008
+    FACCH_F = 0x0009
+    FACCH_H = 0x000a
+    PACCH   = 0x000b
+    CBCH_52 = 0x000c
+    PDCH    = 0x000d
+    PTCCH   = 0x000e
+    CBCH_51 = 0x000f
+    VOICE_F = 0x0010
+    VOICE_H = 0x0011
+
+    ACCH    = 0x0100
+
+@unique
+class gsmtapv3_umts_rrc_types(IntEnum):
+    DL_DCCH   = 0x0001
+    UL_DCCH   = 0x0002
+    DL_CCCH   = 0x0003
+    UL_CCCH   = 0x0004
+    PCCH      = 0x0005
+    DL_SHCCH  = 0x0006
+    UL_SHCCH  = 0x0007
+    BCCH_FACH = 0x0008
+    BCCH_BCH  = 0x0009
+    MCCH      = 0x000b
+    MSCH      = 0x000c
+
+    HandoverToUTRANCommand       = 0x0101
+    InterRATHandoverInfo         = 0x0102
+    SystemInformation_BCH        = 0x0103
+    System_Information_Container = 0x0104
+    UE_RadioAccessCapabilityInfo = 0x0105
+    MasterInformationBlock       = 0x0106
+    SysInfoType1                 = 0x0107
+    SysInfoType2                 = 0x0108
+    SysInfoType3                 = 0x0109
+    SysInfoType4                 = 0x010a
+    SysInfoType5                 = 0x010b
+    SysInfoType5bis              = 0x010c
+    SysInfoType6                 = 0x010d
+    SysInfoType7                 = 0x010e
+    SysInfoType8                 = 0x010f
+    SysInfoType9                 = 0x0110
+    SysInfoType10                = 0x0111
+    SysInfoType11                = 0x0112
+    SysInfoType11bis             = 0x0113
+    SysInfoType12                = 0x0114
+    SysInfoType13                = 0x0115
+    SysInfoType13_1              = 0x0116
+    SysInfoType13_2              = 0x0117
+    SysInfoType13_3              = 0x0118
+    SysInfoType13_4              = 0x0119
+    SysInfoType14                = 0x011a
+    SysInfoType15                = 0x011b
+    SysInfoType15bis             = 0x011c
+    SysInfoType15_1              = 0x011d
+    SysInfoType15_1bis           = 0x011e
+    SysInfoType15_2              = 0x011f
+    SysInfoType15_2bis           = 0x0120
+    SysInfoType15_2ter           = 0x0121
+    SysInfoType15_3              = 0x0122
+    SysInfoType15_3bis           = 0x0123
+    SysInfoType15_4              = 0x0124
+    SysInfoType15_5              = 0x0125
+    SysInfoType15_6              = 0x0126
+    SysInfoType15_7              = 0x0127
+    SysInfoType15_8              = 0x0128
+    SysInfoType16                = 0x0129
+    SysInfoType17                = 0x012a
+    SysInfoType18                = 0x012b
+    SysInfoType19                = 0x012c
+    SysInfoType20                = 0x012d
+    SysInfoType21                = 0x012e
+    SysInfoType22                = 0x012f
+    SysInfoTypeSB1               = 0x0130
+    SysInfoTypeSB2               = 0x0131
+    ToTargetRNC_Container        = 0x0132
+    TargetRNC_ToSourceRNC_Container = 0x0133
+
+@unique
 class gsmtapv3_lte_rrc_types(IntEnum):
     BCCH_BCH = 0x0001
     BCCH_BCH_MBMS = 0x0002
