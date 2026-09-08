@@ -341,7 +341,10 @@ def modify_gsmtapv3_header(payload: bytes):
         gsmtap_v3_metadata += struct.pack('!HHQL', t.PACKET_TIMESTAMP, 12, device_sec, device_usec * 1000)
         header_len += 16
 
-    if gsmtapv3_prerelease_header[2] in (0x01, 0x03, 0x08, 0x09, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x21):
+    if gsmtapv3_prerelease_header[2] in (0x01, 0x03, 0x08, 0x09):
+        gsmtap_v3_metadata += struct.pack('!HHH', t.CHANNEL_NUMBER, 2, chan_number)
+        header_len += 6
+    elif gsmtapv3_prerelease_header[2] in (0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x21):
         gsmtap_v3_metadata += struct.pack('!HHL', t.CHANNEL_NUMBER, 4, chan_number)
         header_len += 8
 
