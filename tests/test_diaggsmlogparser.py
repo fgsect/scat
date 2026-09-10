@@ -78,16 +78,16 @@ GSM Serving Cell New Burst Metric: ARFCN: 37/BC: 8, RSSI: 3778662, RxPwr: -76.94
         result = self.parser.parse_gsm_l1_surround_cell_ba(pkt_header, payload, dict())
         expected = {
             'stdout': '''GSM Surround Cell BA: 10 cells
-GSM Surround Cell BA: Cell 0: ARFCN: 4/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 1: ARFCN: 10/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 2: ARFCN: 12/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 3: ARFCN: 16/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 4: ARFCN: 31/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 5: ARFCN: 42/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 6: ARFCN: 43/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 7: ARFCN: 45/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 8: ARFCN: 47/BC: 8/BSIC: N/A, RxPwr: 0.00
-GSM Surround Cell BA: Cell 9: ARFCN: 49/BC: 8/BSIC: N/A, RxPwr: 0.00''',
+GSM Surround Cell BA: Cell 0: ARFCN: 4/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 1: ARFCN: 10/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 2: ARFCN: 12/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 3: ARFCN: 16/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 4: ARFCN: 31/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 5: ARFCN: 42/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 6: ARFCN: 43/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 7: ARFCN: 45/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 8: ARFCN: 47/BC: 8/BSIC: N/A, RxPwr: -110.00
+GSM Surround Cell BA: Cell 9: ARFCN: 49/BC: 8/BSIC: N/A, RxPwr: -110.00''',
             'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc)
         }
         self.assertDictEqual(result, expected) # type: ignore
