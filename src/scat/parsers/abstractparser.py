@@ -15,7 +15,7 @@ class AbstractParser(metaclass=abc.ABCMeta):
         return
 
     @abc.abstractmethod
-    def set_writer(self, writer: AbstractWriter) -> None:
+    def set_writer(self, writer: list[AbstractWriter]) -> None:
         return
 
     @abc.abstractmethod

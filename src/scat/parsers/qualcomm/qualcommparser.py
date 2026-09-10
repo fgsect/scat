@@ -68,7 +68,7 @@ class QualcommParser(AbstractParser):
         self.lte_last_tcrnti = [1, 1]
 
         self.io_device: AbstractIO
-        self.writer: AbstractWriter
+        self.writer: list[AbstractWriter]
         self.parse_msgs = False
         self.parse_events = False
         self.qsr_hash_filename = ''
@@ -122,7 +122,7 @@ class QualcommParser(AbstractParser):
     def set_io_device(self, io_device: AbstractIO) -> None:
         self.io_device = io_device
 
-    def set_writer(self, writer: AbstractWriter) -> None:
+    def set_writer(self, writer: list[AbstractWriter]) -> None:
         self.writer = writer
 
     def update_parameters(self, display_format: str, gsmtapv3: bool):
@@ -638,19 +638,19 @@ class QualcommParser(AbstractParser):
             if 'layer' in parse_result:
                 if parse_result['layer'] in self.layers:
                     for sock_content in parse_result['cp']:
-                        self.writer.write_cp(sock_content, radio_id, ts)
+                        any(map(lambda x: x.write_cp(sock_content, radio_id, ts), self.writer))
             else:
                 for sock_content in parse_result['cp']:
-                    self.writer.write_cp(sock_content, radio_id, ts)
+                    any(map(lambda x: x.write_cp(sock_content, radio_id, ts), self.writer))
 
         if 'up' in parse_result:
             if 'layer' in parse_result:
                 if parse_result['layer'] in self.layers:
                     for sock_content in parse_result['up']:
-                        self.writer.write_up(sock_content, radio_id, ts)
+                        any(map(lambda x: x.write_up(sock_content, radio_id, ts), self.writer))
             else:
                 for sock_content in parse_result['up']:
-                    self.writer.write_up(sock_content, radio_id, ts)
+                    any(map(lambda x: x.write_up(sock_content, radio_id, ts), self.writer))
 
         if 'stdout' in parse_result:
             if len(parse_result['stdout']) > 0:
@@ -669,7 +669,7 @@ class QualcommParser(AbstractParser):
                         gsmtap_hdr = util.create_gsmtap_header(
                             version = 2,
                             payload_type = util.gsmtap_type.OSMOCORE_LOG)
-                        self.writer.write_cp(gsmtap_hdr + osmocore_log_hdr + l.encode('utf-8'), radio_id, ts)
+                        any(map(lambda x: x.write_cp(gsmtap_hdr + osmocore_log_hdr + l.encode('utf-8'), radio_id, ts), self.writer))
                 else:
                     for l in parse_result['stdout'].split('\n'):
                         print('Radio {}: {}'.format(radio_id, l))

@@ -120,7 +120,8 @@ def scat_main():
     ip_group.add_argument('--port-up', help='Change UDP port to emit user plane packets', type=int, default=47290)
     ip_group.add_argument('-H', '--hostname', help='Change base host name/IP to emit GSMTAP packets. For dual SIM devices the subsequent IP address will be used.', type=str, default='127.0.0.1')
 
-    ip_group.add_argument('-F', '--pcap-file', help='Write GSMTAP packets directly to specified PCAP file')
+    ip_group.add_argument('-F', '--pcap-file', help='Write GSMTAP packets directly to specified PCAP(NG) file')
+    ip_group.add_argument('--pcapng-file', help='Same as -F/--pcap-file, but explicitly use PCAPNG')
     ip_group.add_argument('-C', '--combine-stdout', action='store_true', help='Write standard output messages as osmocore log file, along with other GSMTAP packets.')
 
     args = parser.parse_args()
@@ -169,11 +170,18 @@ def scat_main():
         print('Error: no device specified.')
         sys.exit(1)
 
+    writer: list[scat.writers.AbstractWriter]
     # Writer preparation
-    if args.pcap_file == None:
-        writer = scat.writers.SocketWriter(GSMTAP_IP, GSMTAP_PORT, IP_OVER_UDP_PORT)
-    else:
-        writer = scat.writers.PcapWriter(args.pcap_file, GSMTAP_PORT, IP_OVER_UDP_PORT)
+    writer = [scat.writers.SocketWriter(GSMTAP_IP, GSMTAP_PORT, IP_OVER_UDP_PORT)]
+    if args.pcap_file:
+        if os.path.splitext(args.pcap_file)[1].lower() == '.pcapng':
+            writer.append(scat.writers.PcapngWriter(args.pcap_file, GSMTAP_PORT, IP_OVER_UDP_PORT))
+        else:
+            writer.append(scat.writers.PcapWriter(args.pcap_file, GSMTAP_PORT, IP_OVER_UDP_PORT))
+
+    if args.pcapng_file:
+        if not(args.pcap_file and args.pcap_file == args.pcapng_file):
+            writer.append(scat.writers.PcapngWriter(args.pcapng_file, GSMTAP_PORT, IP_OVER_UDP_PORT))
 
     current_parser = parser_dict[args.type]
     current_parser.set_io_device(io_device)
