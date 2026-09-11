@@ -1,6 +1,6 @@
 [project]
 name = "signalcat"
-version = "2.1.0"
+version = "2.1.1"
 authors = [
     { name="Shinjo Park", email="peremen@gmail.com" },
 ]
@@ -18,21 +18,26 @@ dependencies = [
     "bitstring>=4.0",
     "packaging>=19.0"
 ]
+dynamic = [
+  "urls",
+]
+
 [project.optional-dependencies]
 fastcrc = [
     "libscrc>=1.8.0",
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/fgsect/scat"
-"Bug Tracker" = "https://github.com/fgsect/scat/issues"
-
 [project.scripts]
 scat = "scat.main:scat_main"
 
 [build-system]
-requires = ["hatchling"]
+requires = ["hatchling", "hatch-vcs"]
 build-backend = "hatchling.build"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/scat"]
+
+[tool.hatch.metadata.hooks.vcs.urls]
+"Homepage" = "https://github.com/fgsect/scat"
+"Bug Tracker" = "https://github.com/fgsect/scat/issues"
+source_archive = "https://github.com/fgsect/scat/archive/{commit_hash}.zip"
