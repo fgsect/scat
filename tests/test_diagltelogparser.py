@@ -115,6 +115,19 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
         }
         self.assertDictEqual(result, expected) # type: ignore
 
+        # V3
+        payload = binascii.unhexlify('0332d4033818000016030000000000005a0a000000414d00000000000080d46300000100')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_ML1_SERVING_CELL_INFO), timestamp=0)
+        result = self.parser.parse_lte_ml1_cell_info(pkt_header, payload, dict())
+        expected = {
+            'layer': 'rrc',
+            'cp': [binascii.unhexlify('02040d0018380000000000000400000063d480')],
+            'ts': datetime.datetime(1980, 1, 6, 0, 0, tzinfo=datetime.timezone.utc),
+            'stdout': 'LTE ML1 Cell Info: EARFCN: 6200, PCI: 278, Bandwidth: 10 MHz, Num antennas: 1'
+        }
+        self.assertDictEqual(result, expected) # type: ignore
+
     def test_parse_lte_ml1_intra_freq_cell_resel(self):
         # 01 02 F8 14 0A 02 0C 00 16 0D 00 00 61 03 00 00 0B 20 84 00 00 00 00 00 02 00 00 00 40 06 00 00 79 25 12 12 A0 4B F8 02 7F F9 CB 38 E3 DE CB 0F 30 48 F8 02 62 11 CB 31 C7 9E CB 0F 5A 45 08 03 4E 71 CA 2E BB 1E CB 0F 15 43 EF 02 39 C9 C9 29 A7 DE CA 0F 16 0D 00 00 79 0F 00 0A 61 4D 5B 03 85 31 8B 4C 34 DF CE 0F 38 18 00 00 79 1C 12 0E 67 62 8E 03 36 B2 11 41 04 DF 0E 00 66 56 8D 03 D2 91 0E 33 CC 5E CD 0F EB 4F 88 03 9E F1 0C 20 80 5E CC 0F
         # 01 03 FC 14 0A 02 0C 00 9C 18 00 00 D6 02 00 00 05 19 10 00 01 00 00 00 85 40 00 00 04 00 00 00 0B 20 38 00 01 00 00 00 03 00 00 00 9C 18 00 00 79 0D 00 04 D6 56 A0 03 B6 69 CD 3F 0A 9F CE 0F 22 0B 00 00 79 07 0C 0C 09 07 00 00 79 06 0C 0C 7D 00 00 00 79 04 16 0A
@@ -612,6 +625,13 @@ LTE ML1 SCell Meas Response (Cell 1): PCI: 93, SFN/SubFN: 1005/2, Serving cell i
                                      log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE), timestamp=0)
         result = self.parser.parse_lte_mib(pkt_header, payload, dict())
         self.assertEqual(result['stdout'], 'LTE MIB Info: EARFCN: 1825, SFN:  248, Bandwidth: 15 MHz, TX antennas: 2') # type: ignore
+
+        # V3
+        payload = binascii.unhexlify('03160138180000d403023204')
+        pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload) + 12, length2=len(payload) + 12,
+                                     log_id=diagcmd.diag_log_get_lte_item_id(diagcmd.diag_log_code_lte.LOG_LTE_RRC_MIB_MESSAGE), timestamp=0)
+        result = self.parser.parse_lte_mib(pkt_header, payload, dict())
+        self.assertEqual(result['stdout'], 'LTE-M MIB Info: EARFCN: 6200, SFN:  980, Bandwidth: 10 MHz, TX antennas: 2, schedulingInfoSIB1-BR-r13: 4') # type: ignore
 
         # V17
         payload = binascii.unhexlify('110b00fa090000b9030e000202000202d002')
