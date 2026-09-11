@@ -406,6 +406,9 @@ class DiagLteLogParser:
         elif pkt_version == 2: # Version 2
             # Version, DL BW, SFN, EARFCN, (Cell ID 9, PBCH 1, PHICH Duration 3, PHICH Resource 3), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
             item = item_struct._make(struct.unpack('<BHLLLLQLhH', pkt_body[1:36]))
+        elif pkt_version == 3: # Version 3
+            # Version, DL BW, SFN, EARFCN, (Cell ID 9, PBCH 1, PHICH Duration 3, PHICH Resource 3), PSS, SSS, Ref Time, MIB Payload, Freq Offset, Num Antennas
+            item = item_struct._make(struct.unpack('<BHLLLLQLhH', pkt_body[1:36]))
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown LTE ML1 cell info packet version 0x{:02x}'.format(pkt_version))
@@ -1186,6 +1189,7 @@ class DiagLteLogParser:
         prb_to_mhz = {6: 1.4, 15: 3, 25: 5, 50: 10, 75: 15, 100: 20}
 
         item_struct = namedtuple('QcDiagLteMib', 'pci earfcn sfn tx_antenna bandwidth')
+        item_struct_v3 = namedtuple('QcDiagLteMibV3', 'pci earfcn sfn tx_antenna bandwidth sched_sib1_br_r13')
         item_struct_v17 = namedtuple('QcDiagLteMibV17', 'pci earfcn sfn sfn_msb4 hsfn_lsb2 sib1_sch_info si_value_tag access_barring opmode_type opmode_info tx_antenna')
         item = None
 
@@ -1193,6 +1197,8 @@ class DiagLteLogParser:
             item = item_struct._make(struct.unpack('<HHH BB', pkt_body[1:10]))
         elif pkt_version == 2:
             item = item_struct._make(struct.unpack('<HLH BB', pkt_body[1:12]))
+        elif pkt_version == 3:
+            item = item_struct_v3._make(struct.unpack('<HLH BBB', pkt_body[1:13]))
         elif pkt_version == 17:
             item = item_struct_v17._make(struct.unpack('<HLH BBBBB BHB', pkt_body[1:18]))
         else:
@@ -1207,6 +1213,12 @@ class DiagLteLogParser:
                 stdout = 'LTE MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} MHz, TX antennas: {}'.format(item.earfcn, item.sfn, prb_to_mhz[item.bandwidth], item.tx_antenna)
             else:
                 stdout = 'LTE MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} PRBs, TX antennas: {}'.format(item.earfcn, item.sfn, item.bandwidth, item.tx_antenna)
+        elif isinstance(item, item_struct_v3):
+            # MIB for LTE-M
+            if item.bandwidth in prb_to_mhz:
+                stdout = 'LTE-M MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} MHz, TX antennas: {}, schedulingInfoSIB1-BR-r13: {}'.format(item.earfcn, item.sfn, prb_to_mhz[item.bandwidth], item.tx_antenna, item.sched_sib1_br_r13)
+            else:
+                stdout = 'LTE-M MIB Info: EARFCN: {}, SFN: {:4}, Bandwidth: {} PRBs, TX antennas: {}, schedulingInfoSIB1-BR-r13: {}'.format(item.earfcn, item.sfn, item.bandwidth, item.tx_antenna, item.sched_sib1_br_r13)
         else:
             # MIB for NB-IoT (only 1 PRB)
             stdout = 'LTE MIB-NB Info: EARFCN: {}, SFN: {:4}, TX antennas: {}'.format(item.earfcn, item.sfn, item.tx_antenna)
