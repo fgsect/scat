@@ -1,7 +1,26 @@
 #!/usr/bin/env python3
 # coding: utf8
 
-import gzip, bz2
+import sys
+has_zstandard = False
+try:
+    from compression import gzip
+    from compression import bz2
+    from compression import lzma
+except ImportError:
+    import gzip
+    import bz2
+    import lzma
+
+try:
+    if sys.version_info >= (3, 14):
+        from compression import zstd
+    else:
+        import zstandard as zstd
+    has_zstandard = True
+except ImportError:
+    has_zstandard = False
+
 import scat.util as util
 from scat.iodevices.abstractio import AbstractIO
 
@@ -14,6 +33,10 @@ class FileIO(AbstractIO):
             self.f = gzip.open(fname, 'rb')
         elif fname.find('.bz2') > 0:
             self.f = bz2.open(fname, 'rb')
+        elif fname.find('.xz') > 0:
+            self.f = lzma.open(fname, 'rb')
+        elif fname.find('.zst') > 0:
+            self.f = zstd.open(fname, 'rb')
         else:
             self.f = open(fname, 'rb')
 
