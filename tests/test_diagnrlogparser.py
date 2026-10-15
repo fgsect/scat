@@ -15,6 +15,9 @@ class TestDiagNrLogParser(unittest.TestCase):
     # ML1
 
     def test_parse_nr_ml1_meas_db_update(self):
+        # 2.6, 2 beams
+        payload = binascii.unhexlify('060002000100000000c9090001000000000000001dd8ffffcec3ffffffffffffffff0000ffffffff000032030100000000d3ffff00faffff00000000000000000000000003fc8ce578123308e5d2ffff51c4ffffe2d2ffffeef9ffff0000000000000000')
+
         #major 2 minor 7 one beam
         payload = binascii.unhexlify('070002000114000026ffffff44000000991006000100c602000000000000000000000000ffffffffffff0000ffffffffc6027e000100000017caffff0afaffff000000000000000000000000a5a1dbbd4199a005a3bcffff17caffff17caffff0afaffff0000000000000000')
         pkt_header = self.log_header(cmd_code=0x10, reserved=0, length1=len(payload), length2=len(payload),
