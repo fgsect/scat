@@ -556,6 +556,10 @@ class QualcommParser(AbstractParser):
                 if pkt_len < 2:
                     buf = buf[2:]
                     continue
+                if len(buf) < pkt_len:
+                    # Partial record: wait for the next read instead of
+                    # truncating the record and desyncing the stream
+                    break
                 pkt = buf[0:pkt_len]
                 pkt = b'\x10\x00' + pkt[0:2] + pkt
                 parse_result = self.parse_diag(pkt, has_crc=False, hdlc_encoded=False)

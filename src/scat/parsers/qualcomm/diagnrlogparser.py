@@ -248,9 +248,21 @@ class DiagNrLogParser:
             if pkt_ver.rel_min == 0x00:
                 # PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
                 item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[4:46]))
+            elif pkt_ver.rel_min == 0x04:
+                # Version 3.4: 4-byte prefix (observed 01 00 01 00), then the same payload as version 3.0
+                if len(pkt_body) < 50:
+                    if self.parent:
+                        self.parent.logger.log(logging.WARNING, 'Truncated NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
+                    return None
+                item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[8:50]))
             elif pkt_ver.rel_min in (0x02, 0x03, ):
                 # ? 3b, PCI 2b, NR CGI 8b, DL NR-ARFCN 4b, UL NR-ARFCN 4b, DLBW 2b, ULBW 2b, Cell ID 8b, MCC 2b, MCC digit 1b, MNC 2b, MNC digit 1b, TAC 4b, ?
                 item = item_struct_v30000._make(struct.unpack('<H Q LLHH Q H BH B LH', pkt_body[7:49]))
+            else:
+                if self.parent:
+                    self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
+                    self.parent.logger.log(logging.WARNING, "Body: {}".format(util.xxd_oneline(pkt_body)))
+                return None
         else:
             if self.parent:
                 self.parent.logger.log(logging.WARNING, 'Unknown NR RRC SCell Information packet, version {}.{}'.format(pkt_ver.rel_maj, pkt_ver.rel_min))
