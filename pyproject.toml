@@ -15,7 +15,7 @@ requires-python = ">=3.10"
 dependencies = [
     "pyusb>=1.0.2",
     "pyserial>=3.3",
-    "bitstring>=4.0",
+    "bitstring>=4.0,<5",
     "packaging>=19.0",
     "zstandard; python_version < '3.14'"
 ]
