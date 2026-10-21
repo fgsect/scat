@@ -221,10 +221,10 @@ local gsmtapv3_umts_rrc_subtypes = {
     [0x0004] = { check_and_get_dissector("rrc.ul.ccch"), "UL CCCH" },
     [0x0005] = { check_and_get_dissector("rrc.pcch"), "PCCH" },
     [0x0006] = { check_and_get_dissector("rrc.dl.shcch"), "DL SHCCH" },
-    [0x0007] = { check_and_get_dissector("rrc.Ul.shcch"), "UL SHCCH" },
-    [0x0008] = { check_and_get_dissector("rrc.bcch.facch"), "BCCH FACH" },
+    [0x0007] = { check_and_get_dissector("rrc.ul.shcch"), "UL SHCCH" },
+    [0x0008] = { check_and_get_dissector("rrc.bcch.fach"), "BCCH FACH" },
     [0x0009] = { check_and_get_dissector("rrc.bcch.bch"), "BCCH BCH" },
-    -- [0x000a] = { check_and_get_dissector("rrc.bcch.bch2"), "BCCH BCH2" },
+    [0x000a] = { check_and_get_dissector("rrc.bcch.bch2"), "BCCH BCH2" },
     [0x000b] = { check_and_get_dissector("rrc.mcch"), "MCCH" },
     [0x000c] = { check_and_get_dissector("rrc.msch"), "MSCH" },
 
