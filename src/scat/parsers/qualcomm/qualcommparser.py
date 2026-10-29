@@ -311,28 +311,48 @@ class QualcommParser(AbstractParser):
         else:
             return (radio_id - 1)
 
+    def read_diag_response(self, cmd_code: int, read_size: int = 0x1000, max_reads: int = 50) -> dict[str, Any] | None:
+        # The read buffer may hold several HDLC frames (e.g. events still streaming
+        # from a previous session); only parse the one answering cmd_code.
+        # IO reads block until timeout, so two empty reads in a row mean no reply.
+        empty_reads = 0
+        for _ in range(max_reads):
+            buf = self.io_device.read(read_size)
+            if len(buf) == 0:
+                empty_reads += 1
+                if empty_reads >= 2:
+                    break
+                continue
+            empty_reads = 0
+            for frame in buf.split(b'\x7e'):
+                if len(frame) == 0:
+                    continue
+                pkt = util.unwrap(frame)
+                if len(pkt) < 3 or pkt[0] != cmd_code:
+                    continue
+                return self.parse_diag(pkt, hdlc_encoded=False)
+        self.logger.log(logging.WARNING, 'No response to DIAG command {:#04x}'.format(cmd_code))
+        return None
+
     def init_diag(self) -> None:
         self.logger.log(logging.INFO, 'Initializing diag')
         # Disable static event reporting
         self.io_device.read(0x1000)
 
         self.io_device.write(util.generate_packet(struct.pack('<B', diagcmd.DIAG_VERNO_F)), False)
-        ver_buf = self.io_device.read(0x1000)
-        result = self.parse_diag(ver_buf[:-1])
+        result = self.read_diag_response(diagcmd.DIAG_VERNO_F)
         if result:
             self.postprocess_parse_result(result)
 
         self.io_device.write(util.generate_packet(struct.pack('<B', diagcmd.DIAG_EXT_BUILD_ID_F)), False)
-        build_id_buf = self.io_device.read(0x1000)
-        result = self.parse_diag(build_id_buf[:-1])
+        result = self.read_diag_response(diagcmd.DIAG_EXT_BUILD_ID_F)
         if result:
             self.postprocess_parse_result(result)
 
         self.io_device.write_then_read_discard(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EVENT_REPORT_F, 0x00)), 0x1000, False)
 
         self.io_device.write(util.generate_packet(struct.pack('<LL', diagcmd.DIAG_LOG_CONFIG_F, diagcmd.LOG_CONFIG_RETRIEVE_ID_RANGES_OP)), False)
-        log_config_buf = self.io_device.read(0x1000)
-        result = self.parse_diag(log_config_buf[:-1])
+        result = self.read_diag_response(diagcmd.DIAG_LOG_CONFIG_F)
         if result:
             self.postprocess_parse_result(result)
 
@@ -367,8 +387,7 @@ class QualcommParser(AbstractParser):
             self.io_device.write_then_read_discard(util.generate_packet(diagcmd.log_mask_empty_tdscdma()), 0x1000)
 
         self.io_device.write(util.generate_packet(struct.pack('<BB', diagcmd.DIAG_EXT_MSG_CONFIG_F, 0x01)))
-        ext_msg_buf = self.io_device.read(0x1000)
-        result = self.parse_diag(ext_msg_buf[:-1])
+        result = self.read_diag_response(diagcmd.DIAG_EXT_MSG_CONFIG_F)
         if result:
             self.postprocess_parse_result(result)
 
@@ -410,8 +429,7 @@ class QualcommParser(AbstractParser):
             if len(self.emr_id_range) > 0:
                 for x in self.emr_id_range:
                     self.io_device.write(util.generate_packet(struct.pack('<BBHH', diagcmd.DIAG_EXT_MSG_CONFIG_F, 0x02, x[0], x[1])))
-                    ext_msg_level_buf = self.io_device.read(0x1000)
-                    result = self.parse_diag(ext_msg_level_buf[:-1])
+                    result = self.read_diag_response(diagcmd.DIAG_EXT_MSG_CONFIG_F)
                     if result:
                         self.postprocess_parse_result(result)
                         emr_level_range.append((result['start'], result['end'], result['level']))
