@@ -310,7 +310,7 @@ local gsmtapv3_lte_rrc_subtypes = {
 }
 
 local gsmtapv3_nas_eps_subtypes = {
-    [0x0000] = { check_and_get_dissector("nas-eps"), "NAS/EPS plain" },
+    [0x0000] = { check_and_get_dissector("nas-eps_plain"), "NAS/EPS plain" },
     [0x0001] = { check_and_get_dissector("nas-eps"), "NAS/EPS" }
 }
 
